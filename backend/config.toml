@@ -1,0 +1,14 @@
+[database]
+host = "pg-ef0641c-cardonauribecristian20-10e0.i.aivencloud.com"
+port = 14100
+database = "defaultdb"
+username = "avnadmin"
+password = "YOUR_PASSWORD_HERE"
+ssl = true
+ssl_ca_path = ""
+pool_max = 10
+pool_min = 2
+pool_idle = 10000
+connection_timeout = 30000
+retry_attempts = 3
+retry_delay = 2000
