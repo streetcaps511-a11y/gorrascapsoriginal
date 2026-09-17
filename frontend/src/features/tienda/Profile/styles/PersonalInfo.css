@@ -1,0 +1,521 @@
+.gm-personal-info-card { 
+  background-color: transparent; 
+  border-radius: 0; 
+  border: none; 
+  padding: 0; 
+  margin-bottom: 30px; 
+}
+
+.gm-section-header { 
+  display: flex; 
+  justify-content: flex-start; 
+  align-items: center; 
+  margin-bottom: 25px; 
+  width: 100%; 
+  gap: 40px; 
+}
+
+.gm-section-title-wrapper { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+}
+
+.gm-section-title { 
+  margin: 0; 
+  font-size: 1.4rem; 
+  font-weight: 800; 
+}
+
+.gm-edit-btn { 
+  padding: 10px 28px; 
+  border-radius: 50px; 
+  background: transparent; 
+  color: #FFC107; 
+  border: 1px solid #FFC107; 
+  font-weight: 800; 
+  cursor: pointer; 
+  font-size: 0.8rem; 
+  letter-spacing: 0.5px; 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.1); 
+}
+
+.gm-edit-btn:hover { 
+  transform: translateY(-2px); 
+  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.2); 
+  background-color: rgba(255, 193, 7, 0.1); 
+}
+
+.gm-info-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 22px 50px; 
+  margin-bottom: 40px; 
+  max-width: 900px; 
+}
+
+.gm-info-item { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 2px; /* Pega el nombre al campo */
+}
+
+.gm-info-label { 
+  color: #94a3b8 !important; 
+  font-size: 0.82rem !important; 
+  font-weight: 600 !important; 
+  letter-spacing: 0.05em; 
+  text-transform: uppercase;  
+  display: block; 
+  margin-bottom: 2px; /* Pega el nombre al campo */
+}
+
+.gm-info-label::after { 
+  content: ': '; 
+  margin-left: 2px; 
+}
+
+.gm-info-value { 
+  font-size: 0.96rem; 
+  color: #f1f5f9; 
+  font-weight: 500; 
+  padding-bottom: 2px; 
+}
+
+/* FORMULARIO CON VALIDACIONES */
+.gm-form-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 18px 32px; 
+  max-width: 800px; 
+}
+
+.gm-form-group { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 4px; /* Pega el nombre al input */
+  position: relative;
+}
+
+.gm-form-label { 
+  color: #f8fafc !important; 
+  font-size: 0.86rem !important; 
+  font-weight: 600 !important; 
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 1px;
+}
+
+.gm-form-label .required {
+  color: #ef4444;
+  font-size: 0.85rem;
+}
+
+.gm-form-input, 
+.gm-form-select { 
+  height: 44px; 
+  width: 100%; 
+  padding: 0 14px; 
+  border-radius: 8px; 
+  border: 1px solid rgba(255, 255, 255, 0.18); /* Diseño sobrio, no extravagante */
+  background-color: #0b0f1a; 
+  color: #E5E7EB; 
+  outline: none; 
+  font-size: 0.90rem; 
+  transition: all 0.25s ease; 
+  cursor: text; 
+}
+
+.gm-form-input:focus,
+.gm-form-select:focus {
+  border-color: #FFC107;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.15);
+}
+
+/* ESTADO DE ERROR */
+.gm-form-input.error,
+.gm-form-select.error {
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.05) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* ESTADO DE ÉXITO/VALIDADO */
+.gm-form-input.success,
+.gm-form-select.success {
+  border-color: #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.05) !important;
+}
+
+/* MENSAJE DE ERROR DEBAJO DEL CAMPO */
+.gm-field-error {
+  color: #ef4444;
+  font-size: 0.78rem;
+  font-weight: 500;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  animation: fadeInDown 0.3s ease-out;
+  padding-left: 4px;
+}
+
+.gm-field-error::before {
+  content: '⚠️';
+  font-size: 0.85rem;
+}
+
+/* MENSAJE DE ÉXITO */
+.gm-field-success {
+  color: #10b981;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 4px;
+}
+
+/* ICONO DE VALIDACIÓN DENTRO DEL INPUT */
+.gm-validation-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.gm-form-select { 
+  cursor: pointer; 
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23FFC107' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+}
+
+.gm-form-select option { 
+  background-color: #0b0f1a; 
+  color: #fff; 
+  padding: 10px; 
+}
+
+/* AUTOCOMPLETE */
+.gm-form-input:-webkit-autofill,
+.gm-form-input:-webkit-autofill:hover,
+.gm-form-input:-webkit-autofill:focus,
+.gm-form-input:autofill { 
+  -webkit-text-fill-color: #E5E7EB !important; 
+  -webkit-box-shadow: 0 0 0px 1000px #030712 inset !important; 
+  box-shadow: 0 0 0px 1000px #030712 inset !important; 
+  transition: background-color 5000s ease-in-out 0s !important; 
+  caret-color: white !important; 
+}
+
+.gm-form-input:disabled, 
+.gm-form-select:disabled { 
+  opacity: 0.6; 
+  cursor: not-allowed; 
+  background-color: rgba(0, 0, 0, 0.2) !important; 
+}
+
+/* BOTONES DE ACCIÓN */
+.gm-form-actions { 
+  display: flex; 
+  gap: 12px; 
+  margin-top: 35px; 
+  padding-bottom: 10px; 
+}
+
+.gm-save-btn { 
+  padding: 12px 32px; 
+  border-radius: 50px; 
+  background: transparent; 
+  color: #FFC107; 
+  border: 1.5px solid #FFC107; 
+  font-weight: 800; 
+  cursor: pointer; 
+  font-size: 0.88rem; 
+  letter-spacing: 0.5px; 
+  transition: all 0.3s ease; 
+}
+
+.gm-save-btn:hover { 
+  background-color: rgba(255,193,7,0.15); 
+  transform: translateY(-2px); 
+  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.25);
+}
+
+.gm-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.gm-cancel-btn { 
+  padding: 12px 32px; 
+  border-radius: 50px; 
+  background: transparent; 
+  color: rgba(255,255,255,0.6); 
+  border: 1.5px solid rgba(255,255,255,0.2); 
+  font-weight: 700; 
+  cursor: pointer; 
+  font-size: 0.88rem; 
+  transition: all 0.3s ease; 
+}
+
+.gm-cancel-btn:hover { 
+  background-color: rgba(255,255,255,0.08); 
+  border-color: rgba(255,255,255,0.4);
+  color: #fff;
+}
+
+/* SECCIÓN DE GESTIÓN */
+.gm-mgmt-section { 
+  border-top: 1px solid rgba(255,255,255,0.05); 
+  padding-top: 35px; 
+}
+
+.gm-mgmt-header { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  margin-bottom: 20px; 
+}
+
+.gm-mgmt-title { 
+  margin: 0; 
+  font-weight: 800; 
+  font-size: 1.1rem; 
+}
+
+.gm-mgmt-actions { 
+  display: flex; 
+  gap: 15px; 
+}
+
+.gm-deactivate-btn { 
+  padding: 10px 20px; 
+  border-radius: 8px; 
+  background-color: transparent; 
+  color: #ef4444; 
+  border: 1.5px solid #dc2626; 
+  font-size: 0.85rem; 
+  font-weight: 700; 
+  cursor: pointer; 
+  transition: all 0.2s; 
+}
+
+.gm-deactivate-btn:hover { 
+  background-color: rgba(220, 38, 38, 0.15); 
+  transform: translateY(-1px);
+}
+
+.gm-delete-btn { 
+  padding: 10px 20px; 
+  border-radius: 8px; 
+  background-color: #991b1b; 
+  color: #fff; 
+  border: none; 
+  font-size: 0.85rem; 
+  font-weight: 700; 
+  cursor: pointer; 
+  box-shadow: 0 4px 12px rgba(153, 27, 27, 0.3); 
+  transition: all 0.2s; 
+}
+
+.gm-delete-btn:hover { 
+  background-color: #7f1d1d; 
+  transform: translateY(-1px);
+}
+
+/* ANIMACIONES */
+@keyframes fadeInDown { 
+  from { 
+    transform: translateY(-5px); 
+    opacity: 0; 
+  } 
+  to { 
+    transform: translateY(0); 
+    opacity: 1; 
+  } 
+}
+
+/* RESPONSIVE */
+@media (max-width:980px) { 
+  .gm-section-header { 
+    flex-direction: row !important; 
+    justify-content: space-between !important; 
+    padding: 0 !important; 
+    gap: 0 !important; 
+    margin-bottom: 25px !important; 
+    width: 100% !important; 
+    margin-left: 0 !important; 
+  } 
+  
+  .gm-section-title-wrapper { 
+    gap: 10px !important; 
+    margin-left: -120px !important; 
+    padding: 0 !important; 
+  } 
+  
+  .gm-section-title { 
+    font-size: 1.15rem !important; 
+    text-align: left !important; 
+  } 
+  
+  .gm-edit-btn { 
+    padding: 8px 15px !important; 
+    font-size: 0.65rem !important; 
+  }
+  
+  .gm-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (max-width:768px) { 
+  .gm-personal-info-card { 
+    background-color: transparent; 
+    border: none; 
+    padding: 0; 
+  } 
+  
+  .gm-section-header { 
+    flex-direction: row; 
+    align-items: center; 
+    justify-content: space-between; 
+    padding: 0; 
+    margin-bottom: 25px; 
+    width: 100%; 
+    margin-left: 0 !important; 
+  } 
+  
+  .gm-section-title-wrapper { 
+    margin-left: -120px !important; 
+  } 
+  
+  .gm-edit-btn { 
+    font-size: 0.7rem; 
+    padding: 8px 16px; 
+  } 
+  
+  .gm-info-grid { 
+    grid-template-columns: 1fr; 
+    gap: 16px; 
+    margin-bottom: 30px; 
+  } 
+  
+  .gm-info-value { 
+    font-size: 0.9rem; 
+  } 
+  
+  .gm-section-title { 
+    font-size: 1.1rem; 
+  } 
+  
+  .gm-form-grid { 
+    grid-template-columns: 1fr; 
+  } 
+  
+  .gm-mgmt-actions { 
+    flex-direction: row; 
+    flex-wrap: wrap; 
+    gap: 10px; 
+  } 
+  
+  .gm-deactivate-btn, 
+  .gm-delete-btn { 
+    flex: 1; 
+    font-size: 0.75rem; 
+    padding: 10px 12px; 
+    text-align: center; 
+    white-space: nowrap; 
+  } 
+  
+  .gm-mgmt-section { 
+    padding-top: 20px; 
+  } 
+  
+  .gm-form-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .gm-save-btn,
+  .gm-cancel-btn {
+    width: 100%;
+  }
+}
+
+/* CLEAR BUTTON */
+.gm-clear-input-btn {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 193, 7, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+  z-index: 10;
+}
+
+.gm-clear-input-btn:hover {
+  color: rgba(255, 193, 7, 1);
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+/* PHONE PREFIX */
+.gm-phone-input-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.gm-phone-prefix {
+  position: absolute;
+  left: 16px;
+  color: #FFC107;
+  font-weight: 800;
+  font-size: 0.92rem;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.gm-form-input.has-phone-prefix {
+  padding-left: 55px !important;
+}
+
+.gm-phone-prefix-select {
+  position: absolute;
+  left: 8px;
+  background: transparent;
+  border: none;
+  color: #FFC107;
+  font-weight: 800;
+  font-size: 0.92rem;
+  outline: none;
+  cursor: pointer;
+  z-index: 10;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding: 0 4px;
+}
+
+.gm-phone-prefix-select option {
+  background-color: #0b0f1a;
+  color: #FFC107;
+}

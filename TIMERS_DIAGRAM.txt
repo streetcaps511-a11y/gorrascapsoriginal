@@ -1,0 +1,231 @@
+```
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃             ⏱️  SISTEMA DE TIEMPOS DE DEVOLUCIONES               ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                    FLUJO TEMPORAL COMPLETO                          │
+└─────────────────────────────────────────────────────────────────────┘
+
+                              ⏰ T = 0 segundos
+                                    │
+                                    ▼
+                    ┌──────────────────────────────┐
+                    │  Pedido está "Completado"    │
+                    │  Esperando envío              │
+                    └──────────────────────────────┘
+                                    │
+                                    ▼
+                    ┌──────────────────────────────┐
+                    │  Admin marca "Enviado"       │
+                    │  • fechaEnvio = NOW          │
+                    │  • statusenvio = "Enviado"   │
+                    └──────────────────────────────┘
+                                    │
+                         ✅ BOTÓN DEVOLUCIÓN ACTIVO
+                         (Usuario puede hacer click)
+                                    │
+                    ┌────────────────────────────────────┐
+                    │   ⏰ Espera 2 MINUTOS              │
+                    │   (Sistema verifica cada vez que   │
+                    │    alguien abre la lista de ventas)│
+                    └────────────────────────────────────┘
+                                    │
+                              ⏰ T = 2 minutos
+                                    │
+                                    ▼
+        ┌──────────────────────────────────────────────┐
+        │  checkAutoDeliveries() EJECUTA:              │
+        │  • Busca ventas "Enviado" > 2 minutos        │
+        │  • Cambia a "Entregado"                      │
+        │  • Guarda fechaEntrega = NOW                 │
+        │  • Log: "[Auto-Delivery] Se actualizaron..." │
+        └──────────────────────────────────────────────┘
+                                    │
+        ┌──────────────────────────────────────────────┐
+        │  Base de Datos ACTUALIZA:                    │
+        │  statusenvio: "Enviado" → "Entregado" ✅    │
+        │  fechaEntrega: guardada (usar para calcular) │
+        └──────────────────────────────────────────────┘
+                                    │
+                                    ▼
+        ┌──────────────────────────────────────────────┐
+        │  Frontend: Usuario abre su Perfil            │
+        │  → isReturnExpired() verifica:               │
+        │    • Ahora - fechaEntrega = 2 min 5 seg      │
+        │    • 2 min 5 seg > 2 minutos? SÍ             │
+        │    • return TRUE (expirado)                  │
+        └──────────────────────────────────────────────┘
+                                    │
+                         ❌ BOTÓN DEVOLUCIÓN DESHABILITADO
+                         (Color gris, no se puede hacer click)
+                                    │
+                                    ▼
+        ┌──────────────────────────────────────────────┐
+        │  Usuario ve:                                 │
+        │  "Devolver todo el pedido" [GRIS - BLOQUEADO]│
+        │                                              │
+        │  Tooltip: "Período de devolución expirado"   │
+        └──────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ARQUITECTURA DEL SISTEMA                         │
+└─────────────────────────────────────────────────────────────────────┘
+
+    ┌─────────────────────────────────────────────────┐
+    │  CONFIGURACIÓN CENTRALIZADA                    │
+    │  ═══════════════════════════════════════════════│
+    │                                                │
+    │  📄 timersConfig.js (ambos frontend/backend)  │
+    │                                                │
+    │  const DELIVERY_TO_RETURN_EXPIRY_TIME_MS =    │
+    │        2 * 60 * 1000  // 2 minutos            │
+    │                                                │
+    │  ☑️ FUENTE ÚNICA DE VERDAD                    │
+    └─────────────────────────────────────────────────┘
+             ▲                          ▲
+             │                          │
+             │ IMPORT                   │ REFERENCIA
+             │                          │
+    ┌────────┴──────┐          ┌────────┴──────┐
+    │    FRONTEND    │          │    BACKEND    │
+    │ ══════════════ │          │ ══════════════ │
+    │                │          │                │
+    │ useProfile.js  │          │ ventas.        │
+    │ → Línea 239    │          │ controller.js  │
+    │ isReturnExpired│          │ → Línea 24     │
+    │ {              │          │ checkAuto      │
+    │   diffTime >   │          │ Deliveries()   │
+    │   TIMER        │          │ {              │
+    │   ? true       │          │   AUTO_DELIVERY
+    │   : false      │          │   _TIME = TIMER│
+    │ }              │          │ }              │
+    └────────────────┘          └────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        SINCRONIZACIÓN                               │
+└─────────────────────────────────────────────────────────────────────┘
+
+        DESARROLLO (2 MINUTOS)              PRODUCCIÓN (10 DÍAS)
+        ════════════════════════════════════════════════════════════
+
+         timersConfig.js:                   timersConfig.js:
+         2 * 60 * 1000                      10 * 24 * 60 * 60 * 1000
+
+            Frontend                           Frontend
+            └─ Botón se bloquea                └─ Botón se bloquea
+               después de 2 min                   después de 10 días
+
+            Backend                            Backend
+            └─ Status auto-actualiza           └─ Status auto-actualiza
+               después de 2 min                   después de 10 días
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│              CAMBIO RÁPIDO: Desarrollo ↔ Producción                 │
+└─────────────────────────────────────────────────────────────────────┘
+
+  🔄 PASO 1: Editar archivo
+  ───────────────────────────
+  frontend/src/shared/config/timersConfig.js
+  
+  Línea 11:
+  export const DELIVERY_TO_RETURN_EXPIRY_TIME_MS = 
+    2 * 60 * 1000;  ← Cambiar esto
+
+
+  🔄 PASO 2: Backend (referencia)
+  ────────────────────────────────
+  backend/src/config/timersConfig.js
+  backend/src/controllers/ventas.controller.js
+  
+  Actualizar comentarios para documentación
+
+
+  🔄 PASO 3: Listo
+  ────────────────
+  El sistema completo se sincroniza automáticamente
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                      TABLA DE TIEMPOS                               │
+└─────────────────────────────────────────────────────────────────────┘
+
+TIEMPO DESEADO         │ CÓDIGO
+─────────────────────────────────────────────────────────────────────
+5 minutos              │ 5 * 60 * 1000
+30 minutos             │ 30 * 60 * 1000
+1 hora                 │ 1 * 60 * 60 * 1000
+2 horas                │ 2 * 60 * 60 * 1000
+12 horas               │ 12 * 60 * 60 * 1000
+1 día (24 horas)       │ 24 * 60 * 60 * 1000
+2 días                 │ 2 * 24 * 60 * 60 * 1000
+3 días                 │ 3 * 24 * 60 * 60 * 1000
+7 días                 │ 7 * 24 * 60 * 60 * 1000
+10 días (PRODUCCIÓN)   │ 10 * 24 * 60 * 60 * 1000 ⭐
+14 días                │ 14 * 24 * 60 * 60 * 1000
+30 días                │ 30 * 24 * 60 * 60 * 1000
+90 días                │ 90 * 24 * 60 * 60 * 1000
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                     CASOS DE PRUEBA                                 │
+└─────────────────────────────────────────────────────────────────────┘
+
+  TEST 1: Cambio automático de estado
+  ───────────────────────────────────
+  1. Admin: http://localhost:5173/admin/ventas
+  2. Marcar pedido como "Enviado"
+  3. Esperar 2 minutos
+  4. Recargar página
+  5. ✅ Status debe cambiar a "Entregado"
+
+
+  TEST 2: Botones deshabilitados
+  ────────────────────────────────
+  1. Usuario: http://localhost:5173/perfil → "Mis Pedidos"
+  2. Buscar pedido entregado
+  3. Si < 2 minutos: ✅ Botón azul (activo)
+  4. Si > 2 minutos: ❌ Botón gris (deshabilitado)
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ARCHIVOS INVOLUCRADOS                            │
+└─────────────────────────────────────────────────────────────────────┘
+
+NUEVA CONFIGURACIÓN:
+  📄 frontend/src/shared/config/timersConfig.js ✨
+  📄 backend/src/config/timersConfig.js ✨
+
+MODIFIED:
+  📝 frontend/src/features/tienda/Profile/hooks/useProfile.js
+  📝 backend/src/controllers/ventas.controller.js
+
+DOCUMENTACIÓN:
+  📚 TIMERS_GUIDE.md (completo y detallado)
+  📚 TIMERS_QUICK_GUIDE.md (rápido y fácil)
+  📚 TIMERS_DIAGRAM.txt (este archivo)
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        RESUMEN FINAL                                │
+└─────────────────────────────────────────────────────────────────────┘
+
+✅ PROBLEMA RESUELTO:
+   Los botones de devolución se inhabilitan automáticamente después
+   de 2 minutos, sincronizado con el cambio automático de estado
+
+✅ CENTRALIZADO:
+   Un único archivo de configuración (timersConfig.js) controla todo
+
+✅ FÁCIL DE CAMBIAR:
+   Solo editar 1 línea para cambiar el tiempo globalmente
+
+✅ DOCUMENTADO:
+   Guías completas, ejemplos y troubleshooting incluidos
+
+✅ LISTO PARA PRODUCCIÓN:
+   Solo cambiar a 10 días cuando sea necesario
+```

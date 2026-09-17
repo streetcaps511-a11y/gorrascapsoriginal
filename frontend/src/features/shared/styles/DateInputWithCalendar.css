@@ -1,0 +1,7 @@
+.date-input-container { position: relative; width: 100%; }
+.date-input-visual { display: flex; align-items: center; height: 28px; background-color: transparent; border: 1px solid #8F9DB1; border-radius: 6px; padding: 0 4px; gap: 2px; }
+.date-input-visual.has-error { border-color: #ef4444; }
+.date-input-visual input,
+.date-input-visual select { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-size: 11px; height: 100%; text-align: center; padding: 0 2px; }
+.date-input-visual select { cursor: pointer; appearance: none; -webkit-appearance: none; -moz-appearance: none; }
+.date-input-hidden { position: absolute; opacity: 0; height: 0; width: 0; }
