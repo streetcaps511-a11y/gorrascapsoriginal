@@ -5,6 +5,7 @@ Recibe eventos de la UI y se comunica con los Servicios API. */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { NitroCache } from '../../../shared/utils/NitroCache';
+import { useFormDraft } from '../../../shared/hooks/useFormDraft';
 import Swal from 'sweetalert2';
 import {
   fetchAllCompras,
@@ -213,7 +214,7 @@ export const useComprasLogic = (location) => {
     setProductoPage(1);
   }, []);
 
-  const mostrarFormulario = useCallback(async (compra = null) => {
+  const mostrarFormulario = useCallback(async (compra = null, customNuevaCompra = null) => {
     setModoVista("formulario");
     setProductoPage(1);
     setErrors({});
@@ -262,6 +263,9 @@ export const useComprasLogic = (location) => {
         numeroFactura: compra.nfactura || '',
         fechaRegistro: compra.fechaRegistro || ''
       });
+    } else if (customNuevaCompra) {
+      setCompraEditando(null);
+      setNuevaCompra(customNuevaCompra);
     } else {
       const nextFactura = '10001';
       setCompraEditando(null);
@@ -287,6 +291,54 @@ export const useComprasLogic = (location) => {
       });
     }
   }, [showAlert, productos.length]); // ✅ Eliminada dependencia 'compras' no usada
+
+  const isCompraDirty = useCallback((data) => {
+    const c = data || nuevaCompra;
+    if (!c) return false;
+    const hasProv = Boolean(c.proveedor && c.proveedor.trim());
+    const hasFactura = Boolean(c.numeroFactura && c.numeroFactura.trim());
+    const hasFecha = Boolean(c.fecha && c.fecha.trim());
+    const hasProducts = Array.isArray(c.productos) && c.productos.some((p, i) =>
+      Boolean(
+        (p.nombre && p.nombre.trim()) ||
+        (p.precioCompra && String(p.precioCompra) !== '') ||
+        (p.precioVenta && String(p.precioVenta) !== '') ||
+        (i > 0) ||
+        (Array.isArray(p.variantes) && p.variantes.some(v => v.talla && v.talla.trim()))
+      )
+    );
+    return hasProv || hasFactura || hasFecha || hasProducts;
+  }, [nuevaCompra]);
+
+  const {
+    showDraftModal,
+    setShowDraftModal,
+    hasDraft,
+    draftData,
+    draftMeta,
+    handleRegisterClick,
+    restoreDraft,
+    discardDraft,
+    closeDraftModal,
+    saveDraft,
+    clearDraft
+  } = useFormDraft({
+    moduleId: 'compra',
+    isEditing: !!compraEditando,
+    modoVista,
+    getFormData: () => nuevaCompra,
+    isDirty: isCompraDirty,
+    getExtraInfo: (d) => d?.proveedor ? `Proveedor: ${d.proveedor}` : (d?.numeroFactura ? `Factura: ${d.numeroFactura}` : null),
+    onRestore: (draft) => mostrarFormulario(null, draft),
+    onDiscard: () => mostrarFormulario(null, null),
+    onOpenForm: () => setModoVista("formulario")
+  });
+
+  useEffect(() => {
+    if (modoVista === 'formulario' && !compraEditando) {
+      saveDraft(nuevaCompra);
+    }
+  }, [nuevaCompra, modoVista, compraEditando, saveDraft]);
 
   const mostrarDetalle = useCallback((compra) => {
     if (!compra) return;
@@ -468,6 +520,7 @@ export const useComprasLogic = (location) => {
         showAlert('Funcionalidad de edición conectando...');
       } else {
         await createNewCompra(payload);
+        clearDraft();
         showAlert('Compra registrada correctamente');
         // Notificar al resto de la app (sync) para que recarguen stock
         const channel = new BroadcastChannel('app_sync');
@@ -600,6 +653,15 @@ export const useComprasLogic = (location) => {
     recalcularStock,
     isRecalculando,
     handleInputChange,
-    handleDateChange
+    handleDateChange,
+    showDraftModal,
+    setShowDraftModal,
+    hasDraft,
+    draftData,
+    draftMeta,
+    handleRegisterClick,
+    restoreDraft,
+    discardDraft,
+    closeDraftModal
   };
 };

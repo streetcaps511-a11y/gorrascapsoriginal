@@ -4,6 +4,7 @@ Separa la 'inteligencia' de la interfaz visual para mantener el código limpio.
 Recibe eventos de la UI y se comunica con los Servicios API. */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { NitroCache } from '../../../shared/utils/NitroCache';
+import { useFormDraft } from '../../../shared/hooks/useFormDraft';
 import * as ventasService from "../services/ventasApi";
 import * as productosService from "../../Productos/services/productosApi";
 
@@ -141,22 +142,85 @@ export const useVentasLogic = () => {
     setRejectionReason('');
   };
 
-  const mostrarFormulario = () => {
+  const mostrarFormulario = (customNuevaVenta = null) => {
     fetchData(true);
-    setNuevaVenta({
-      cliente: '',
-      metodoPago: '',
-      fecha: new Date().toLocaleDateString('es-CO'),
-      productos: [{ id: '', nombre: '', variantes: [{ talla: '', cantidad: 1, _tempKey: Date.now() }], precio: '', _tempKey: Date.now() + Math.random() }],
-      estado: availableStatuses[0] || '',
-      motivoRechazo: '',
-      evidencia: null,
-      tipoEntrega: '',
-      direccionEnvio: ''
-    });
+    if (customNuevaVenta) {
+      setNuevaVenta(customNuevaVenta);
+    } else {
+      setNuevaVenta({
+        cliente: '',
+        idCliente: '',
+        metodoPago: '',
+        fecha: new Date().toLocaleDateString('es-CO'),
+        productos: [{ id: '', nombre: '', variantes: [{ talla: '', cantidad: 1, _tempKey: Date.now() }], precio: '', _tempKey: Date.now() + Math.random() }],
+        estado: availableStatuses[0] || '',
+        motivoRechazo: '',
+        evidencia: null,
+        tipoEntrega: '',
+        direccionEnvio: ''
+      });
+    }
     setErrors({});
     setModoVista("formulario");
   };
+
+  const isVentaDirty = useCallback((data) => {
+    const v = data || nuevaVenta;
+    if (!v) return false;
+    const hasCliente = Boolean(
+      (typeof v.cliente === 'string' && v.cliente.trim()) ||
+      v.idCliente ||
+      (typeof v.cliente === 'object' && v.cliente !== null)
+    );
+    const hasMetodo = Boolean(v.metodoPago);
+    const hasTipo = Boolean(v.tipoEntrega);
+    const hasDir = Boolean(v.direccionEnvio && v.direccionEnvio.trim());
+    const hasEvidencia = Boolean(v.evidencia);
+    const hasProducts = Array.isArray(v.productos) && v.productos.some((p, i) =>
+      Boolean(
+        (p.nombre && p.nombre.trim()) ||
+        p.id ||
+        (p.precio && String(p.precio) !== '') ||
+        (i > 0) ||
+        (Array.isArray(p.variantes) && p.variantes.some(varItem => varItem.talla && varItem.talla.trim()))
+      )
+    );
+    return hasCliente || hasMetodo || hasTipo || hasDir || hasEvidencia || hasProducts;
+  }, [nuevaVenta]);
+
+  const {
+    showDraftModal,
+    setShowDraftModal,
+    hasDraft,
+    draftData,
+    draftMeta,
+    handleRegisterClick,
+    restoreDraft,
+    discardDraft,
+    closeDraftModal,
+    saveDraft,
+    clearDraft
+  } = useFormDraft({
+    moduleId: 'venta',
+    isEditing: false,
+    modoVista,
+    getFormData: () => nuevaVenta,
+    isDirty: isVentaDirty,
+    getExtraInfo: (d) => {
+      if (!d) return null;
+      const clientName = typeof d.cliente === 'object' ? d.cliente?.nombre : d.cliente;
+      return clientName ? `Cliente: ${clientName}` : null;
+    },
+    onRestore: (draft) => mostrarFormulario(draft),
+    onDiscard: () => mostrarFormulario(null),
+    onOpenForm: () => setModoVista("formulario")
+  });
+
+  useEffect(() => {
+    if (modoVista === 'formulario') {
+      saveDraft(nuevaVenta);
+    }
+  }, [nuevaVenta, modoVista, saveDraft]);
 
   const mostrarDetalle = (venta) => {
     setVentaViendo(venta);
@@ -311,6 +375,7 @@ export const useVentasLogic = () => {
       const newVentas = [created, ...ventas];
       setVentas(newVentas);
       NitroCache.set('ventas', newVentas);
+      clearDraft();
       showAlert('Venta registrada exitosamente');
       notifySync();
       setTimeout(() => {
@@ -491,6 +556,15 @@ export const useVentasLogic = () => {
     updateVentaStatus,
     handlePartialPayment,
     handleEnviarVenta,
-    requiresReceipt
+    requiresReceipt,
+    showDraftModal,
+    setShowDraftModal,
+    hasDraft,
+    draftData,
+    draftMeta,
+    handleRegisterClick,
+    restoreDraft,
+    discardDraft,
+    closeDraftModal
   };
 };

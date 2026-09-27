@@ -203,6 +203,22 @@ const categoriaController = {
                 return errorResponse(res, 'Datos de categoría inválidos', 400, validationErrors);
             }
 
+            // Si se intenta desactivar una categoría que actualmente está activa
+            const isDesactivando = (estado === false || estado === 'false') && categoria.estado === true;
+            if (isDesactivando) {
+                const productosActivos = await Producto.count({
+                    where: { idCategoria: id, isActive: true }
+                });
+
+                if (productosActivos > 0) {
+                    return errorResponse(
+                        res,
+                        `No se puede desactivar la categoría "${categoria.nombre}" porque contiene ${productosActivos} producto(s) activo(s). Debes desactivar o reasignar los productos primero.`,
+                        400
+                    );
+                }
+            }
+
             const sanitizedData = sanitizeCategoria({ nombre, descripcion, imagenUrl: finalImagenUrl, estado });
             await categoria.update(sanitizedData);
 
@@ -302,7 +318,24 @@ const categoriaController = {
                 return errorResponse(res, 'Categoría no encontrada', 404);
             }
 
-            await categoria.update({ estado: !categoria.estado });
+            const nuevoEstado = !categoria.estado;
+
+            // Si se va a desactivar, verificar si contiene productos activos
+            if (!nuevoEstado) {
+                const productosActivos = await Producto.count({
+                    where: { idCategoria: id, isActive: true }
+                });
+
+                if (productosActivos > 0) {
+                    return errorResponse(
+                        res,
+                        `No se puede desactivar la categoría "${categoria.nombre}" porque contiene ${productosActivos} producto(s) activo(s). Debes desactivar o reasignar los productos primero.`,
+                        400
+                    );
+                }
+            }
+
+            await categoria.update({ estado: nuevoEstado });
 
             return successResponse(res, {
                 id: categoria.id,

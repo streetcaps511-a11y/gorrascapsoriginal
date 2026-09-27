@@ -1,13 +1,12 @@
-/* === HOOK DE LÓGICA === 
-   Este archivo maneja el estado de React, las reglas de negocio, y las validaciones del módulo. 
-   Separa la 'inteligencia' de la interfaz visual para mantener el código limpio. 
-   Recibe eventos de la UI y se comunica con los Servicios API. */
-
+/* === HOOK DE LÓGICA ===
+Este archivo maneja el estado de React, las reglas de negocio, y las validaciones del módulo.
+Separa la 'inteligencia' de la interfaz visual para mantener el código limpio.
+Recibe eventos de la UI y se comunica con los Servicios API. */
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import * as rolesService from '../services/rolesApi';
 import { NitroCache } from '../../../shared/utils/NitroCache';
 
-// 🧠 MEMORIA GLOBAL (Caché Nitro)
+//  MEMORIA GLOBAL (Caché Nitro)
 const getInitialRoles = () => {
   const cached = NitroCache.get('roles_admin');
   return cached?.data || [];
@@ -18,34 +17,29 @@ let rolesCache = {
   isInitialized: false
 };
 
-export const useRolesLogic = ( ) => {
+export const useRolesLogic = () => {
   const [roles, setRoles] = useState(rolesCache.roles);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('Todos');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
-
   const [loading, setLoading] = useState(!rolesCache.isInitialized && rolesCache.roles.length === 0);
   const [alert, setAlert] = useState({ show: false, message: '', type: 'success' });
-  
   const [currentRole, setCurrentRole] = useState({
     name: "",
     description: "",
     permissions: [],
     isActive: true,
   });
-
-  const [modalState, setModalState] = useState({ 
-    isOpen: false, 
+  const [modalState, setModalState] = useState({
+    isOpen: false,
     mode: 'create', // create, edit, details
-    role: null 
+    role: null
   });
-
-  const [deleteModal, setDeleteModal] = useState({ 
-    isOpen: false, 
-    role: null 
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    role: null
   });
-
   const [fieldErrors, setFieldErrors] = useState({
     name: false,
     permissions: false
@@ -57,7 +51,7 @@ export const useRolesLogic = ( ) => {
     try {
       const data = await rolesService.getRoles();
       // Ensure "Administrador" role has special handling if needed
-      const processed = data.map(role => 
+      const processed = data.map(role =>
         (role.name || "").toLowerCase() === "administrador"
           ? { ...role, description: role.description || "Acceso total al sistema" }
           : role
@@ -91,7 +85,7 @@ export const useRolesLogic = ( ) => {
     let result = roles;
     if (searchTerm) {
       const term = searchTerm.toLowerCase().trim();
-      result = result.filter(r => 
+      result = result.filter(r =>
         (r.name || "").toLowerCase().includes(term) ||
         (r.description || "").toLowerCase().includes(term)
       );
@@ -143,24 +137,28 @@ export const useRolesLogic = ( ) => {
       showAlert("Complete todos los campos requeridos", "error");
       return;
     }
-
     setLoading(true);
+    
+    // ✅ AGREGAR DESCRIPCIÓN POR DEFECTO SI ESTÁ VACÍA
+    const roleToSave = {
+      ...currentRole,
+      description: currentRole.description?.trim() || "Sin descripción"
+    };
+    
     try {
       if (modalState.mode === 'edit') {
-        const updated = await rolesService.updateRole(currentRole.id, currentRole);
+        const updated = await rolesService.updateRole(currentRole.id, roleToSave);
         setRoles(prev => prev.map(r => r.id === updated.id ? updated : r));
         showAlert("Rol actualizado correctamente");
       } else {
-        const created = await rolesService.createRole(currentRole);
+        const created = await rolesService.createRole(roleToSave);
         setRoles(prev => [created, ...prev]);
         showAlert("Rol creado correctamente");
       }
-
       // Broadcast permissions update in real time
       const channel = new BroadcastChannel('app_sync');
       channel.postMessage('user_permissions_updated');
       channel.close();
-
       closeModal();
     } catch (error) {
       showAlert("Error al guardar: " + error.message, "error");
@@ -168,8 +166,6 @@ export const useRolesLogic = ( ) => {
       setLoading(false);
     }
   };
-
-
 
   const openDeleteModal = (role) => {
     if (isAdministrador(role)) {
@@ -188,24 +184,20 @@ export const useRolesLogic = ( ) => {
   const handleDelete = async () => {
     const roleToDelete = deleteModal.role;
     if (!roleToDelete) return;
-
     setLoading(true);
+    
     try {
       await rolesService.deleteRole(roleToDelete.id);
-      
       // Sincronizar estado local
       setRoles(prev => prev.filter(r => r.id !== roleToDelete.id));
       showAlert(`Rol "${roleToDelete.name}" eliminado correctamente`, "delete");
-      
       // Sincronizar caché
       const updated = roles.filter(r => r.id !== roleToDelete.id);
       NitroCache.set('roles_admin', updated);
-      
       // Broadcast permissions update in real time
       const channel = new BroadcastChannel('app_sync');
       channel.postMessage('user_permissions_updated');
       channel.close();
-
       closeDeleteModal();
     } catch (error) {
       const msg = error.response?.data?.message || "Error al eliminar";
@@ -239,9 +231,9 @@ export const useRolesLogic = ( ) => {
     closeDeleteModal,
     handleDelete,
     isAdministrador,
-    isRestrictedRole: (role) => (role?.name || "").toLowerCase() === "administrador" || (role?.name || "").toLowerCase() === "cliente",
+    isRestrictedRole: (role) => (role?.name || " ").toLowerCase() === "administrador" || (role?.name || " ").toLowerCase() === "cliente",
     handleToggleStatus: async (role) => {
-      if ((role?.name || "").toLowerCase() === "administrador") {
+      if ((role?.name || " ").toLowerCase() === "administrador") {
         showAlert('El rol "Administrador" no se puede desactivar', "error");
         return;
       }
@@ -255,7 +247,6 @@ export const useRolesLogic = ( ) => {
         showAlert(newState ? 'Rol activado ✅' : 'Rol desactivado');
         const next = roles.map(r => r.id === role.id ? { ...r, isActive: newState } : r);
         NitroCache.set('roles_admin', next);
-
         // Broadcast permissions update in real time
         const channel = new BroadcastChannel('app_sync');
         channel.postMessage('user_permissions_updated');
@@ -266,4 +257,4 @@ export const useRolesLogic = ( ) => {
       }
     }
   };
-};
+};    

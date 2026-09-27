@@ -103,15 +103,14 @@ export const useCategoriasLogic = () => {
     if (!category) return;
     const previousCategorias = [...categorias];
     const newStatus = !category.isActive;
-    
-    // Actuamos de inmediato en la UI (Optimista)
-    setCategorias(prev => prev.map(c => c.id === category.id ? { ...c, isActive: newStatus, estado: newStatus ? 'Activo' : 'Inactivo' } : c));
 
     try {
-      showAlert(`Categoría ${newStatus ? 'activada ✅' : 'desactivada ⏸️'}`, newStatus ? 'success' : 'warning');
-      
       // Llamada al endpoint dedicado PATCH para cambiar el estado
       await categoriasApi.toggleStatus(category.id);
+
+      // Actualizar estado en UI y mostrar confirmación sólo tras confirmación exitosa del servidor
+      setCategorias(prev => prev.map(c => c.id === category.id ? { ...c, isActive: newStatus, estado: newStatus ? 'Activo' : 'Inactivo' } : c));
+      showAlert(`Categoría ${newStatus ? 'activada ✅' : 'desactivada ⏸️'}`, newStatus ? 'success' : 'warning');
       
       // Sincronizar estado local y caché
       await fetchData();
@@ -122,7 +121,7 @@ export const useCategoriasLogic = () => {
       channel.close();
     } catch (error) {
       setCategorias(previousCategorias);
-      const msg = error?.response?.data?.message || "Error al cambiar estado";
+      const msg = error?.response?.data?.message || error?.message || "Error al cambiar estado";
       showAlert(msg, "error");
     }
   }, [categorias, showAlert, fetchData]);

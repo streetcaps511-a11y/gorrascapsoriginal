@@ -97,5 +97,12 @@ export const NitroCache = {
         }
       });
     }
+  },
+
+  /**
+   * Alias de clear para eliminar una clave específica
+   */
+  remove: (key) => {
+    NitroCache.clear(key);
   }
 };

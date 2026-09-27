@@ -1,20 +1,16 @@
-/* === PÁGINA PRINCIPAL === 
-   Este componente es la interfaz visual principal de la ruta. 
-   Se encarga de dibujar el HTML/JSX e invoca el Hook para obtener todas las funciones y estados necesarios. */
-
+/* === PÁGINA PRINCIPAL ===
+Este componente es la interfaz visual principal de la ruta.
+Se encarga de dibujar el HTML/JSX e invoca el Hook para obtener todas las funciones y estados necesarios. */
 import React from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 import '../style/index.css';
-
 // ===== COMPONENTES COMPARTIDOS =====
-import { Alert, EntityTable, SearchInput, ConfirmDeleteModal, StatusPill } from '../../../shared/services';
+import { Alert, EntityTable, SearchInput, ConfirmDeleteModal, StatusPill, DraftModal } from '../../../shared/services';
 import CustomPagination from '../../../shared/components/admin/CustomPagination';
-
 import CategoryFilter from '../components/CategoryFilter';
 import StatusFilter from '../components/StatusFilter';
 import DetalleProductoView from '../components/DetalleProductoView';
 import ProductoForm from '../components/ProductoForm';
-
 // ===== HOOKS =====
 import { useProductosLogic } from '../hooks/useProductosLogic';
 
@@ -40,13 +36,12 @@ const columns = [
     field: 'stock',
     width: '100px',
     render: (item) => {
-      // Sumar cantidades de todas las tallas para el stock total
       const hasTallasStock = Array.isArray(item.tallasStock) && item.tallasStock.length > 0;
       const totalStock = hasTallasStock
         ? item.tallasStock.reduce((acc, ts) => acc + (Number(ts.cantidad) || 0), 0)
         : Number(item.stock || 0);
       return (
-        <span style={{ 
+        <span style={{
           color: totalStock > 20 ? '#10B981' : (totalStock > 10 ? '#F5C81B' : '#EF4444'),
           fontWeight: '700'
         }}>
@@ -60,8 +55,8 @@ const columns = [
     field: 'status_display',
     width: '120px',
     render: (item) => (
-      <StatusPill 
-        status={item.isActive === true || item.isActive === 1 || item.isActive === 'true'} 
+      <StatusPill
+        status={item.isActive === true || item.isActive === 1 || item.isActive === 'true'}
       />
     )
   }
@@ -93,6 +88,15 @@ const ProductosPage = () => {
     totalPages,
     showingStart,
     endIndex,
+    verTodos, setVerTodos,
+    hasDraft,
+    showDraftModal,
+    setShowDraftModal,
+    draftMeta,
+    handleRegisterClick,
+    restoreDraft,
+    discardDraft,
+    closeDraftModal,
     handleFilterSelect: _handleFilterSelect,
     handleStatusSelect,
     agregarTalla,
@@ -139,7 +143,16 @@ const ProductosPage = () => {
         loading={loading}
       />
 
-
+      {/* ✅ MODAL GENERAL DE CONFIRMACIÓN DE BORRADOR */}
+      <DraftModal
+        isOpen={showDraftModal}
+        onClose={closeDraftModal}
+        onRestore={restoreDraft}
+        onDiscard={discardDraft}
+        entityName="producto"
+        timestamp={draftMeta?.timestamp}
+        extraInfo={draftMeta?.extraInfo}
+      />
 
       <div className="productos-container">
         {/* HEADER */}
@@ -164,14 +177,12 @@ const ProductosPage = () => {
                 </p>
               </div>
             </div>
-
             <div className="productos-actions">
               {modoVista === "lista" && (
-                <button onClick={() => mostrarFormulario()} className="productos-btn-register">
+                <button onClick={handleRegisterClick} className="productos-btn-register">
                   Registrar Productos
                 </button>
               )}
-
               {modoVista === "formulario" && (
                 <button type="submit" form="productoForm" className="productos-btn-submit" disabled={loading}>
                   {loading ? "Guardando..." : (productoEditando ? "Actualizar" : "Registrar Producto")}
@@ -179,7 +190,6 @@ const ProductosPage = () => {
               )}
             </div>
           </div>
-
           {modoVista === "lista" && (
             <div className="productos-search-bar">
               <div style={{ flex: 1, marginRight: '20px' }}>
@@ -200,7 +210,6 @@ const ProductosPage = () => {
             </div>
           )}
         </div>
-
         {/* MAIN CONTENT */}
         {modoVista === "lista" ? (
           <div className="productos-main-content">
@@ -223,7 +232,6 @@ const ProductosPage = () => {
                 className="productos-entity-table"
               />
             </div>
-
             <CustomPagination
               currentPage={currentPage}
               totalPages={totalPages}

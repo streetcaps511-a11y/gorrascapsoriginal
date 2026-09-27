@@ -1,0 +1,215 @@
+/* ========================================================
+   ESTILOS PARA COMPONENTE REUTILIZABLE DraftModal (ADMIN)
+   Gorras Medellín - Recuperación y Gestión de Borradores
+   ======================================================== */
+
+.draft-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100000;
+  padding: 20px;
+  animation: draftFadeIn 0.2s ease-out;
+}
+
+.draft-modal-container {
+  background: #0b1220;
+  border: 1.5px solid #F5C81B;
+  border-radius: 16px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.7),
+              0 0 25px rgba(245, 200, 27, 0.15);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: draftSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+@keyframes draftFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes draftSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.draft-modal-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.draft-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.draft-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.draft-modal-icon-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: rgba(245, 200, 27, 0.12);
+  border: 1px solid rgba(245, 200, 27, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #F5C81B;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.draft-modal-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.draft-modal-title {
+  color: #F5C81B;
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: 0.3px;
+}
+
+.draft-modal-subtitle {
+  color: #94a3b8;
+  font-size: 12px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.draft-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  line-height: 1.5;
+}
+
+.draft-modal-message {
+  color: #e2e8f0;
+  font-size: 14px;
+  margin: 0;
+}
+
+.draft-modal-meta-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.draft-modal-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #94a3b8;
+}
+
+.draft-modal-meta-value {
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.draft-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.draft-modal-btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: 0.3px;
+}
+
+.draft-modal-btn-discard {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+}
+
+.draft-modal-btn-discard:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+}
+
+.draft-modal-btn-restore {
+  background: #F5C81B;
+  border: none;
+  color: #0b1220;
+  box-shadow: 0 4px 12px rgba(245, 200, 27, 0.25);
+}
+
+.draft-modal-btn-restore:hover {
+  background: #FFD700;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(245, 200, 27, 0.35);
+}
+
+@media (max-width: 480px) {
+  .draft-modal-container {
+    padding: 22px 18px;
+  }
+  .draft-modal-actions {
+    flex-direction: column-reverse;
+  }
+  .draft-modal-btn {
+    width: 100%;
+  }
+}

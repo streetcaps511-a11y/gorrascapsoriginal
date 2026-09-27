@@ -14,6 +14,7 @@ export const useCartPage = () => {
   const { user } = useAuth();
   const { 
     cartItems, 
+    setCartItems,
     updateQuantity: updateCartQuantity, 
     removeFromCart: removeFromCartContext, 
     clearCart,
@@ -135,6 +136,71 @@ export const useCartPage = () => {
     return '';
   };
 
+  // 🔄 SINCRONIZACIÓN EN TIEMPO REAL CON EL BACKEND:
+  // Detecta si algún producto en el carrito fue desactivado por el administrador
+  useEffect(() => {
+    if (!cartItems || cartItems.length === 0) return;
+
+    let isMounted = true;
+    const verifyItemsStatus = async () => {
+      try {
+        const uniqueIds = [...new Set(cartItems.map(i => i.id))];
+        const statusMap = {};
+
+        await Promise.all(
+          uniqueIds.map(async (id) => {
+            try {
+              const res = await cartApi.getProductoById(id);
+              const prodData = res.data?.data || res.data;
+              if (prodData) {
+                const isActive = prodData.isActive !== false && prodData.isActive !== 0 && prodData.isActive !== 'false';
+                statusMap[id] = {
+                  isActive,
+                  nombre: prodData.nombre
+                };
+              }
+            } catch (err) {
+              if (err?.response?.status === 404) {
+                statusMap[id] = { isActive: false };
+              }
+            }
+          })
+        );
+
+        if (!isMounted) return;
+
+        let hasChanged = false;
+        const updatedItems = cartItems.map(item => {
+          const remote = statusMap[item.id];
+          if (remote && item.isActive !== remote.isActive) {
+            hasChanged = true;
+            return { ...item, isActive: remote.isActive, nombre: remote.nombre || item.nombre };
+          }
+          return item;
+        });
+
+        if (hasChanged && setCartItems) {
+          setCartItems(updatedItems);
+        }
+
+        const inactiveItems = updatedItems.filter(i => i.isActive === false || i.isActive === 0 || i.isActive === 'false');
+        if (inactiveItems.length > 0) {
+          const names = [...new Set(inactiveItems.map(i => i.nombre || 'Producto'))].join(', ');
+          setCenterAlert({
+            visible: true,
+            message: `Atención: el siguiente producto está inactivo y no está disponible para la compra: ${names}. Por favor, retíralo del carrito.`,
+            type: 'error'
+          });
+        }
+      } catch (err) {
+        console.error('Error sincronizando estado de productos en carrito:', err);
+      }
+    };
+
+    verifyItemsStatus();
+    return () => { isMounted = false; };
+  }, [cartItems.length]);
+
   const handleRemoveFromCart = (productId, talla, productName) => {
     setItemToDelete({ id: productId, talla });
     setProductToDeleteName(`${productName}${talla ? ` (${talla})` : ''}`);
@@ -217,7 +283,7 @@ export const useCartPage = () => {
     setShowClearConfirm(false);
   };
 
-  const handleFinishPurchase = () => {
+  const handleFinishPurchase = async () => {
     if (cartItems.length === 0) {
       setCenterAlert({ visible: true, message: 'El carrito está vacío', type: 'error' });
       return;
@@ -225,6 +291,58 @@ export const useCartPage = () => {
 
     if (!user) {
       setShowAuthConfirm(true);
+      return;
+    }
+
+    // 🔍 Validación en tiempo real contra la base de datos
+    setIsProcessing(true);
+    let hasInactive = false;
+    let inactiveNames = [];
+    const updatedStatusMap = {};
+
+    try {
+      const uniqueIds = [...new Set(cartItems.map(i => i.id))];
+      await Promise.all(
+        uniqueIds.map(async (id) => {
+          try {
+            const res = await cartApi.getProductoById(id);
+            const prodData = res.data?.data || res.data;
+            const isActive = prodData && prodData.isActive !== false && prodData.isActive !== 0 && prodData.isActive !== 'false';
+            updatedStatusMap[id] = isActive;
+            if (!isActive) {
+              hasInactive = true;
+              const matching = cartItems.find(i => String(i.id) === String(id));
+              inactiveNames.push(matching?.nombre || prodData?.nombre || `Producto ${id}`);
+            }
+          } catch {
+            hasInactive = true;
+            const matching = cartItems.find(i => String(i.id) === String(id));
+            inactiveNames.push(matching?.nombre || `Producto ${id}`);
+            updatedStatusMap[id] = false;
+          }
+        })
+      );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsProcessing(false);
+    }
+
+    // Actualizar cartItems para reflejar badges inactivos
+    if (setCartItems && Object.keys(updatedStatusMap).length > 0) {
+      setCartItems(prev => prev.map(item => ({
+        ...item,
+        isActive: updatedStatusMap[item.id] !== undefined ? updatedStatusMap[item.id] : item.isActive
+      })));
+    }
+
+    if (hasInactive) {
+      const nombresUnicos = [...new Set(inactiveNames)].join(', ');
+      setCenterAlert({
+        visible: true,
+        message: `No puedes continuar: el siguiente producto está inactivo y no está disponible para la venta: ${nombresUnicos}. Por favor, retíralo del carrito.`,
+        type: 'error'
+      });
       return;
     }
 
@@ -324,6 +442,19 @@ export const useCartPage = () => {
       console.error('Error al finalizar compra:', error);
       const msg = error?.response?.data?.message || error?.message || 'Ocurrió un error inesperado al procesar tu compra';
       setCenterAlert({ visible: true, message: msg, type: 'error' });
+      
+      // Si el error es de producto inactivo, cerramos el checkout y marcamos el producto como inactivo
+      if (msg.toLowerCase().includes('inactiv')) {
+        setShowCheckout(false);
+        if (setCartItems) {
+          setCartItems(prev => prev.map(item => {
+            if (msg.toLowerCase().includes((item.nombre || '').toLowerCase())) {
+              return { ...item, isActive: false };
+            }
+            return item;
+          }));
+        }
+      }
     } finally {
       setIsProcessing(false);
     }

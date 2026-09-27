@@ -1,89 +1,7 @@
-/* Estilos del componente Cart */
-.cart-badge-agotado { 
-  display: inline-flex; 
-  align-items: center; 
-  justify-content: center; 
-}
-
-@media (max-width:768px) { 
-  .cart-badge-agotado { display: none !important; } 
-}
-
-.cart-item-qty-price { 
-  display: flex; 
-  align-items: center; 
-  gap: 12px; 
-}
-
-.cart-qty-wrapper { 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  gap: 4px; 
-}
-
-.cart-price-wrapper { 
-  text-align: right; 
-  flex-shrink: 0; 
-}
-
-@media (max-width:600px) { 
-  .cart-item-main-row { align-items:flex-start !important; } 
-  .cart-item-qty-price { 
-    flex-direction: column-reverse; 
-    align-items: flex-end !important; 
-    gap: 8px; 
-  } 
-}
-
-/* 🔥 LAYOUT PRINCIPAL DEL CHECKOUT - 2 COLUMNAS EN DESKTOP */
-.gm-checkout-layout,
-.gm-cart-grid,
-.gm-checkout-grid {
-  display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 24px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* 🔥 RESPONSIVE: 1 COLUMNA EN TABLET/MÓVIL */
-@media (max-width: 900px) {
-  .gm-checkout-layout,
-  .gm-cart-grid,
-  .gm-checkout-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    padding: 0 12px;
-  }
-  
-  /* El resumen del pedido va al final en móvil */
-  .gm-order-summary,
-  .gm-checkout-summary,
-  .cart-summary-card {
-    order: 2;
-  }
-  
-  .gm-checkout-main,
-  .gm-cart-main {
-    order: 1;
-  }
-}
-
-/* 🔥 MÓVIL PEQUEÑO */
-@media (max-width: 480px) {
-  .gm-checkout-layout,
-  .gm-cart-grid,
-  .gm-checkout-grid {
-    gap: 12px;
-    padding: 0 8px;
-  }
-}
-
-/* 🔥 TARJETAS DEL CHECKOUT */
-.gm-checkout-card,
-.gm-cart-card {
+/* 🔥 CORRECCIÓN: Detalles del pedido - sin huecos */
+.gm-order-details-card,
+.gm-cart-items-section,
+.gm-checkout-items {
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
@@ -91,188 +9,218 @@
   margin-bottom: 16px;
 }
 
-@media (max-width: 768px) {
-  .gm-checkout-card,
-  .gm-cart-card {
-    padding: 16px;
-    margin-bottom: 12px;
-  }
+/* Header de la sección */
+.gm-order-details-header,
+.gm-section-header-checkout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
-/* 🔥 RESUMEN DEL PEDIDO - FIJO EN DESKTOP */
-.gm-order-summary,
-.gm-checkout-summary,
-.cart-summary-card {
-  position: sticky;
-  top: 80px;
-  align-self: start;
-}
-
-@media (max-width: 900px) {
-  .gm-order-summary,
-  .gm-checkout-summary,
-  .cart-summary-card {
-    position: static;
-    margin-top: 16px;
-  }
-}
-
-/* 🔥 BOTÓN CONTINUAR - RESPONSIVO */
-.gm-btn-continue,
-.gm-btn-confirm-checkout {
-  width: 100%;
-  padding: 14px 24px;
-  background: #FFC107;
-  color: #000;
-  border: none;
-  border-radius: 10px;
+.gm-order-details-header h3,
+.gm-section-header-checkout h3 {
+  font-size: 1.1rem;
   font-weight: 800;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: #fff;
+  margin: 0;
 }
 
-.gm-btn-continue:hover,
-.gm-btn-confirm-checkout:hover {
-  background: #FFB300;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
+/* 🔥 LISTA DE ITEMS - sin huecos */
+.gm-order-items-list,
+.gm-checkout-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-@media (max-width: 480px) {
-  .gm-btn-continue,
-  .gm-btn-confirm-checkout {
-    padding: 12px 20px;
+/*  CADA ITEM DEL PEDIDO */
+.gm-order-item,
+.gm-checkout-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Imagen del producto */
+.gm-order-item-image,
+.gm-checkout-item-image {
+  width: 70px;
+  height: 70px;
+  min-width: 70px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gm-order-item-image img,
+.gm-checkout-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Info del producto */
+.gm-order-item-info,
+.gm-checkout-item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.gm-order-item-name,
+.gm-checkout-item-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.gm-order-item-details,
+.gm-checkout-item-details {
+  display: flex;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.gm-order-item-qty,
+.gm-checkout-item-qty {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Precio del item */
+.gm-order-item-price,
+.gm-checkout-item-price {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #FFC107;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 🔥 RESPONSIVE MÓVIL */
+@media (max-width: 768px) {
+  .gm-order-item,
+  .gm-checkout-item {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .gm-order-item-image,
+  .gm-checkout-item-image {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+  }
+
+  .gm-order-item-name,
+  .gm-checkout-item-name {
+    font-size: 0.85rem;
+  }
+
+  .gm-order-item-price,
+  .gm-checkout-item-price {
     font-size: 0.9rem;
   }
 }
 
-/* 🔥 SECCIÓN DE ENVÍO - OPCIONES */
-.gm-shipping-options,
-.gm-delivery-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+@media (max-width: 480px) {
+  .gm-order-item,
+  .gm-checkout-item {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .gm-order-item-image,
+  .gm-checkout-item-image {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    border-radius: 6px;
+  }
+
+  .gm-order-item-name,
+  .gm-checkout-item-name {
+    font-size: 0.8rem;
+  }
+
+  .gm-order-item-details,
+  .gm-checkout-item-details {
+    font-size: 0.7rem;
+  }
+
+  .gm-order-item-price,
+  .gm-checkout-item-price {
+    font-size: 0.85rem;
+  }
 }
 
-.gm-shipping-option,
-.gm-delivery-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+/* 🔥 BOTÓN VER PRODUCTOS */
+.gm-btn-view-products {
+  background: transparent;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  color: #FFC107;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.gm-shipping-option:hover,
-.gm-delivery-option:hover {
-  border-color: #FFC107;
-  background: rgba(255, 193, 7, 0.05);
-}
-
-.gm-shipping-option.selected,
-.gm-delivery-option.selected {
-  border-color: #FFC107;
+.gm-btn-view-products:hover {
   background: rgba(255, 193, 7, 0.1);
+  border-color: #FFC107;
 }
 
-@media (max-width: 600px) {
-  .gm-shipping-option,
-  .gm-delivery-option {
-    padding: 12px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-}
-
-/* 🔥 DIRECCIÓN DE ENVÍO */
-.gm-shipping-address,
-.gm-delivery-address {
+/*  MINIATURAS EN LÍNEA (si se muestran varias) */
+.gm-product-thumbnails-row {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.gm-address-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 600px) {
-  .gm-address-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-}
-
-/* 🔥 MINIATURAS DE PRODUCTOS */
-.gm-product-thumbnails,
-.gm-order-thumbnails {
-  display: flex;
-  gap: 12px;
+  gap: 10px;
   overflow-x: auto;
   padding: 8px 0;
   scrollbar-width: none;
 }
 
-.gm-product-thumbnails::-webkit-scrollbar,
-.gm-order-thumbnails::-webkit-scrollbar {
+.gm-product-thumbnails-row::-webkit-scrollbar {
   display: none;
 }
 
-.gm-product-thumb,
-.gm-order-thumb {
-  flex: 0 0 80px;
-  width: 80px;
-  height: 80px;
+.gm-product-thumb-item {
+  flex: 0 0 70px;
+  width: 70px;
+  height: 70px;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
-.gm-product-thumb img,
-.gm-order-thumb img {
+.gm-product-thumb-item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
 @media (max-width: 480px) {
-  .gm-product-thumb,
-  .gm-order-thumb {
-    flex: 0 0 60px;
-    width: 60px;
-    height: 60px;
-  }
-}
-
-/* 🔥 BADGE DE SEGURIDAD */
-.gm-security-badge,
-.gm-payment-security {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px;
-  background: rgba(16, 185, 129, 0.05);
-  border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: 8px;
-  margin-top: 16px;
-}
-
-@media (max-width: 600px) {
-  .gm-security-badge,
-  .gm-payment-security {
-    flex-direction: column;
-    gap: 8px;
+  .gm-product-thumb-item {
+    flex: 0 0 55px;
+    width: 55px;
+    height: 55px;
   }
 }

@@ -323,6 +323,12 @@ const ventaController = {
                     throw new Error(`Producto con ID ${productId} no encontrado`);
                 }
 
+                // 🛑 VALIDACIÓN ESTRICTA: El producto NO puede estar inactivo
+                const isProductActive = producto.isActive !== false && producto.isActive !== 0 && producto.isActive !== 'false';
+                if (!isProductActive) {
+                    throw new Error(`El producto "${producto.nombre}" está inactivo y no está disponible para la compra. Por favor, retíralo de tu carrito.`);
+                }
+
                 detallesData.push({
                     idProducto: productId,
                     nombreProducto: item.nombre || producto.nombre,

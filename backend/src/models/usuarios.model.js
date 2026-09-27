@@ -17,12 +17,7 @@ const Usuario = sequelize.define('Usuario', {
     field: 'Nombre',
     validate: {
       notEmpty: { msg: 'El nombre es requerido' },
-      len: { args: [3, 100], msg: 'El nombre debe tener entre 3 y 100 caracteres' },
-      isFullName(value) {
-        if (!value || !value.trim().includes(' ')) {
-          throw new Error('Debe ingresar nombre y apellido separados por un espacio');
-        }
-      }
+      len: { args: [3, 100], msg: 'El nombre debe tener entre 3 y 100 caracteres' }
     }
   },
   email: {

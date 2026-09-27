@@ -1,12 +1,11 @@
-/* === HOOK DE LÓGICA === 
-   Este archivo maneja el estado de React, las reglas de negocio, y las validaciones del módulo. 
-   Separa la 'inteligencia' de la interfaz visual para mantener el código limpio. 
-   Recibe eventos de la UI y se comunica con los Servicios API. */
-
+/* === HOOK DE LÓGICA ===
+Este archivo maneja el estado de React, las reglas de negocio, y las validaciones del módulo.
+Separa la 'inteligencia' de la interfaz visual para mantener el código limpio.
+Recibe eventos de la UI y se comunica con los Servicios API. */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../../shared/services/api';
 import { NitroCache } from '../../../shared/utils/NitroCache';
-import { 
+import {
   fetchAllClientes,
   createNewCliente,
   updateExistingCliente,
@@ -14,18 +13,18 @@ import {
   toggleClienteStatus
 } from "../services/clientesApi";
 
-
 // 🧠 MEMORIA GLOBAL (Caché Nitro)
 let clientesCache = {
   clientes: [],
   isInitialized: false
 };
 
-// 🧠 CONFIGURACIÓN INICIAL (Caché Nitro Persistente)
+//  CONFIGURACIÓN INICIAL (Caché Nitro Persistente)
 const getInitialClientes = () => {
   const cached = NitroCache.get('clientes');
   return Array.isArray(cached?.data) ? cached.data : [];
 };
+
 export const useClientesLogic = () => {
   const initialClientes = getInitialClientes();
   const [clientes, setClientes] = useState(initialClientes);
@@ -66,10 +65,9 @@ export const useClientesLogic = () => {
       (c.departamento || '') +
       (c.tipoDocumento || '')
     ).toLowerCase().includes(searchTerm.toLowerCase());
-    const status = filterStatus === 'Todos' || 
-      (filterStatus === 'Activos' && c.isActive) || 
+    const status = filterStatus === 'Todos' ||
+      (filterStatus === 'Activos' && c.isActive) ||
       (filterStatus === 'Inactivos' && !c.isActive);
-
     return search && status;
   });
 
@@ -91,14 +89,10 @@ export const useClientesLogic = () => {
     }
   };
 
-
   useEffect(() => {
     loadClientes();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // ====== FETCH DEPARTAMENTOS ======
-  // Eliminado ya que Departamento fue removido.
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
@@ -129,13 +123,9 @@ export const useClientesLogic = () => {
     setCurrentPage(1);
   };
 
-  // ====== FETCH CIUDADES ======
-  // Eliminado ya que Ciudad ahora es de texto libre y no depende de Departamento.
-
   const openModal = (mode = 'create', cliente = null) => {
     setModalState({ isOpen: true, mode, cliente });
     setErrors({});
-    
     if (cliente && (mode === 'edit' || mode === 'view')) {
       setFormData({
         documentType: cliente.tipoDocumento,
@@ -182,6 +172,38 @@ export const useClientesLogic = () => {
     setErrors({});
   };
 
+  // 🔍 Validar duplicados en tiempo real (onBlur)
+  const validateDuplicate = async (field, value) => {
+    if (!value?.trim()) return;
+    
+    try {
+      const params = {};
+      if (field === 'email') {
+        params.email = value.trim();
+      } else if (field === 'documentNumber') {
+        params.documento = value.trim();
+      }
+      if (modalState.mode === 'edit' && modalState.cliente) {
+        params.excludeClienteId = modalState.cliente.id;
+      }
+      const checkResponse = await api.get('/api/auth/check-exists', { params });
+      if (checkResponse.data.success) {
+        const newErrors = {};
+        if (checkResponse.data.emailExists) {
+          newErrors.email = 'El correo electrónico ya está registrado';
+        }
+        if (checkResponse.data.documentoExists) {
+          newErrors.documentNumber = 'El número de documento ya está registrado';
+        }
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(prev => ({ ...prev, ...newErrors }));
+        }
+      }
+    } catch (err) {
+      console.warn("Error checking existence:", err);
+    }
+  };
+
   const handleInputChange = (field, value) => {
     if (errors[field]) {
       const newErr = { ...errors };
@@ -191,19 +213,44 @@ export const useClientesLogic = () => {
     
     if (field === 'country') {
       setFormData(prev => ({ ...prev, country: value, city: '' }));
+    } else if (field === 'documentType') {
+      // Limpiar errores de documentNumber cuando cambia el tipo de documento
+      if (errors.documentNumber) {
+        const newErr = { ...errors };
+        delete newErr.documentNumber;
+        setErrors(newErr);
+      }
+      setFormData(prev => ({ ...prev, [field]: value, documentNumber: '' }));
     } else if (field === 'documentNumber') {
-      // Permitir letras y símbolos si es NIT o Pasaporte
-      const isAlphanumeric = formData.documentType === 'NIT' || formData.documentType === 'Pasaporte';
-      // Limitar a 10 caracteres si es NIT, 20 si es Pasaporte, 15 otros
+      const isAlphanumeric = value && (formData.documentType === 'NIT' || formData.documentType === 'Pasaporte');
       const limit = formData.documentType === 'NIT' ? 10 : (formData.documentType === 'Pasaporte' ? 20 : 15);
-      
       const val = isAlphanumeric ? value.slice(0, limit) : value.replace(/\D/g, '').slice(0, limit);
       setFormData(prev => ({ ...prev, [field]: val }));
     } else if (field === 'phone') {
       const code = formData.countryCode || '+57';
+      const digits = value.replace(/\D/g, '');
       const maxLength = code === '+507' ? 8 : (code === '+34' || code === '+56' || code === '+51') ? 9 : 10;
-      const val = value.replace(/\D/g, '').slice(0, maxLength);
+      let val = digits.slice(0, maxLength);
+      
+      // 🇨🇴 Colombia: formato con separación (300 123 4567)
+      if (code === '+57' && val.length > 3) {
+        if (val.length <= 6) {
+          val = val.slice(0, 3) + ' ' + val.slice(3);
+        } else {
+          val = val.slice(0, 3) + ' ' + val.slice(3, 6) + ' ' + val.slice(6);
+        }
+      }
+      // 🇻🇪 Venezuela y otros países: sin separación, solo números seguidos
+      
       setFormData(prev => ({ ...prev, [field]: val }));
+    } else if (field === 'countryCode') {
+      // Limpiar el teléfono cuando cambia el código de país
+      setFormData(prev => ({ ...prev, [field]: value, phone: '' }));
+      if (errors.phone) {
+        const newErr = { ...errors };
+        delete newErr.phone;
+        setErrors(newErr);
+      }
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
@@ -217,7 +264,6 @@ export const useClientesLogic = () => {
     } else if (formData.documentType === 'NIT') {
       const nit = formData.documentNumber.trim();
       const hyphenCount = (nit.match(/-/g) || []).length;
-      
       if (hyphenCount === 0) {
         newErrors.documentNumber = 'Falta el guion (-) en el NIT';
       } else if (hyphenCount > 1) {
@@ -233,20 +279,17 @@ export const useClientesLogic = () => {
     } else if (formData.documentNumber.trim().length < 6 || formData.documentNumber.trim().length > 15) {
       newErrors.documentNumber = 'El documento debe tener entre 6 y 15 caracteres';
     }
-    
     if (!formData.fullName?.trim()) {
       newErrors.fullName = 'Nombre completo es obligatorio';
     } else if (formData.fullName.trim().length < 3) {
       newErrors.fullName = 'El nombre debe tener al menos 3 caracteres';
     }
-
     if (!formData.email?.trim()) {
       newErrors.email = 'Email es obligatorio';
     } else {
       const email = formData.email.trim();
       const atIndex = email.indexOf('@');
       const dotIndex = email.lastIndexOf('.');
-      
       if (atIndex === -1) {
         newErrors.email = 'Falta el símbolo arroba (@)';
       } else if (atIndex === 0 || atIndex === email.length - 1) {
@@ -265,7 +308,7 @@ export const useClientesLogic = () => {
     }
     if (formData.phone) {
       const code = formData.countryCode || '+57';
-      const phone = formData.phone.trim();
+      const phone = formData.phone.trim().replace(/\D/g, '');
       const expected = code === '+507' ? 8 : (code === '+34' || code === '+56' || code === '+51') ? 9 : 10;
       if (phone.length !== expected) {
         newErrors.phone = `El teléfono debe tener ${expected} dígitos para este país`;
@@ -276,15 +319,14 @@ export const useClientesLogic = () => {
     if (!formData.country?.trim()) newErrors.country = 'País es obligatorio';
     if (!formData.city?.trim()) newErrors.city = 'Ciudad es obligatoria';
     if (!formData.address?.trim()) newErrors.address = 'Dirección es obligatoria';
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = async () => {
     if (!validateForm()) return;
-
-    // 🔍 Validar duplicados en base de datos
+    
+    //  Validar duplicados en base de datos
     try {
       const params = {
         email: formData.email.trim(),
@@ -293,7 +335,6 @@ export const useClientesLogic = () => {
       if (modalState.mode === 'edit' && modalState.cliente) {
         params.excludeClienteId = modalState.cliente.id;
       }
-      
       const checkResponse = await api.get('/api/auth/check-exists', { params });
       if (checkResponse.data.success) {
         const newErrors = {};
@@ -317,7 +358,7 @@ export const useClientesLogic = () => {
       numeroDocumento: formData.documentNumber,
       nombreCompleto: formData.fullName,
       email: formData.email,
-      telefono: formData.phone,
+      telefono: formData.phone.replace(/\D/g, ''), // Limpiar formato al enviar
       direccion: formData.address,
       pais: formData.country || 'Colombia',
       ciudad: formData.city,
@@ -328,36 +369,28 @@ export const useClientesLogic = () => {
     try {
       if (modalState.mode === 'edit') {
         const updatedId = modalState.cliente.id;
-        
-        // Optimistic UI
         setClientes(prev => {
-            const next = prev.map(c => c.id === updatedId ? { ...c, ...apiClienteData } : c);
-            clientesCache.clientes = next;
-            return next;
+          const next = prev.map(c => c.id === updatedId ? { ...c, ...apiClienteData } : c);
+          clientesCache.clientes = next;
+          return next;
         });
         closeModal();
         showAlert(`Cliente ${apiClienteData.nombreCompleto} actualizado correctamente ✅`);
-
         await updateExistingCliente(updatedId, apiClienteData);
       } else {
-        // Optimistic UI (Temp ID)
         const tempId = `temp-${Date.now()}`;
         setClientes(prev => {
-            const next = [{ id: tempId, ...apiClienteData }, ...prev];
-            clientesCache.clientes = next;
-            return next;
+          const next = [{ id: tempId, ...apiClienteData }, ...prev];
+          clientesCache.clientes = next;
+          return next;
         });
         closeModal();
         showAlert(`Cliente ${apiClienteData.nombreCompleto} registrado correctamente ✅`);
-
         await createNewCliente(apiClienteData);
       }
-      // Quitamos el loadClientes() de aquí para que sea instantáneo. 
-      // El fetch inicial ya se encargará de sincronizar si es necesario, 
-      // pero el estado local ya está actualizado de forma optimista.
     } catch {
       showAlert('Error al guardar el cliente', 'error');
-      loadClientes(); // Re-sync
+      loadClientes();
     }
   };
 
@@ -366,7 +399,6 @@ export const useClientesLogic = () => {
       showAlert(`No se puede eliminar el cliente "${cliente.nombreCompleto}" porque está activo. Desactívelo primero.`, 'error');
       return;
     }
-    
     const mensaje = `¿Estás seguro que deseas eliminar permanentemente al cliente "${cliente.nombreCompleto}"?`;
     setDeleteModal({ 
       isOpen: true, 
@@ -382,25 +414,18 @@ export const useClientesLogic = () => {
   const handleDelete = async () => {
     const cliente = deleteModal.cliente;
     if (!cliente) return;
-    
     setLoading(true);
     try {
       await deleteExistingCliente(cliente.id);
-      
-      // Sincronizar estado local
       setClientes(prev => {
         const next = prev.filter(c => c.id !== cliente.id);
         clientesCache.clientes = next;
         return next;
       });
-      
       closeDeleteModal();
-      
-      // Notificar éxito y actualizar caché
       showAlert(cliente.nombreCompleto, 'delete');
       const updatedData = await fetchAllClientes();
       NitroCache.set('clientes', updatedData);
-
     } catch (err) {
       const msg = err?.response?.data?.message || 'Error al eliminar cliente';
       showAlert(msg, 'error');
@@ -408,8 +433,6 @@ export const useClientesLogic = () => {
       setLoading(false);
     }
   };
-
-
 
   return {
     clientes, setClientes,
@@ -433,6 +456,7 @@ export const useClientesLogic = () => {
     closeModal,
     handleInputChange,
     handleSave,
+    validateDuplicate, // Exponer para validación en tiempo real
     openDeleteModal,
     closeDeleteModal,
     handleDelete,

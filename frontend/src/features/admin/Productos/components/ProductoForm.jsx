@@ -1,11 +1,9 @@
-/* === COMPONENTE REUTILIZABLE ===
-Pieza modular de interfaz (como Tarjetas, Modales o Botones).
-Recibe información a través de 'props' y notifica eventos hacia arriba (a la Página principal). */
+/* === COMPONENTE REUTILIZABLE === */
 import React, { useRef, useEffect } from 'react';
 import { FaPlus, FaMinus, FaTrash, FaImage } from 'react-icons/fa';
 import CustomColorSelect from './CustomColorSelect';
 import { COMMON_COLORS } from '../../../shared/constants/colores';
-import '../style/form.css'; // ✅ Importación del CSS
+import '../style/form.css';
 
 const Switch = ({ checked, onChange, id, disabled = false }) => (
   <label className={`switch-container ${disabled ? 'disabled' : ''}`}>
@@ -59,7 +57,6 @@ const ProductoForm = ({
     }
   }, []);
 
-  // Auto-expandir descripción
   useEffect(() => {
     if (descriptionRef.current) {
       descriptionRef.current.style.height = '34px';
@@ -83,7 +80,6 @@ const ProductoForm = ({
     return isNaN(num) ? '' : num.toLocaleString('es-CO');
   };
 
-  // 🧮 CALCULAR PORCENTAJE DE OFERTA
   const calcularPorcentajeOferta = () => {
     const venta = parseFloat(formData.precioVenta) || 0;
     const oferta = parseFloat(formData.precioOferta) || 0;
@@ -116,7 +112,9 @@ const ProductoForm = ({
             <div className="product-form-group">
               <div className="product-form-row-2col">
                 <div className="form-field">
-                  <label className="form-label">Nombre: <span className="required">*</span></label>
+                  <label className="form-label">
+                    Nombre: <span className="required">*</span>
+                  </label>
                   <input
                     ref={nameInputRef}
                     type="text"
@@ -128,9 +126,10 @@ const ProductoForm = ({
                   />
                   {errors.nombre && <div className="field-error-text">{errors.nombre}</div>}
                 </div>
-
                 <div className="form-field">
-                  <label className="form-label">Categoría: <span className="required">*</span></label>
+                  <label className="form-label">
+                    Categoría: <span className="required">*</span>
+                  </label>
                   <select
                     name="idCategoria"
                     value={formData.idCategoria || ''}
@@ -147,9 +146,10 @@ const ProductoForm = ({
                   {errors.idCategoria && <div className="field-error-text">{errors.idCategoria}</div>}
                 </div>
               </div>
-
               <div className="form-field full-width">
-                <label className="form-label">Descripción: <span className="required">*</span></label>
+                <label className="form-label">
+                  Descripción: <span className="required">*</span>
+                </label>
                 <textarea
                   ref={descriptionRef}
                   name="descripcion"
@@ -170,7 +170,9 @@ const ProductoForm = ({
             <h4 className="product-form-section-title">Precios</h4>
             <div className="product-form-grid prices">
               <div className="form-field">
-                <label className="form-label">Venta (Normal): <span className="required">*</span></label>
+                <label className="form-label">
+                  Venta (Normal): <span className="required">*</span>
+                </label>
                 <input
                   type="text"
                   name="precioVenta"
@@ -184,9 +186,10 @@ const ProductoForm = ({
                 />
                 {errors.precioVenta && <div className="field-error-text">{errors.precioVenta}</div>}
               </div>
-
               <div className="form-field">
-                <label className="form-label">Precio Oferta: {formData.enOfertaVenta && <span className="required">*</span>}</label>
+                <label className="form-label">
+                  Precio Oferta: {formData.enOfertaVenta && <span className="required">*</span>}
+                </label>
                 <div className="offer-input-wrapper">
                   <div className="price-with-discount">
                     <input
@@ -217,15 +220,15 @@ const ProductoForm = ({
                   {errors.precioOferta && <div className="field-error-text">{errors.precioOferta}</div>}
                 </div>
               </div>
-
               {formData.enOfertaVenta && porcentajeOferta > 0 && (
                 <div className="total-discount-message">
                   El descuento total es de {porcentajeOferta}%
                 </div>
               )}
-
               <div className="form-field">
-                <label className="form-label">+6 Unidades: <span className="required">*</span></label>
+                <label className="form-label">
+                  +6 Unidades: <span className="required">*</span>
+                </label>
                 <input
                   type="text"
                   name="precioMayorista6"
@@ -239,9 +242,10 @@ const ProductoForm = ({
                 />
                 {errors.precioMayorista6 && <div className="field-error-text">{errors.precioMayorista6}</div>}
               </div>
-
               <div className="form-field">
-                <label className="form-label">+80 Unidades: <span className="required">*</span></label>
+                <label className="form-label">
+                  +80 Unidades: <span className="required">*</span>
+                </label>
                 <input
                   type="text"
                   name="precioMayorista80"
@@ -263,11 +267,15 @@ const ProductoForm = ({
         <div className="product-form-bottom-row">
           <div className="product-form-section no-frame detailed">
             <div className="detailed-grid two-cols">
-              {/* COLORES */}
-              <div className={`form-card colores ${errors.colores ? 'card-has-error' : ''}`}>
+              {/* COLORES - SIN BORDE ROJO EN LA TARJETA */}
+              <div className="form-card colores">
                 <div className="form-card-header">
-                  <h3 className="form-card-title">Colores <span className="required">*</span></h3>
-                  <button type="button" onClick={agregarColor} className="btn-add-circle">+ Agregar</button>
+                  <h3 className="form-card-title">
+                    Colores <span className="required">*</span>
+                  </h3>
+                  <button type="button" onClick={agregarColor} className="btn-add-circle">
+                    + Agregar
+                  </button>
                 </div>
                 <div className="form-card-content">
                   {errors.colores && <div className="card-error-msg">{errors.colores}</div>}
@@ -284,7 +292,9 @@ const ProductoForm = ({
                               onChange={(value) => actualizarColor(index, value)}
                             />
                           </div>
-                          <button type="button" onClick={() => eliminarColor(index)} className="btn-delete"><FaTrash size={12} /></button>
+                          <button type="button" onClick={() => eliminarColor(index)} className="btn-delete">
+                            <FaTrash size={12} />
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -292,11 +302,15 @@ const ProductoForm = ({
                 </div>
               </div>
 
-              {/* IMÁGENES */}
-              <div className={`form-card imagenes ${errors.imagenes ? 'card-has-error' : ''}`}>
+              {/* IMÁGENES - SIN BORDE ROJO EN LA TARJETA */}
+              <div className="form-card imagenes">
                 <div className="form-card-header">
-                  <h3 className="form-card-title">URLs de Imágenes <span className="required">*</span></h3>
-                  <button type="button" onClick={agregarUrlImagen} className="btn-add-circle">+ Agregar</button>
+                  <h3 className="form-card-title">
+                    URLs de Imágenes <span className="required">*</span>
+                  </h3>
+                  <button type="button" onClick={agregarUrlImagen} className="btn-add-circle">
+                    + Agregar
+                  </button>
                 </div>
                 <div className="form-card-content">
                   {errors.imagenes && <div className="card-error-msg">{errors.imagenes}</div>}
@@ -309,8 +323,9 @@ const ProductoForm = ({
                         return (
                           <div key={index} className="form-list-row-wrapper">
                             <div className="form-list-row image-row" style={{ display: 'flex', alignItems: 'center' }}>
-                              {/* ✅ NÚMERO DE IMAGEN EN LA LISTA */}
-                              <span style={{ color: '#F5C81B', fontSize: '11px', fontWeight: 'bold', marginRight: '6px', minWidth: '16px' }}>{index + 1}.</span>
+                              <span style={{ color: '#F5C81B', fontSize: '11px', fontWeight: 'bold', marginRight: '6px', minWidth: '16px' }}>
+                                {index + 1}.
+                              </span>
                               {url.startsWith('data:image/') ? (
                                 <div 
                                   className={`form-input-sm ${errors[`url_${index}`] || isInvalid ? 'has-error' : ''}`}
@@ -338,7 +353,9 @@ const ProductoForm = ({
                                     onChange={(e) => handleImageUpload(index, e.target.files[0])}
                                   />
                                 </label>
-                                <button type="button" onClick={() => eliminarUrlImagen(index)} className="btn-delete" style={{ margin: 0 }}><FaTrash size={12} /></button>
+                                <button type="button" onClick={() => eliminarUrlImagen(index)} className="btn-delete" style={{ margin: 0 }}>
+                                  <FaTrash size={12} />
+                                </button>
                               </div>
                             </div>
                             {(errors[`url_${index}`] || isInvalid) && (
@@ -362,7 +379,6 @@ const ProductoForm = ({
           <div className="external-previews-container">
             {urlsImagenes.map((url, i) => url.trim() !== '' ? (
               <div key={i} className="external-preview-wrapper" style={{ position: 'relative' }}>
-                {/* ✅ NÚMERO DE IMAGEN EN LA VISTA PREVIA */}
                 <div style={{ position: 'absolute', top: '5px', left: '5px', backgroundColor: 'rgba(0,0,0,0.7)', border: '1px solid #FFC300', color: '#FFC300', fontSize: '11px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px', zIndex: 2 }}>
                   {i + 1}
                 </div>

@@ -100,13 +100,26 @@ const Header = () => {
             <img src="/logo.png" className="logo-img" alt="Logo GM CAPS" />
           </Link>
 
-          <button
-            className="header-menu-btn"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Abrir menú"
-          >
-            {isMenuOpen ? <FaTimes /> : <FaBars />}
-          </button>
+          <div className="header-mobile-right">
+            <Link 
+              to="/carrito" 
+              className="header-mobile-cart-btn" 
+              aria-label={`Carrito (${cartItemCount} artículos)`}
+            >
+              <FaShoppingCart size={20} color="#FFC107" />
+              {cartItemCount > 0 && (
+                <span className="badge-count">{cartItemCount}</span>
+              )}
+            </Link>
+
+            <button
+              className="header-menu-btn"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Abrir menú"
+            >
+              {isMenuOpen ? <FaTimes /> : <FaBars />}
+            </button>
+          </div>
 
           <nav className="header-nav">
             <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>

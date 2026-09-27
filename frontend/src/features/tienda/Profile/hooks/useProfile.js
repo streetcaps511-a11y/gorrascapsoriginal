@@ -13,7 +13,7 @@ export const useProfile = () => {
   
   const [formData, setFormData] = useState({
     documentType: "", documentNumber: "", name: "", email: "", phone: "",
-    countryCode: "+57", city: "", address: "",
+    countryCode: "+57", city: "", address: "", genero: "", fechaNacimiento: "",
   });
   
   const [errors, setErrors] = useState({});
@@ -113,6 +113,8 @@ export const useProfile = () => {
         countryCode: "+57",
         city: authUser.Ciudad || authUser.city || "",
         address: authUser.Direccion || authUser.address || "",
+        genero: authUser.genero || authUser.Genero || "",
+        fechaNacimiento: authUser.fechaNacimiento || authUser.FechaNacimiento || "",
       });
       setAvatarUrl(authUser.avatarUrl || "");
     }
@@ -171,17 +173,29 @@ export const useProfile = () => {
       newErrors.email = 'Ingresa un correo válido (ej: nombre@gmail.com)';
     }
 
-    // Teléfono
+    // Teléfono - validación por longitud según código de país
     const code = formData.countryCode || '+57';
-    const phoneVal = (formData.phone || '').trim();
-    if (!phoneVal) {
+    const rawPhone = String(formData.phone || '').replace(/\D/g, '');
+    const phoneLengthMap = {
+      '+57': 10,  // Colombia: 10 dígitos
+      '+1':  10,  // USA/Canadá: 10 dígitos
+      '+34':  9,  // España: 9 dígitos
+      '+52': 10,  // México: 10 dígitos
+      '+54': 10,  // Argentina: 10 dígitos (sin 0 ni 15)
+      '+56':  9,  // Chile: 9 dígitos
+      '+51':  9,  // Perú: 9 dígitos
+      '+58': 10,  // Venezuela: 10 dígitos
+      '+507':  8, // Panamá: 8 dígitos
+    };
+    const expectedLen = phoneLengthMap[code] ?? 10;
+    if (!rawPhone) {
       newErrors.phone = 'El teléfono es obligatorio';
-    } else if (!/^\d+$/.test(phoneVal)) {
+    } else if (!/^\d+$/.test(rawPhone)) {
       newErrors.phone = 'Solo se permiten números. Sin espacios ni caracteres especiales';
-    } else {
-      const expected = code === '+507' ? 8 : (code === '+34' || code === '+56' || code === '+51') ? 9 : 10;
-      if (phoneVal.length !== expected) newErrors.phone = `El teléfono debe tener ${expected} dígitos`;
-      else if (code === '+57' && !phoneVal.startsWith('3')) newErrors.phone = 'El teléfono debe empezar con 3 (ej: 300, 310...)';
+    } else if (rawPhone.length !== expectedLen) {
+      newErrors.phone = `El teléfono para ${code} debe tener ${expectedLen} dígitos`;
+    } else if (code === '+57' && !rawPhone.startsWith('3')) {
+      newErrors.phone = 'El teléfono colombiano debe empezar con 3 (ej: 300, 310...)';
     }
 
     // Ciudad
@@ -212,6 +226,8 @@ export const useProfile = () => {
       Telefono: formData.phone, phone: formData.phone,
       Ciudad: formData.city, city: formData.city,
       Direccion: formData.address, address: formData.address,
+      genero: formData.genero, Genero: formData.genero,
+      fechaNacimiento: formData.fechaNacimiento, FechaNacimiento: formData.fechaNacimiento,
       avatarUrl: avatarUrl || "",
     };
 
@@ -227,9 +243,19 @@ export const useProfile = () => {
     let value = e.target?.value !== undefined ? e.target.value : e.value;
     
     if (name === 'phone') {
-      const code = formData.countryCode || '+57';
-      const maxLength = code === '+507' ? 8 : (code === '+34' || code === '+56' || code === '+51') ? 9 : 10;
+      const code = (name === 'phone' ? formData.countryCode : null) || '+57';
+      const phoneLengthMap = {
+        '+57': 10, '+1': 10, '+34': 9, '+52': 10,
+        '+54': 10, '+56': 9, '+51': 9, '+58': 10, '+507': 8,
+      };
+      const maxLength = phoneLengthMap[code] ?? 10;
       value = String(value).replace(/\D/g, '').slice(0, maxLength);
+    }
+    // Si cambia el código de país, limpiar el teléfono para re-ingresarlo
+    if (name === 'countryCode') {
+      setFormData((p) => ({ ...p, [name]: value, phone: '' }));
+      if (errors.phone) setErrors(prev => { const n = { ...prev }; delete n.phone; return n; });
+      return;
     }
     if (name === 'documentNumber') {
       value = String(value).replace(/\D/g, '');

@@ -6,6 +6,7 @@ y devuelve las respuestas en formato JSON. */
 import { Op } from 'sequelize';
 import Producto from '../models/productos.model.js';
 import Categoria from '../models/categorias.model.js';
+import { DetalleVenta, Venta } from '../models/index.js';
 import { sequelize } from '../config/db.js';
 import { validateProducto, sanitizeProducto } from '../utils/validationUtils.js';
 import cloudinary from '../config/cloudinary.config.js';
@@ -263,12 +264,15 @@ const productoController = {
     try {
       const { id } = req.params;
       const p = await Producto.findByPk(id, {
-        include: [{ model: Categoria, as: 'categoriaData', attributes: ['id', 'nombre'] }]
+        include: [{ model: Categoria, as: 'categoriaData', attributes: ['id', 'nombre', 'estado'] }]
       });
 
       if (!p) return res.status(404).json({ success: false, message: 'Producto no encontrado' });
 
       const pPlain = p.get({ plain: true });
+
+      const isCatActive = pPlain.categoriaData ? (pPlain.categoriaData.estado !== false) : true;
+      const isProdActive = (pPlain.isActive !== false && pPlain.isActive !== 0 && pPlain.isActive !== 'false') && isCatActive;
 
       // 🚀 MAPEO ULTRA-MINIMALISTA
       const rawDetail = {
@@ -286,7 +290,7 @@ const productoController = {
         imagenes: pPlain.imagenes || [],
         destacado: false,
         salesCount: pPlain.sales || 0,
-        isActive: true
+        isActive: isProdActive
       };
 
       // 🚀 FILTRO INTELIGENTE
@@ -299,6 +303,10 @@ const productoController = {
       const cleanDetail = {};
       Object.keys(rawDetail).forEach(key => {
         const val = rawDetail[key];
+        if (key === 'isActive') {
+          cleanDetail.isActive = !!val;
+          return;
+        }
         if (val !== false && val !== 0 && val !== " " && val !== null && val !== undefined) {
           if (Array.isArray(val) && val.length === 0) return;
           cleanDetail[key] = val;
@@ -307,6 +315,7 @@ const productoController = {
 
       cleanDetail.id = rawDetail.id;
       cleanDetail.nombre = rawDetail.nombre;
+      cleanDetail.isActive = rawDetail.isActive;
       if (rawDetail.tallasStock) cleanDetail.tallasStock = rawDetail.tallasStock;
 
       res.status(200).json({
@@ -446,7 +455,35 @@ const productoController = {
       }
 
       if (req.body.enInventario !== undefined) sanitizedData.enInventario = req.body.enInventario;
-      if (req.body.isActive !== undefined) sanitizedData.isActive = req.body.isActive;
+      
+      // 🛡️ REGLA DE NEGOCIO: No permitir desactivar si el producto está en pedidos en proceso / pendientes
+      if (req.body.isActive !== undefined) {
+        const wantsToDeactivate = req.body.isActive === false || req.body.isActive === 0 || req.body.isActive === 'false';
+        if (wantsToDeactivate && producto.isActive) {
+          const ventaPendiente = await DetalleVenta.findOne({
+            where: { idProducto: id },
+            include: [{
+              model: Venta,
+              as: 'venta',
+              where: {
+                idEstado: {
+                  [Op.in]: ['Pendiente', 'pendiente', 'En Proceso', 'en proceso', 'En proceso', 'Proceso', 'proceso']
+                }
+              }
+            }],
+            transaction
+          });
+
+          if (ventaPendiente) {
+            await transaction.rollback();
+            return res.status(400).json({
+              success: false,
+              message: 'No se puede desactivar el producto porque está en proceso (tiene pedidos pendientes por procesar).'
+            });
+          }
+        }
+        sanitizedData.isActive = req.body.isActive;
+      }
 
       // 🚀 RECALCULAR STOCK TOTAL
       if (Array.isArray(req.body.tallasStock)) {

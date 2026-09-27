@@ -14,7 +14,7 @@ import jsPDF from 'jspdf';
 import { useLocation } from 'react-router-dom';
 import {
   Alert, EntityTable, SearchInput, CustomPagination,
-  StatusPill
+  StatusPill, DraftModal
 } from '../../../shared/services';
 import StatusFilter from '../components/StatusFilter';
 import { FaArrowLeft, FaFilePdf } from 'react-icons/fa';
@@ -29,7 +29,7 @@ const ComprasPage = () => {
   const location = useLocation();
   const [detalleSearch, setDetalleSearch] = useState('');
   
-  const { modoVista, searchTerm, setSearchTerm, filterStatus, setFilterStatus, currentPage, setCurrentPage, itemsPerPage, alert, setAlert, errors, compraViendo, compraEditando, completarModal, setCompletarModal, annulModal, setAnnulModal, handleAnularCompra, nuevaCompra, setNuevaCompra, availableStatuses, availablePaymentMethods, availableSizes, proveedoresActivos, mostrarLista, mostrarFormulario, mostrarDetalle, agregarProducto, actualizarProducto, eliminarProducto, calcularTotal, handleSubmit, handleCompletarCompra, confirmCompletarCompra, filtered, loading, actionLoading, actionLoadingText, availableProducts, isLoadingProducts, handleInputChange, handleDateChange } = useComprasLogic(location);
+  const { modoVista, searchTerm, setSearchTerm, filterStatus, setFilterStatus, currentPage, setCurrentPage, itemsPerPage, alert, setAlert, errors, compraViendo, compraEditando, completarModal, setCompletarModal, annulModal, setAnnulModal, handleAnularCompra, nuevaCompra, setNuevaCompra, availableStatuses, availablePaymentMethods, availableSizes, proveedoresActivos, mostrarLista, mostrarFormulario, mostrarDetalle, agregarProducto, actualizarProducto, eliminarProducto, calcularTotal, handleSubmit, handleCompletarCompra, confirmCompletarCompra, filtered, loading, actionLoading, actionLoadingText, availableProducts, isLoadingProducts, handleInputChange, handleDateChange, showDraftModal, draftMeta, handleRegisterClick, restoreDraft, discardDraft, closeDraftModal } = useComprasLogic(location);
 
   const columns = [
     { 
@@ -293,6 +293,17 @@ const ComprasPage = () => {
         />
       )}
 
+      {/* ✅ MODAL GENERAL DE CONFIRMACIÓN DE BORRADOR */}
+      <DraftModal
+        isOpen={showDraftModal}
+        onClose={closeDraftModal}
+        onRestore={restoreDraft}
+        onDiscard={discardDraft}
+        entityName="compra"
+        timestamp={draftMeta?.timestamp}
+        extraInfo={draftMeta?.extraInfo}
+      />
+
       <div className="compras-container">
         <div className="compras-header">
           <div className="compras-header-top">
@@ -334,7 +345,7 @@ const ComprasPage = () => {
               </button>
             )}
             {modoVista === "lista" && (
-              <button onClick={() => mostrarFormulario()} className="compras-btn-register">
+              <button onClick={handleRegisterClick} className="compras-btn-register">
                 Registrar Compra
               </button>
             )}

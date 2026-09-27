@@ -14,6 +14,7 @@ export { default as StatusPill } from "../components/admin/StatusPill";
 export { default as ErrorBoundary } from "../components/admin/ErrorBoundary";
 export { default as UniversalModal } from "../components/admin/UniversalModal";
 export { default as ConfirmDeleteModal } from "../components/admin/ConfirmDeleteModal";
+export { default as DraftModal } from "../components/admin/DraftModal";
 
 export { default as EntityDetailsModal } from "../components/admin/EntityDetailsModal";
 export { default as BlurModalOverlay } from "../components/admin/BlurModalOverlay";

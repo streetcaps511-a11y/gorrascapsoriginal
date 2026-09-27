@@ -67,20 +67,13 @@ const ConfirmPurchaseModal = ({
         </button>
 
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div style={{
-            fontSize: '40px',
-            color: '#FFC107',
-            marginBottom: '10px'
-          }}>
-            🛒
-          </div>
           <h3 style={{
-            color: '#FFC107',
+            color: '#F5C81B',
             margin: '0 0 10px 0',
-            fontSize: '18px',
-            fontWeight: 'bold'
+            fontSize: '20px',
+            fontWeight: '800'
           }}>
-            Confirmar Compra
+            Confirmar compra
           </h3>
           <p style={{
             color: '#CBD5E1',
@@ -91,44 +84,47 @@ const ConfirmPurchaseModal = ({
             ¿Deseas finalizar la compra por un total de:
           </p>
           <div style={{
-            color: '#FFC107',
-            fontSize: '20px',
-            fontWeight: 'bold',
-            margin: '15px 0'
+            color: '#F5C81B',
+            fontSize: '22px',
+            fontWeight: '800',
+            margin: '12px 0'
           }}>
             ${total.toLocaleString()}
           </div>
           <p style={{
             color: '#94a3b8',
-            fontSize: '12px',
-            fontStyle: 'italic'
+            fontSize: '12px'
           }}>
             Se generará una factura con los detalles de tu compra
           </p>
         </div>
 
         <div style={{
-          backgroundColor: 'rgba(255, 193, 7, 0.05)',
-          borderRadius: '8px',
-          padding: '12px',
+          backgroundColor: '#070b14',
+          borderRadius: '12px',
+          padding: '14px 16px',
           marginBottom: '20px',
-          fontSize: '12px'
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          fontSize: '13px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px'
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-            <span>Productos:</span>
-            <span>{itemCount} items</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#94a3b8' }}>Productos:</span>
+            <span style={{ color: '#fff', fontWeight: '600' }}>{itemCount} items</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-            <span>Subtotal:</span>
-            <span>${subtotal.toLocaleString()}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#94a3b8' }}>Subtotal:</span>
+            <span style={{ color: '#fff', fontWeight: '600' }}>${subtotal.toLocaleString()}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-            <span>IVA (19%):</span>
-            <span>${tax.toLocaleString()}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ color: '#94a3b8' }}>IVA (19%):</span>
+            <span style={{ color: '#fff', fontWeight: '600' }}>${tax.toLocaleString()}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '5px', borderTop: '1px solid rgba(255, 193, 7, 0.2)' }}>
-            <strong>Total:</strong>
-            <strong>${total.toLocaleString()}</strong>
+          <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <strong style={{ color: '#fff' }}>Total:</strong>
+            <strong style={{ color: '#F5C81B', fontSize: '16px' }}>${total.toLocaleString()}</strong>
           </div>
         </div>
 
@@ -158,7 +154,7 @@ const ConfirmPurchaseModal = ({
           >
             Cancelar
           </button>
-          
+
           <button
             onClick={onConfirm}
             disabled={isProcessing}

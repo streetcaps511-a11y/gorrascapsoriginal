@@ -26,6 +26,7 @@ const Login = () => {
   const [infoMsg, setInfoMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConflictModal, setShowConflictModal] = useState(false); // 🔐 Estado para el modal
+  const [registerSuccessAlert, setRegisterSuccessAlert] = useState(false); // ✅ Alerta registro exitoso
 
   // ─── Datos de Login ──────────────────────────────
   const [loginData, setLoginData] = useState({
@@ -633,10 +634,21 @@ const Login = () => {
           console.warn("⚠️ No se pudo crear en Firebase:", firebaseErr.message);
         }
 
-        setInfoMsg("¡Cuenta creada exitosamente! Ya puedes iniciar sesión.");
+        // Limpiar formulario completamente
+        setRegisterData({
+          documentType: "Cédula de Ciudadanía",
+          documentNumber: "",
+          fullName: "",
+          correo: "",
+          clave: "",
+          confirmarClave: ""
+        });
         setPinVerification(false);
         setUserPin("");
         setActiveTab("login");
+        // Mostrar alerta de éxito fuera del formulario
+        setRegisterSuccessAlert(true);
+        setTimeout(() => setRegisterSuccessAlert(false), 5000);
       } else {
         setError(result.message || "El código es incorrecto o ha expirado.");
       }
@@ -1169,6 +1181,64 @@ const Login = () => {
 
         </div>
       </div>
+
+      {/* ✅ ALERTA FLOTANTE DE REGISTRO EXITOSO (fuera del formulario, como las otras alertas) */}
+      {registerSuccessAlert && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+            backgroundColor: '#0b1220',
+            border: '2px solid #10B981',
+            borderRadius: '16px',
+            padding: '28px 32px',
+            maxWidth: '420px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+            animation: 'fadeIn 0.3s ease-out'
+          }}
+        >
+          <div style={{ fontSize: '40px', marginBottom: '12px' }}>✅</div>
+          <h3 style={{ color: '#10B981', fontSize: '20px', fontWeight: '800', margin: '0 0 10px 0' }}>
+            ¡Cuenta creada exitosamente!
+          </h3>
+          <p style={{ color: '#CBD5E1', fontSize: '14px', lineHeight: '1.6', margin: '0 0 20px 0' }}>
+            Ya puedes iniciar sesión con tu correo y contraseña.
+          </p>
+          <button
+            onClick={() => setRegisterSuccessAlert(false)}
+            style={{
+              padding: '10px 28px',
+              backgroundColor: '#10B981',
+              border: 'none',
+              borderRadius: '10px',
+              color: '#fff',
+              fontWeight: '800',
+              cursor: 'pointer',
+              fontSize: '14px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Entendido
+          </button>
+        </div>
+      )}
+      {registerSuccessAlert && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            zIndex: 9998,
+            backdropFilter: 'blur(4px)'
+          }}
+          onClick={() => setRegisterSuccessAlert(false)}
+        />
+      )}
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }

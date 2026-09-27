@@ -8,7 +8,7 @@ import {
 } from "react-icons/fa";
 import {
   Alert, EntityTable, SearchInput, DateInputWithCalendar,
-  StatusPill, SearchSelect,
+  StatusPill, SearchSelect, DraftModal
 } from "../../../shared/services";
 import CustomPagination from "../../../shared/components/admin/CustomPagination";
 import StatusFilter from "../components/StatusFilter";
@@ -86,6 +86,7 @@ const VentasPage = () => {
     agregarProducto, actualizarProducto, eliminarProducto, calcularTotal,
     handleImageUpload, handleImage2Upload, handleCreateVenta,
     updateVentaStatus, handlePartialPayment, handleEnviarVenta, requiresReceipt,
+    showDraftModal, draftMeta, handleRegisterClick, restoreDraft, discardDraft, closeDraftModal,
   } = useVentasLogic();
 
   const columns = [
@@ -840,6 +841,17 @@ const VentasPage = () => {
 
       {imgModal.open && <AdminExpandedImageModal src={imgModal.src} onClose={() => setImgModal({ open: false, src: "" })} />}
 
+      {/* ✅ MODAL GENERAL DE CONFIRMACIÓN DE BORRADOR */}
+      <DraftModal
+        isOpen={showDraftModal}
+        onClose={closeDraftModal}
+        onRestore={restoreDraft}
+        onDiscard={discardDraft}
+        entityName="venta"
+        timestamp={draftMeta?.timestamp}
+        extraInfo={draftMeta?.extraInfo}
+      />
+
       <div className="ventas-container">
         <div className="ventas-header">
           <div className="ventas-header-top">
@@ -850,7 +862,7 @@ const VentasPage = () => {
                 <p className="ventas-subtitle">{modoVista === "lista" && "Gestión de ventas"}{modoVista === "formulario" && "Ingrese los datos de la venta"}{modoVista === "detalle" && "Revisión de venta"}</p>
               </div>
             </div>
-            {modoVista === "lista" && <button onClick={mostrarFormulario} className="ventas-btn-add">Registrar Venta</button>}
+            {modoVista === "lista" && <button onClick={handleRegisterClick} className="ventas-btn-add">Registrar Venta</button>}
             {modoVista === "detalle" && <button onClick={handleExportPDF} className="compras-btn-pdf" style={{ backgroundColor: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '8px', padding: '0 15px', height: '40px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}><FaFilePdf size={14} /> Descargar PDF</button>}
             {modoVista === "formulario" && <button onClick={handleCreateVenta} className="ventas-btn-submit" disabled={loading}>{loading ? "Guardando..." : "Guardar Venta"}</button>}
           </div>

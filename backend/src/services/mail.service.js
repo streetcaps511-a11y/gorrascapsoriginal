@@ -133,19 +133,6 @@ const sendForgotPasswordEmailNodmailer = async (email, nombre, resetLink) => {
  * @param {string} pin - Código de verificación de 6 dígitos
  */
 export const sendPinEmail = async (email, pin) => {
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  });
-
   const htmlContent = `
     <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
       <div style="background-color: #000000; padding: 30px; text-align: center;">
@@ -173,16 +160,41 @@ export const sendPinEmail = async (email, pin) => {
     </div>
   `;
 
-  const mailOptions = {
-    from: '"Gorras Medellin" <' + process.env.SMTP_USER + '>',
-    to: email,
-    subject: 'Tu código de verificación - Gorras Medellin 🧢',
-    html: htmlContent,
-  };
+  // 🚀 PRIMERO intentar con Brevo (rápido — API HTTP, no SMTP)
+  if (process.env.BREVO_API_KEY) {
+    try {
+      const brevoInstance = new Brevo.TransactionalEmailsApi();
+      brevoInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+      const sendSmtpEmail = new Brevo.SendSmtpEmail();
+      sendSmtpEmail.subject = 'Tu código de verificación - Gorras Medellin 🧢';
+      sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
+      sendSmtpEmail.to = [{ email }];
+      sendSmtpEmail.htmlContent = htmlContent;
+      const data = await brevoInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('✅ Correo de PIN enviado con éxito via Brevo:', data.messageId || 'OK');
+      return true;
+    } catch (brevoError) {
+      console.error('⚠️ Error con Brevo para PIN, usando SMTP fallback:', brevoError.message);
+    }
+  }
+
+  // 🔄 FALLBACK: Nodemailer SMTP
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    tls: { rejectUnauthorized: false }
+  });
 
   try {
-    await transporter.sendMail(mailOptions);
-    console.log('✅ Correo de PIN enviado con éxito a:', email);
+    await transporter.sendMail({
+      from: '"Gorras Medellin" <' + process.env.SMTP_USER + '>',
+      to: email,
+      subject: 'Tu código de verificación - Gorras Medellin 🧢',
+      html: htmlContent,
+    });
+    console.log('✅ Correo de PIN enviado con éxito via SMTP a:', email);
     return true;
   } catch (error) {
     console.error('❌ Error enviando correo de PIN vía Nodemailer:', error);

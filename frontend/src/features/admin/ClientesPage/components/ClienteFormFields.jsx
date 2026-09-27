@@ -1,12 +1,10 @@
-/* === COMPONENTE REUTILIZABLE === 
-   Pieza modular de interfaz (como Tarjetas, Modales o Botones). 
-   Recibe información a través de 'props' y notifica eventos hacia arriba (a la Página principal). */
-
+/* === COMPONENTE REUTILIZABLE ===
+Pieza modular de interfaz (como Tarjetas, Modales o Botones).
+Recibe información a través de 'props' y notifica eventos hacia arriba (a la Página principal). */
 import React from 'react';
 
-export const ClienteFormFields = ({ modalState, formData, handleInputChange, errors, firstInputRef }) => {
+export const ClienteFormFields = ({ modalState, formData, handleInputChange, errors, firstInputRef, validateDuplicate }) => {
   const isReadOnly = modalState.mode === 'view';
-  
 
   const formatDocTypeLabel = (val) => {
     const map = {
@@ -49,9 +47,8 @@ export const ClienteFormFields = ({ modalState, formData, handleInputChange, err
     );
   }
 
-  const renderEditableField = (label, fieldName, type = "text", options = []) => {
+  const renderEditableField = (label, fieldName, type = "text", options = [], extraProps = {}) => {
     const isError = errors[fieldName];
-    
     if (type === 'select') {
       let fieldOptions = options;
       if (fieldName === 'documentType') {
@@ -88,6 +85,7 @@ export const ClienteFormFields = ({ modalState, formData, handleInputChange, err
           type={type}
           value={formData[fieldName] || ''}
           onChange={(e) => handleInputChange(fieldName, e.target.value)}
+          onBlur={extraProps.onBlur}
           maxLength={fieldName === 'documentNumber' ? (formData.documentType === 'NIT' ? 10 : (formData.documentType === 'Pasaporte' ? 20 : 15)) : undefined}
           className={`form-field-input ${isError ? 'has-error' : ''}`}
         />
@@ -100,16 +98,36 @@ export const ClienteFormFields = ({ modalState, formData, handleInputChange, err
     <div className="clientes-form-grid">
       <div className="clientes-form-row">
         <div className="clientes-form-col">{renderEditableField('Tipo documento', 'documentType', 'select')}</div>
-        <div className="clientes-form-col">{renderEditableField(formData.documentType === 'NIT' ? 'Número' : 'N° documento', 'documentNumber', 'text')}</div>
+        <div className="clientes-form-col">
+          {renderEditableField(
+            formData.documentType === 'NIT' ? 'Número' : 'N° documento', 
+            'documentNumber', 
+            'text', 
+            [], 
+            { onBlur: () => validateDuplicate('documentNumber', formData.documentNumber) }
+          )}
+        </div>
       </div>
       <div>{renderEditableField(formData.documentType === 'NIT' ? 'Nombre de la empresa' : 'Nombre completo', 'fullName', 'text')}</div>
-      <div>{renderEditableField('Email', 'email', 'text')}</div>
+      <div>
+        {renderEditableField(
+          'Email', 
+          'email', 
+          'text', 
+          [], 
+          { onBlur: () => validateDuplicate('email', formData.email) }
+        )}
+      </div>
       <div className="clientes-form-row">
-        <div className="clientes-form-col">{renderEditableField('Ciudad', 'city', 'text')}</div>
-        <div className="clientes-form-col">
+        {/* Ciudad más pequeña */}
+        <div className="clientes-form-col" style={{ flex: '0 0 35%' }}>
+          {renderEditableField('Ciudad', 'city', 'text')}
+        </div>
+        {/* Teléfono más amplio */}
+        <div className="clientes-form-col" style={{ flex: '0 0 65%' }}>
           <label className="form-field-label">Teléfono: <span style={{ color: "#ef4444" }}>*</span></label>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <div style={{ flex: '0 0 90px' }}>
+            <div style={{ flex: '0 0 100px' }}>
               <select
                 value={formData.countryCode || '+57'}
                 onChange={(e) => handleInputChange('countryCode', e.target.value)}
@@ -117,22 +135,22 @@ export const ClienteFormFields = ({ modalState, formData, handleInputChange, err
                 style={{ width: '100%' }}
               >
                 <option value="+57">🇨🇴 +57</option>
-                <option value="+1">🇺🇸 +1</option>
+                <option value="+1">🇸 +1</option>
                 <option value="+34">🇪🇸 +34</option>
                 <option value="+52">🇲🇽 +52</option>
                 <option value="+54">🇦🇷 +54</option>
-                <option value="+56">🇨🇱 +56</option>
-                <option value="+51">🇵🇪 +51</option>
+                <option value="+56">🇱 +56</option>
+                <option value="+51">🇵 +51</option>
                 <option value="+58">🇻🇪 +58</option>
                 <option value="+507">🇵🇦 +507</option>
                 <option value="+55">🇧🇷 +55</option>
                 <option value="+593">🇪🇨 +593</option>
                 <option value="+591">🇧🇴 +591</option>
-                <option value="+598">🇺🇾 +598</option>
+                <option value="+598">🇾 +598</option>
                 <option value="+595">🇵🇾 +595</option>
-                <option value="+506">🇨🇷 +506</option>
-                <option value="+502">🇬🇹 +502</option>
-                <option value="+504">🇭🇳 +504</option>
+                <option value="+506">🇨 +506</option>
+                <option value="+502">🇬 +502</option>
+                <option value="+504">🇭 +504</option>
                 <option value="+503">🇸🇻 +503</option>
                 <option value="+505">🇳🇮 +505</option>
               </select>
@@ -143,7 +161,7 @@ export const ClienteFormFields = ({ modalState, formData, handleInputChange, err
                 value={formData.phone || ''}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 className={`form-field-input ${errors.phone ? 'has-error' : ''}`}
-                placeholder="Número"
+                placeholder={formData.countryCode === '+57' ? '300 123 4567' : 'Número'}
               />
             </div>
           </div>
@@ -151,7 +169,6 @@ export const ClienteFormFields = ({ modalState, formData, handleInputChange, err
         </div>
       </div>
       <div>{renderEditableField('Dirección', 'address', 'text')}</div>
-
     </div>
   );
 };
