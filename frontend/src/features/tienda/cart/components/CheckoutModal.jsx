@@ -285,12 +285,9 @@ const CheckoutModal = ({
     onConfirm();
   };
 
-  // 🔥 VISTA COMPLETA DE EDICIÓN DE DIRECCIÓN (Solo en móvil) CON HEADER Y FOOTER
+  // 🔥 VISTA COMPLETA DE EDICIÓN DE DIRECCIÓN (Solo en móvil) SIN HEADER/FOOTER DEL SITIO
   const renderAddressEditView = () => (
     <div className="gm-address-full-view">
-      {/* HEADER DEL SITIO */}
-      <Header />
-
       <div className="gm-address-full-content">
         <div className="gm-address-full-header">
           <button
@@ -518,9 +515,6 @@ const CheckoutModal = ({
           </button>
         </div>
       </div>
-
-      {/* FOOTER DEL SITIO */}
-      <Footer />
     </div>
   );
 
@@ -627,14 +621,14 @@ const CheckoutModal = ({
                 <button
                   type="button"
                   onClick={() => setShowProductsDetailModal(true)}
-                  className="gm-checkout-edit-btn"
+                  className="gm-checkout-edit-btn gm-products-btn-desktop-only"
                   title="Ver detalles de los productos"
                 >
                   <FaEye size={12} /><span className="gm-edit-btn-text"> Ver detalles</span>
                 </button>
               </div>
-              {/* Fila con solo las imágenes de los productos (sin fondo oscuro) */}
-              <div className="gm-checkout-products-row-wrapper" style={{ background: 'transparent', border: 'none', padding: '2px 0', boxShadow: 'none' }}>
+              {/* Fila con solo las imágenes de los productos - solo desktop */}
+              <div className="gm-checkout-products-row-wrapper gm-products-desktop-only" style={{ background: 'transparent', border: 'none', padding: '2px 0', boxShadow: 'none' }}>
                 <div className="gm-checkout-products-row" style={{ gap: '10px' }}>
                   {cartItems.map((item, index) => {
                     const qty = item.quantity || 1;
@@ -655,6 +649,34 @@ const CheckoutModal = ({
                     );
                   })}
                 </div>
+              </div>
+              {/* Lista completa inline - solo móvil */}
+              <div className="gm-checkout-products-list gm-products-mobile-only">
+                {cartItems.map((item, index) => {
+                  const name2 = gPN ? gPN(item) : (item.nombre || 'Gorra');
+                  const price2 = gPP ? gPP(item) : (item.precio || 0);
+                  const qty2 = item.quantity || 1;
+                  const img2 = Array.isArray(item.imagenes) && item.imagenes[0] ? item.imagenes[0] : (item.imagen || item.safeImg || 'https://placehold.co/100x100?text=Gorra');
+                  return (
+                    <div key={`m-${index}`} style={{ display: 'flex', gap: '12px', alignItems: 'center', padding: '10px 12px', backgroundColor: '#070b14', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.07)' }}>
+                      <div style={{ width: '52px', height: '52px', borderRadius: '8px', overflow: 'hidden', background: '#000', flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <img src={img2} alt={name2} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: '700', color: '#FFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name2}</h4>
+                        <div style={{ display: 'flex', gap: '8px', fontSize: '11px', color: '#94a3b8' }}>
+                          <span>Talla: <strong style={{ color: '#cbd5e1' }}>{item.talla || 'U'}</strong></span>
+                          <span>|</span>
+                          <span>Cant: <strong style={{ color: '#fff' }}>{qty2}</strong></span>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <span style={{ fontSize: '14px', fontWeight: '800', color: '#FFC107', display: 'block' }}>${(price2 * qty2).toLocaleString('es-CO')}</span>
+                        {qty2 > 1 && <span style={{ fontSize: '10px', color: '#64748b' }}>${price2.toLocaleString('es-CO')} c/u</span>}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </section>
             {/* SECCIÓN C: TIPO DE ENVÍO */}
@@ -954,7 +976,6 @@ const CheckoutModal = ({
       {showProductsDetailModal && (
         <div
           className="gm-modal-overlay-responsive"
-          onClick={() => setShowProductsDetailModal(false)}
           style={{
             position: 'fixed',
             inset: 0,
@@ -1046,7 +1067,6 @@ const CheckoutModal = ({
                     }}
                   >
                     <div
-                      onClick={() => setExpandedProductImage(img)}
                       style={{
                         width: '52px',
                         height: '52px',
@@ -1055,15 +1075,10 @@ const CheckoutModal = ({
                         background: '#000',
                         flexShrink: 0,
                         border: '1px solid rgba(255, 255, 255, 0.1)',
-                        cursor: 'pointer',
                         position: 'relative'
                       }}
-                      title="Clic para ampliar foto"
                     >
                       <img src={img} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <div style={{ position: 'absolute', bottom: '2px', right: '2px', backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: '3px', padding: '1px 3px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <FaEye size={7} color="#cbd5e1" />
-                      </div>
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: '700', color: '#FFFFFF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

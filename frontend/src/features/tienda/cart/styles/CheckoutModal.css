@@ -365,6 +365,35 @@
   margin-top: 10px;
 }
 
+/* Control visibilidad desktop vs móvil para sección productos */
+/* En desktop: mostrar thumbnails, ocultar lista móvil */
+.gm-products-mobile-only {
+  display: none;
+}
+.gm-products-desktop-only {
+  display: flex;
+}
+.gm-products-btn-desktop-only {
+  display: inline-flex;
+}
+
+/* En móvil: ocultar thumbnails y botón Ver detalles, mostrar lista inline */
+@media (max-width: 960px) {
+  .gm-products-mobile-only {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .gm-products-desktop-only {
+    display: none !important;
+  }
+  .gm-products-btn-desktop-only {
+    display: none !important;
+  }
+}
+
+
 .gm-checkout-product-card {
   display: flex;
   align-items: center;
@@ -596,8 +625,18 @@
     border-right: none !important;
     border-bottom: none !important;
     margin: 0 !important;
-    max-height: 94vh !important;
+    max-height: 85vh !important;
     box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Scroll interno del modal de productos en responsive */
+  .gm-products-modal-compact > div:nth-child(2) {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
   }
 
   .gm-form-row-2col {
@@ -672,6 +711,17 @@
   overflow: hidden;
 }
 
+/* Ocultar el header del sitio dentro de la vista de dirección en móvil para ganar espacio */
+.gm-address-full-view > header,
+.gm-address-full-view > nav {
+  display: none !important;
+}
+
+/* Ocultar el footer del sitio dentro de la vista de dirección en móvil */
+.gm-address-full-view > footer {
+  display: none !important;
+}
+
 /* Contenedor principal entre Header y Footer */
 .gm-address-full-content {
   flex: 1;
@@ -679,6 +729,7 @@
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+  height: 100%;
 }
 
 /* Header fijo de la vista completa */
@@ -736,11 +787,12 @@
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 28px 24px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 20px;
   background: #030712;
+  min-height: 0;
 }
 
 /* Campos del formulario */
