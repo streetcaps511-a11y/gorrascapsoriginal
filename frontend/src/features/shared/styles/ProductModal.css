@@ -73,14 +73,14 @@
 .gm-sizes-head { margin-bottom: 0; flex-shrink: 0; }
 .gm-sizes-label { font-weight: 800 !important; color: #fff; font-size: 0.85rem; letter-spacing: 0.5px; }
 .gm-sizes-wrap { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 0; }
-.gm-size-chip { display: inline-flex; align-items: center; justify-content: center; padding: 2px 8px; border-radius: 5px; border: 1px solid rgba(255, 255, 255, 0.25); background: #1e293b !important; color: #fff; font-weight: 700; font-size: 0.78rem; cursor: pointer; transition: all 0.2s ease; min-width: 28px; }
+.gm-size-chip { display: inline-flex; align-items: center; justify-content: center; padding: 2px 8px; border-radius: 5px; border: 1px solid rgba(255, 255, 255, 0.25); background: #1e293b !important; color: #fff; font-weight: 700; font-size: 0.78rem; cursor: pointer; transition: all 0.2s ease; min-width: 28px; text-transform: capitalize; }
 .gm-size-chip:hover:not(.is-disabled) { border-color: rgba(245, 200, 27, 0.5); background: rgba(245, 200, 27, 0.08); }
 .gm-size-chip.is-selected { background: #f5c81b !important; border-color: #f5c81b !important; color: #000 !important; }
 .gm-size-chip-container { position: relative; display: inline-block; }
 .gm-size-tooltip { visibility: hidden; position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background-color: #1e293b; color: #fff; text-align: center; padding: 5px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; white-space: nowrap; z-index: 100; opacity: 0; transition: opacity 0.3s, transform 0.3s; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); }
 .gm-size-tooltip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #1e293b transparent transparent transparent; }
 .gm-size-chip-container:hover .gm-size-tooltip { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(-5px); }
-.gm-size-chip.is-disabled { opacity: 0.3; cursor: not-allowed; }
+.gm-size-chip.is-disabled { opacity: 0.35; cursor: not-allowed; text-decoration: line-through; border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04) !important; color: #94a3b8 !important; }
 .gm-size-error-msg { color: #ef4444; font-size: 0.9rem; font-weight: 900 !important; margin-top: 8px; display: flex; align-items: center; gap: 6px; animation: gm-shake 0.4s ease-in-out; }
 @keyframes gm-shake { 0%, 100% { transform:translateX(0); } 25% { transform:translateX(-5px); } 75% { transform: translateX(5px); } }
 
@@ -128,6 +128,9 @@
   .gm-modal-imgbox { position: relative !important; height: 100% !important; background: #0b1220 !important; }
   .gm-modal-img { width: 100% !important; height: 100% !important; object-fit: contain !important; object-position: center 48% !important; background: #0b1220 !important; }
   
+  /* Badge OFERTA a la izquierda solo en responsive para alinearse con los extremos como la X */
+  .gm-img-badge-corner.oferta { right: auto !important; left: 18px !important; top: 18px !important; }
+  
   .gm-modal-dots { bottom: 8px; padding: 2px 7px; gap: 4px; border-radius: 12px; }
   .gm-modal-dot { width: 6px; height: 6px; border-width: 1px; }
   .gm-modal-dot.active { width: 14px; border-radius: 8px; }
@@ -163,11 +166,11 @@
 }
 
 @media (max-width: 640px) {
-  .gm-modal-overlay { padding: 0 !important; align-items: flex-end !important; }
-  .gm-modal { width: 100vw !important; max-width: 100vw !important; max-height: 96dvh !important; border-radius: 16px 16px 0 0 !important; border-left: none !important; border-right: none !important; border-bottom: none !important; margin: 0 !important; }
-  .gm-modal-left { height: clamp(230px, 38dvh, 320px) !important; }
-  .gm-modal-right-content { padding: 8px 12px 12px !important; }
-  .gm-modal-title { -webkit-line-clamp: 3 !important; line-clamp: 3 !important; }
+  .gm-modal-overlay { padding: 8px 6px !important; align-items: center !important; }
+  .gm-modal { width: 98vw !important; max-width: 480px !important; max-height: calc(100dvh - 16px) !important; border-radius: 16px !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; margin: auto !important; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9) !important; }
+  .gm-modal-left { height: clamp(210px, 35dvh, 290px) !important; border-radius: 16px 16px 0 0 !important; }
+  .gm-modal-right-content { padding: 10px 14px 14px !important; }
+  .gm-modal-title { -webkit-line-clamp: 2 !important; line-clamp: 2 !important; }
 }
 
 /* SMARTWATCH VIEWPORT OVERRIDES */

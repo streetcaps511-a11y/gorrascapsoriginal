@@ -107,13 +107,13 @@ export const CartProvider = ({ children }) => {
     
     const isOfferActive = !!(item.enOfertaVenta || item.oferta || item.has_discount || item.is_oferta);
     const offerPrice = (item.precioOferta != null) ? parseFloat(item.precioOferta) : (item.precio_descuento ? parseFloat(item.precio_descuento) : null);
-    const basePrice = parseFloat(item.precioNormal || item.precio_normal || item.precio || 0);
+    const basePrice = Math.round(parseFloat(item.precioNormal || item.precio_normal || item.precio || 0));
     
     // Si hay oferta y tenemos el precio de oferta, ese es nuestro retail
-    const retailPrice = isOfferActive && offerPrice ? offerPrice : (item.precio ? parseFloat(item.precio) : basePrice);
+    const retailPrice = isOfferActive && offerPrice ? Math.round(offerPrice) : (item.precio ? Math.round(parseFloat(item.precio)) : basePrice);
 
-    const p6 = parseFloat(item.precio_mayorista6 || item.precioMayorista6 || 0);
-    const p80 = parseFloat(item.precio_mayorista80 || item.precioMayorista80 || 0);
+    const p6 = Math.round(parseFloat(item.precio_mayorista6 || item.precioMayorista6 || 0));
+    const p80 = Math.round(parseFloat(item.precio_mayorista80 || item.precioMayorista80 || 0));
 
     if (qty >= 80 && p80 > 0) return p80;
     if (qty >= 6 && p6 > 0) return p6;
@@ -121,7 +121,7 @@ export const CartProvider = ({ children }) => {
   };
 
   const cartTotal = useMemo(
-    () => cartItems.reduce((t, i) => t + (getItemPrice(i) * (i.quantity || 1)), 0),
+    () => Math.round(cartItems.reduce((t, i) => t + (getItemPrice(i) * (i.quantity || 1)), 0)),
     [cartItems]
   );
 

@@ -138,30 +138,39 @@ const Cart = () => {
 
   const handleShareCart = async () => {
     const text = getShareText();
-    if (navigator.share && isMobile) {
+    const shareData = {
+      title: 'Mi Carrito en GM CAPS',
+      text: text,
+      url: window.location.origin + '/carrito'
+    };
+
+    if (navigator.share) {
       try {
-        await navigator.share({
-          title: 'Mi Carrito en GM CAPS',
-          text: text,
-          url: window.location.origin + '/carrito'
-        });
+        await navigator.share(shareData);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2500);
         return;
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          setShowShareModal(true);
-        }
-        return;
+        if (err.name === 'AbortError') return;
       }
     }
-    setShowShareModal(true);
-  };
 
-  const handleCopyShare = () => {
-    const text = getShareText();
-    navigator.clipboard.writeText(text).then(() => {
+    try {
+      await navigator.clipboard.writeText(text);
       setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 3000);
-    });
+      setCenterAlert({ visible: true, message: '¡Detalles del carrito copiados para compartir!', type: 'success' });
+      setTimeout(() => setShareCopied(false), 2500);
+    } catch {
+      const input = document.createElement('textarea');
+      input.value = text;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      setShareCopied(true);
+      setCenterAlert({ visible: true, message: '¡Detalles del carrito copiados para compartir!', type: 'success' });
+      setTimeout(() => setShareCopied(false), 2500);
+    }
   };
 
   // Renderizado: Carrito vacío
@@ -393,26 +402,28 @@ const Cart = () => {
       )}
       
       {selectedDetailProduct && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000, padding: '15px' }} onClick={() => setSelectedDetailProduct(null)}>
-          <div style={{ background: '#1E293B', borderRadius: '16px', width: '100%', maxWidth: '500px', border: '1px solid #F5C81B', padding: '0', position: 'relative', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setSelectedDetailProduct(null)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(0,0,0,0.5)', border: 'none', color: '#F5C81B', fontSize: '18px', cursor: 'pointer', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10000, padding: '12px', backdropFilter: 'blur(5px)' }} onClick={() => setSelectedDetailProduct(null)}>
+          <div style={{ background: '#1E293B', borderRadius: '16px', width: '100%', maxWidth: '480px', maxHeight: 'calc(100dvh - 24px)', border: '1px solid rgba(245, 200, 27, 0.4)', padding: '0', position: 'relative', overflowY: 'auto', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setSelectedDetailProduct(null)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#F5C81B', fontSize: '16px', cursor: 'pointer', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
               <FaTimes />
             </button>
-            <img src={getImageUrl(selectedDetailProduct)} alt={getProductName(selectedDetailProduct)} style={{ width: '100%', height: '320px', objectFit: 'cover' }} onError={handleImageError} />
-            <div style={{ padding: '24px' }}>
-              <h2 style={{ color: '#F5C81B', fontSize: '20px', fontWeight: 'bold', margin: '0 0 12px 0' }}>{getProductName(selectedDetailProduct)}</h2>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+            <div style={{ width: '100%', height: isMobile ? '220px' : '280px', backgroundColor: '#0b1220', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <img src={getImageUrl(selectedDetailProduct)} alt={getProductName(selectedDetailProduct)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} onError={handleImageError} />
+            </div>
+            <div style={{ padding: isMobile ? '16px' : '22px' }}>
+              <h2 style={{ color: '#F5C81B', fontSize: '18px', fontWeight: 'bold', margin: '0 0 10px 0' }}>{getProductName(selectedDetailProduct)}</h2>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
                 <span style={{ fontSize: '12px', color: '#CBD5E1', backgroundColor: 'rgba(51, 65, 85, 0.7)', padding: '4px 10px', borderRadius: '8px' }}>{getProductCategory(selectedDetailProduct)}</span>
                 {selectedDetailProduct.color && <span style={{ fontSize: '12px', color: '#CBD5E1', backgroundColor: 'rgba(51, 65, 85, 0.7)', padding: '4px 10px', borderRadius: '8px' }}>Color: {selectedDetailProduct.color}</span>}
                 {selectedDetailProduct.talla && <span style={{ fontSize: '12px', color: '#CBD5E1', backgroundColor: 'rgba(51, 65, 85, 0.7)', padding: '4px 10px', borderRadius: '8px' }}>Talla: {selectedDetailProduct.talla}</span>}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ color: '#94a3b8', fontSize: '14px' }}>Cantidad en carrito:</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '13px' }}>Cantidad en carrito:</span>
                 <span style={{ color: '#fff', fontSize: '15px', fontWeight: 'bold' }}>{selectedDetailProduct.quantity || 1}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <span style={{ color: '#94a3b8', fontSize: '14px' }}>Precio unitario:</span>
-                <span style={{ color: '#F5C81B', fontSize: '20px', fontWeight: 'bold' }}>${getProductPrice(selectedDetailProduct).toLocaleString()}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <span style={{ color: '#94a3b8', fontSize: '13px' }}>Precio unitario:</span>
+                <span style={{ color: '#F5C81B', fontSize: '18px', fontWeight: 'bold' }}>${Math.round(getProductPrice(selectedDetailProduct)).toLocaleString('es-CO')}</span>
               </div>
             </div>
           </div>
@@ -424,10 +435,34 @@ const Cart = () => {
           <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', justifyContent: 'center' }}>
             {/* LISTA DE PRODUCTOS */}
             <div style={{ flex: 1, minWidth: '320px', maxWidth: '750px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h2 style={{ color: '#F5C81B', fontSize: '16px', fontWeight: '700', margin: 0 }}>
-                  Productos seleccionados ({cartItems.length})
-                </h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <h2 style={{ color: '#F5C81B', fontSize: '16px', fontWeight: '700', margin: 0 }}>
+                    Productos seleccionados ({cartItems.length})
+                  </h2>
+                  <button 
+                    onClick={handleShareCart} 
+                    type="button"
+                    style={{ 
+                      background: shareCopied ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 200, 27, 0.12)', 
+                      border: shareCopied ? '1px solid #10b981' : '1px solid rgba(245, 200, 27, 0.4)', 
+                      color: shareCopied ? '#10b981' : '#F5C81B', 
+                      padding: '5px 12px', 
+                      borderRadius: '8px', 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      fontSize: '12px', 
+                      fontWeight: '700', 
+                      cursor: 'pointer', 
+                      transition: 'all 0.2s' 
+                    }} 
+                    title="Compartir carrito de compras"
+                  >
+                    {shareCopied ? <FaCheck size={11} /> : <FaShareAlt size={11} />}
+                    {shareCopied ? 'Compartido ✓' : 'Compartir'}
+                  </button>
+                </div>
               </div>
               
               {currentItems.map((item, index) => {
@@ -772,10 +807,25 @@ const Cart = () => {
                 <button 
                   onClick={handleShareCart} 
                   type="button"
-                  style={{ flex: 1, background: 'rgba(245, 200, 27, 0.1)', border: '1px solid rgba(245, 200, 27, 0.35)', color: '#F5C81B', padding: '10px 6px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }} 
+                  style={{ 
+                    flex: 1, 
+                    background: shareCopied ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 200, 27, 0.1)', 
+                    border: shareCopied ? '1px solid #10b981' : '1px solid rgba(245, 200, 27, 0.35)', 
+                    color: shareCopied ? '#10b981' : '#F5C81B', 
+                    padding: '10px 6px', 
+                    borderRadius: '10px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '6px', 
+                    fontSize: '12px', 
+                    fontWeight: 'bold', 
+                    cursor: 'pointer', 
+                    transition: 'all 0.2s' 
+                  }} 
                   title="Compartir carrito de compras"
                 >
-                  <FaShareAlt size={11} /> Compartir
+                  {shareCopied ? <FaCheck size={11} /> : <FaShareAlt size={11} />} {shareCopied ? 'Compartido ✓' : 'Compartir'}
                 </button>
                 <button 
                   onClick={handleClearCart} 
@@ -803,14 +853,14 @@ const Cart = () => {
                     </div>
                   )}
                   {financials.hasWholesale && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: '#38bdf8', fontWeight: '700', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: '#f87171', fontWeight: '700', fontSize: '13px' }}>
                       <div>
-                        <span>Descuento al por mayor:</span>
+                        <span style={{ color: '#fff' }}>Descuento al por mayor:</span>
                         <span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', fontWeight: '500' }}>
-                          (Queda en: ${financials.wholesaleResult.toLocaleString('es-CO')})
+                          (Queda en: ${Math.round(financials.wholesaleResult).toLocaleString('es-CO')})
                         </span>
                       </div>
-                      <span>-${financials.wholesaleDiscount.toLocaleString('es-CO')}</span>
+                      <span style={{ color: '#f87171' }}>-${Math.round(financials.wholesaleDiscount).toLocaleString('es-CO')}</span>
                     </div>
                   )}
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -818,9 +868,16 @@ const Cart = () => {
                     <span style={{ color: '#F5C81B', fontSize: '12px', fontStyle: 'italic' }}>{getShippingText()}</span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '20px', marginBottom: '25px' }}>
-                  <strong style={{ color: '#fff' }}>Total del pedido:</strong>
-                  <strong style={{ color: '#F5C81B' }}>${total.toLocaleString('es-CO')}</strong>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '25px', flexWrap: 'nowrap' }}>
+                  <strong style={{ color: '#fff', fontSize: '16px', whiteSpace: 'nowrap', flexShrink: 0 }}>Total del pedido:</strong>
+                  <strong style={{ 
+                    color: '#F5C81B', 
+                    fontSize: String(Math.round(total)).length > 10 ? '16px' : '19px', 
+                    whiteSpace: 'nowrap', 
+                    textAlign: 'right' 
+                  }}>
+                    ${Math.round(total).toLocaleString('es-CO')}
+                  </strong>
                 </div>
                 <button 
                   onClick={handleFinishPurchase}

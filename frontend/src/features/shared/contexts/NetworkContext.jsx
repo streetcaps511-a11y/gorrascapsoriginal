@@ -6,19 +6,18 @@ export function NetworkProvider({ children }) {
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [showBanner, setShowBanner] = useState(false);
     const [connectionQuality, setConnectionQuality] = useState('good'); // 'good' | 'slow' | 'offline'
+    const [showReconnected, setShowReconnected] = useState(false);
     const heartbeatInterval = useRef(null);
-    const pingTimeout = useRef(null);
+    const wasOfflineRef = useRef(false);
 
     // Función para verificar conexión real con ping
     const checkConnection = async () => {
         const startTime = Date.now();
 
         try {
-            // Intentar cargar un recurso pequeño con timeout
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos timeout
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-            // Usar un endpoint ligero o un archivo pequeño
             const response = await fetch('/favicon.ico', {
                 method: 'HEAD',
                 cache: 'no-cache',
@@ -29,74 +28,60 @@ export function NetworkProvider({ children }) {
             const latency = Date.now() - startTime;
 
             if (response.ok || response.status === 304) {
-                // Conexión exitosa - evaluar calidad
-                if (latency > 3000) {
-                    // Más de 3 segundos = conexión muy lenta
+                if (latency > 2000) {
+                    // Más de 2 segundos = conexión lenta — mostrar banner
                     setConnectionQuality('slow');
                     setShowBanner(true);
-                } else if (latency > 1500) {
-                    // Más de 1.5 segundos = conexión regular
-                    setConnectionQuality('slow');
-                    setShowBanner(false); // No mostrar banner pero marcar como lento
                 } else {
-                    // Menos de 1.5 segundos = buena conexión
+                    // Buena conexión
                     setConnectionQuality('good');
                     setShowBanner(false);
                 }
 
-                if (!isOnline) {
+                if (!isOnline || wasOfflineRef.current) {
                     setIsOnline(true);
+                    wasOfflineRef.current = false;
+                    // Mostrar banner de reconexión brevemente
+                    setShowReconnected(true);
+                    setTimeout(() => setShowReconnected(false), 3000);
                 }
 
                 return true;
             }
         } catch (error) {
-            // Error de conexión
             console.log('Connection check failed:', error);
             setIsOnline(false);
             setConnectionQuality('offline');
             setShowBanner(true);
+            wasOfflineRef.current = true;
             return false;
         }
     };
 
     // Heartbeat - verificar conexión cada 10 segundos
     useEffect(() => {
-        const startHeartbeat = () => {
-            checkConnection(); // Verificación inmediata
-            heartbeatInterval.current = setInterval(checkConnection, 10000); // Cada 10 segundos
-        };
+        checkConnection(); // Verificación inmediata
+        heartbeatInterval.current = setInterval(checkConnection, 10000);
 
-        const stopHeartbeat = () => {
-            if (heartbeatInterval.current) {
-                clearInterval(heartbeatInterval.current);
-            }
-        };
-
-        // Event listeners nativos
-        const handleOnline = () => {
-            checkConnection(); // Verificar inmediatamente
-        };
-
+        const handleOnline = () => checkConnection();
         const handleOffline = () => {
             setIsOnline(false);
             setConnectionQuality('offline');
             setShowBanner(true);
+            wasOfflineRef.current = true;
         };
 
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        startHeartbeat();
-
         return () => {
-            stopHeartbeat();
+            if (heartbeatInterval.current) clearInterval(heartbeatInterval.current);
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, [isOnline]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    // Función para forzar verificación (útil antes de pagos)
     const forceCheck = async () => {
         await checkConnection();
     };
@@ -107,6 +92,8 @@ export function NetworkProvider({ children }) {
             showBanner,
             setShowBanner,
             connectionQuality,
+            showReconnected,
+            setShowReconnected,
             forceCheck
         }}>
             {children}

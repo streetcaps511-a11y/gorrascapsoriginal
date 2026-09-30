@@ -15,7 +15,11 @@ const ProductCard = ({ product, onOpenDetail }) => {
     ? product.imagenes.filter(Boolean).map((x) => String(x).trim()).filter(Boolean).slice(0, 4)
     : [product.safeImg || product.imagen || "https://placehold.co/800x800?text=Sin+Imagen"];
 
-  const isAgotado = getProductTotalStock(product) <= 0;
+  // Solo mostrar AGOTADO si tenemos datos de stock confirmados y son 0
+  const hasTallasData = Array.isArray(product?.tallasStock) && product.tallasStock.length > 0;
+  const hasStockField = Number(product?.stock ?? 0) > 0;
+  const confirmedStock = hasTallasData || hasStockField;
+  const isAgotado = confirmedStock && getProductTotalStock(product) <= 0;
   const isOffer = (product.enOferta || product.hasDiscount || product.has_discount || product.oferta) && product.precioOferta;
   const discountPct = isOffer && product.precio > 0
     ? Math.round(((product.precio - product.precioOferta) / product.precio) * 100) : 0;

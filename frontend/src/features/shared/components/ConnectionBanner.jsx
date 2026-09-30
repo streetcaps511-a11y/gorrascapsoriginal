@@ -82,20 +82,23 @@ export default function ConnectionBanner() {
     if (connectionQuality === 'offline') {
       return {
         bg: '#dc2626',
-        text: 'Sin conexión a internet',
-        icon: <WifiOffIcon />
+        text: '⚠ Sin conexión a internet — guarda antes de continuar',
+        icon: <WifiOffIcon />,
+        pulse: true
       };
     } else if (connectionQuality === 'slow') {
       return {
-        bg: '#b45309',
-        text: 'Conexión lenta',
-        icon: <WifiLowIcon />
+        bg: '#92400e',
+        text: '🐢 Conexión lenta — las operaciones pueden tardar más',
+        icon: <WifiLowIcon />,
+        pulse: false
       };
     }
     return {
       bg: '#dc2626',
       text: 'Problemas de conexión',
-      icon: <WifiOffIcon />
+      icon: <WifiOffIcon />,
+      pulse: true
     };
   };
 

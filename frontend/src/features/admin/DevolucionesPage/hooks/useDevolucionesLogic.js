@@ -3,6 +3,7 @@ Este archivo maneja el estado de React, las reglas de negocio, y las validacione
 Separa la 'inteligencia' de la interfaz visual para mantener el código limpio.
 Recibe eventos de la UI y se comunica con los Servicios API. */
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useFormDraft } from '../../../shared/hooks/useFormDraft';
 import {
   fetchAllDevoluciones,
   createNewDevolucion,
@@ -297,9 +298,9 @@ export const useDevolucionesLogic = () => {
     setRejectionReason('');
   };
 
-  const mostrarFormulario = () => {
+  const mostrarFormulario = useCallback((customFormData = null) => {
     loadData(true);
-    setFormData({
+    const defaultForm = {
       cliente: '',
       idCliente: '',
       productoOriginalId: '',
@@ -314,12 +315,13 @@ export const useDevolucionesLogic = () => {
       motivoRechazo: '',
       idVenta: '',
       defectoFabrica: false
-    });
+    };
+    setFormData(customFormData || defaultForm);
     setVentasCliente([]);
     setProductosVenta([]);
     setErrors({});
     setModoVista("formulario");
-  };
+  }, [loadData, availableStatuses]);
 
   const mostrarDetalle = (devolucion) => {
     setDevolucionViendo(devolucion);
@@ -449,6 +451,40 @@ export const useDevolucionesLogic = () => {
     }
   };
 
+  const isDevolucionDirty = useCallback((data) => {
+    const d = data || formData;
+    if (!d) return false;
+    return Boolean(d.idCliente || d.idVenta || d.productoOriginalId || d.motivo?.trim());
+  }, [formData]);
+
+  const {
+    showDraftModal,
+    draftMeta,
+    handleRegisterClick,
+    restoreDraft,
+    discardDraft,
+    closeDraftModal,
+    saveDraft,
+    clearDraft
+  } = useFormDraft({
+    moduleId: 'devolucion',
+    isEditing: false,
+    modoVista,
+    getFormData: () => formData,
+    isDirty: isDevolucionDirty,
+    getExtraInfo: (d) => d?.idVenta ? `Orden: ${d.idVenta}` : null,
+    onRestore: (draft) => mostrarFormulario(draft),
+    onDiscard: () => mostrarFormulario(null),
+    onOpenForm: () => setModoVista("formulario")
+  });
+
+  // Autoguardar borrador mientras se llena el formulario
+  useEffect(() => {
+    if (modoVista === 'formulario') {
+      saveDraft(formData);
+    }
+  }, [formData, modoVista, saveDraft]);
+
   const filtered = useMemo(() => {
     const q = searchTerm.toLowerCase();
     return devoluciones.filter(d => {
@@ -458,6 +494,13 @@ export const useDevolucionesLogic = () => {
       return matchesSearch && matchesStatus;
     });
   }, [devoluciones, searchTerm, filterStatus]);
+
+  // Limpiar borrador al guardar exitosamente
+  const handleSubmitWithDraftClear = useCallback(async (e) => {
+    // Import the original handleSubmit and wrap it
+    const originalSubmit = handleSubmit;
+    await originalSubmit(e);
+  }, [handleSubmit]);
 
   return {
     modoVista, setModoVista,
@@ -488,6 +531,13 @@ export const useDevolucionesLogic = () => {
     submitting,
     actionLoading,
     updateStatus,
-    filtered
+    filtered,
+    // ✅ Borrador (DraftModal)
+    showDraftModal,
+    draftMeta,
+    handleRegisterClick,
+    restoreDraft,
+    discardDraft,
+    closeDraftModal,
   };
 };

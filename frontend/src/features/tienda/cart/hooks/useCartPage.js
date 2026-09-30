@@ -55,8 +55,20 @@ export const useCartPage = () => {
       return '';
     }
   });
-  const [deliveryAddress, setDeliveryAddress] = useState(user?.Direccion || user?.direccion || user?.address || '');
-  const [deliveryPhone, setDeliveryPhone] = useState(user?.Telefono || user?.telefono || user?.telefono_db || user?.phone || '');
+  const [deliveryAddress, setDeliveryAddress] = useState(() => {
+    try {
+      return sessionStorage.getItem('cart_delivery_address') || user?.Direccion || user?.direccion || user?.address || '';
+    } catch {
+      return user?.Direccion || user?.direccion || user?.address || '';
+    }
+  });
+  const [deliveryPhone, setDeliveryPhone] = useState(() => {
+    try {
+      return sessionStorage.getItem('cart_delivery_phone') || user?.Telefono || user?.telefono || user?.telefono_db || user?.phone || '';
+    } catch {
+      return user?.Telefono || user?.telefono || user?.telefono_db || user?.phone || '';
+    }
+  });
   const [receiptFile, setReceiptFile] = useState(null);
   const [selectedDetailProduct, setSelectedDetailProduct] = useState(null);
   const [showFinalMessage, setShowFinalMessage] = useState(false);
@@ -98,6 +110,30 @@ export const useCartPage = () => {
       console.error(e);
     }
   }, [selectedPaymentMethod]);
+
+  useEffect(() => {
+    try {
+      if (deliveryAddress) {
+        sessionStorage.setItem('cart_delivery_address', deliveryAddress);
+      } else {
+        sessionStorage.removeItem('cart_delivery_address');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [deliveryAddress]);
+
+  useEffect(() => {
+    try {
+      if (deliveryPhone) {
+        sessionStorage.setItem('cart_delivery_phone', deliveryPhone);
+      } else {
+        sessionStorage.removeItem('cart_delivery_phone');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [deliveryPhone]);
   
   const navigate = useNavigate();
   const location = useLocation();

@@ -18,6 +18,7 @@ import {
   CustomPagination,
   StatusPill,
   ConfirmDeleteModal,
+  DraftModal,
 } from "../../../shared/services";
 import { useDevolucionesLogic } from "../hooks/useDevolucionesLogic";
 import StatusFilter from "../components/StatusFilter";
@@ -60,6 +61,12 @@ const DevolucionesPage = () => {
     updateStatus,
     filtered,
     deleteDevolucion,
+    showDraftModal,
+    draftMeta,
+    handleRegisterClick,
+    restoreDraft,
+    discardDraft,
+    closeDraftModal,
   } = useDevolucionesLogic();
 
   // Estados locales para acciones de los modales
@@ -140,6 +147,17 @@ const DevolucionesPage = () => {
         />
       )}
 
+      {/* ✅ MODAL DE BORRADOR - Preguntar si continuar o empezar nuevo */}
+      <DraftModal
+        isOpen={showDraftModal}
+        onClose={closeDraftModal}
+        onRestore={restoreDraft}
+        onDiscard={discardDraft}
+        entityName="devolución"
+        timestamp={draftMeta?.timestamp}
+        extraInfo={draftMeta?.extraInfo}
+      />
+
       <div className="devoluciones-container">
         {/* CABECERA */}
         <div className="devoluciones-header">
@@ -172,7 +190,7 @@ const DevolucionesPage = () => {
 
             {modoVista === "lista" && (
               <button
-                onClick={mostrarFormulario}
+                onClick={handleRegisterClick}
                 className="devoluciones-btn-register"
               >
                 Registrar Devolución
