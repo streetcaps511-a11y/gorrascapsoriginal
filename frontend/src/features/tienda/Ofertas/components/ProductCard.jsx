@@ -60,7 +60,7 @@ const ProductCard = ({ product, openModal }) => {
               key={idx}
               src={img}
               alt={`${product.nombre} - ${idx + 1}`}
-              style={{ cursor: images.length > 1 ? 'pointer' : 'default' }}
+              style={{ cursor: images.length > 1 ? 'grab' : 'default' }}
               onClick={(e) => {
                 e.stopPropagation();
                 if (images.length > 1) {
@@ -112,7 +112,7 @@ const ProductCard = ({ product, openModal }) => {
             >
               <FaShoppingCart size={15} color="#000" />
             </button>
-            <span className="gm-cart-tooltip">Ver detalles</span>
+            <span className="gm-cart-tooltip">Detalles</span>
           </div>
         </div>
       </div>

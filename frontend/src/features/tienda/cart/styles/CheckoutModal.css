@@ -157,8 +157,8 @@
   .gm-checkout-edit-btn { padding: 0 !important; width: 36px !important; height: 36px !important; border-radius: 50% !important; }
   .gm-view-products-text { display: none !important; }
   .gm-checkout-view-products-btn { width: 36px !important; height: 36px !important; padding: 0 !important; border-radius: 50% !important; }
-  .gm-modal-overlay-responsive { padding: 12px 8px !important; align-items: center !important; }
-  .gm-modal-dialog-responsive { width: 96% !important; max-width: 440px !important; border-radius: 16px !important; margin: auto !important; max-height: calc(100dvh - 24px) !important; }
+  .gm-modal-overlay-responsive { padding: 0 !important; align-items: flex-end !important; }
+  .gm-modal-dialog-responsive { width: 100% !important; max-width: 100vw !important; border-radius: 16px 16px 0 0 !important; margin: 0 !important; max-height: 85vh !important; }
   .gm-form-grid-3, .gm-form-grid-location { grid-template-columns: 1fr !important; }
 }
 

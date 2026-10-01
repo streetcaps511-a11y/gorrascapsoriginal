@@ -191,6 +191,14 @@ const authService = {
 
         if (!usuario) throw new Error('El enlace de recuperación es inválido o ha expirado');
 
+        // Validar que la nueva contraseña sea diferente a la actual
+        if (usuario.clave) {
+            const isSamePassword = await usuario.validarClave(newPassword);
+            if (isSamePassword) {
+                throw new Error('La contraseña debe ser diferente a la actual');
+            }
+        }
+
         // Actualizar contraseña (el modelo la encriptará automáticamente gracias al hook beforeUpdate)
         usuario.clave = newPassword;
         usuario.resetPasswordToken = null;

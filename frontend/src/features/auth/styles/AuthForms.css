@@ -23,3 +23,49 @@
 .width-30 { flex: 0.35; }
 .width-70 { flex: 0.65; }
 .eye-action-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8b949e; cursor: pointer; display: flex; font-size: 14px; }
+
+/* ===== Password strength checklist (Globito afuera del cuadro) ===== */
+.pw-checklist-balloon {
+  position: absolute;
+  right: calc(100% + 20px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 240px;
+  background: #0f172a;
+  border: 1px solid rgba(245, 200, 27, 0.45);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 15px rgba(245, 200, 27, 0.15);
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  box-sizing: border-box;
+}
+.pw-checklist-balloon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -8px;
+  transform: translateY(-50%);
+  border-width: 8px 0 8px 8px;
+  border-style: solid;
+  border-color: transparent transparent transparent #0f172a;
+}
+@media (max-width: 900px) {
+  .pw-checklist-balloon {
+    position: static !important;
+    width: 100% !important;
+    margin-top: 10px !important;
+    transform: none !important;
+  }
+  .pw-checklist-balloon::after { display: none !important; }
+}
+
+.pw-checklist { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; padding: 8px 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; animation: fadeInDown 0.25s ease; }
+@keyframes fadeInDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.pw-rule { display: flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 500; transition: color 0.2s ease; }
+.pw-rule.ok  { color: #22c55e; }
+.pw-rule.fail { color: #6b7280; }
+.pw-rule-icon { font-size: 9px; flex-shrink: 0; }
+.pw-rule.ok .pw-rule-icon  { color: #22c55e; }
+.pw-rule.fail .pw-rule-icon { color: #ef4444; }
+

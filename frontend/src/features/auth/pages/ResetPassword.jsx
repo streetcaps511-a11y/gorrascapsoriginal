@@ -5,7 +5,7 @@
 // src/features/auth/pages/ResetPassword.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
-import { FaArrowLeft, FaEye, FaEyeSlash, FaCheckCircle } from "react-icons/fa";
+import { FaArrowLeft, FaEye, FaEyeSlash, FaCheckCircle, FaCheck, FaTimes } from "react-icons/fa";
 import Swal from "sweetalert2";
 import api from "../../shared/services/api";
 import { auth, confirmPasswordReset, verifyPasswordResetCode } from "../../shared/services/firebase";
@@ -21,6 +21,7 @@ const ResetPassword = () => {
   const [confirmarClave, setConfirmarClave] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [isClaveFocused, setIsClaveFocused] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
@@ -37,8 +38,8 @@ const ResetPassword = () => {
     e.preventDefault();
     setError("");
 
-    if (clave.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
+    if (clave.length <= 6 || !/[a-zA-Z]/.test(clave) || !/[0-9]/.test(clave) || !/[^a-zA-Z0-9]/.test(clave)) {
+      setError("La contraseña no cumple con los requisitos de seguridad.");
       return;
     }
 
@@ -88,7 +89,12 @@ const ResetPassword = () => {
       }
     } catch (err) {
       console.error("Error en reset:", err);
-      setError(err.response?.data?.message || "El enlace ha expirado o es inválido. Solicita uno nuevo.");
+      const serverMsg = err.response?.data?.message || err.message;
+      if (serverMsg && (serverMsg.includes("diferente") || serverMsg.includes("actual"))) {
+        setError("La contraseña debe ser diferente a la actual.");
+      } else {
+        setError(serverMsg || "El enlace ha expirado o es inválido. Solicita uno nuevo.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -276,7 +282,39 @@ const ResetPassword = () => {
             <>
               <p style={styles.formSubtitle}>Ingresa tu nueva contraseña para actualizar tu acceso</p>
  
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} style={{ position: 'relative' }}>
+                {/* 🎈 GLOBITO DE VALIDACIÓN AFUERA DEL CUADRO GENERAL */}
+                {(isClaveFocused || clave.length > 0) && (
+                  <div className="password-globito-balloon">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px' }}>
+                      <span style={{ fontSize: '13px' }}>🔐</span>
+                      <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#FFC107', letterSpacing: '0.3px' }}>
+                        Requisitos de seguridad
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      {[
+                        { label: 'Más de 6 caracteres', ok: clave.length > 6 },
+                        { label: 'Al menos una letra', ok: /[a-zA-Z]/.test(clave) },
+                        { label: 'Al menos un número', ok: /[0-9]/.test(clave) },
+                        { label: 'Al menos un carácter especial (!@#$...)', ok: /[^a-zA-Z0-9]/.test(clave) },
+                      ].map((rule, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', fontWeight: 600, color: rule.ok ? '#22c55e' : '#94a3b8', transition: 'all 0.2s' }}>
+                          {rule.ok
+                            ? <FaCheck style={{ fontSize: '9px', color: '#22c55e', flexShrink: 0 }} />
+                            : <FaTimes style={{ fontSize: '9px', color: '#ef4444', flexShrink: 0 }} />}
+                          <span style={{ color: rule.ok ? '#4ade80' : '#cbd5e1' }}>{rule.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {clave.length > 6 && /[a-zA-Z]/.test(clave) && /[0-9]/.test(clave) && /[^a-zA-Z0-9]/.test(clave) && (
+                      <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(34,197,94,0.2)', color: '#22c55e', fontSize: '10.5px', fontWeight: 800, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                        <FaCheck style={{ fontSize: '10px' }} /> ¡Contraseña segura!
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <label style={styles.label}>Contraseña Nueva</label>
                 <div style={styles.inputWrap}>
                   <input
@@ -285,6 +323,8 @@ const ResetPassword = () => {
                     placeholder="••••••••"
                     required
                     value={clave}
+                    onFocus={() => setIsClaveFocused(true)}
+                    onBlur={() => setIsClaveFocused(false)}
                     onChange={(e) => setClave(e.target.value)}
                   />
                   <button type="button" style={styles.eyeBtn} onClick={() => setShowPass(!showPass)}>
@@ -295,7 +335,12 @@ const ResetPassword = () => {
                 <label style={styles.label}>Confirmar Contraseña</label>
                 <div style={styles.inputWrap}>
                   <input
-                    style={styles.input}
+                    style={{
+                      ...styles.input,
+                      borderColor: confirmarClave 
+                        ? (confirmarClave === clave ? '#22c55e' : '#ef4444')
+                        : styles.input.border.split(' ')[2]
+                    }}
                     type={showConfirmPass ? "text" : "password"}
                     placeholder="••••••••"
                     required
@@ -305,6 +350,18 @@ const ResetPassword = () => {
                   <button type="button" style={styles.eyeBtn} onClick={() => setShowConfirmPass(!showConfirmPass)}>
                     {showConfirmPass ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
                   </button>
+
+                  {/* 🎯 Validación en tiempo real cuando la va poniendo */}
+                  {confirmarClave && confirmarClave !== clave && (
+                    <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: '700', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', animation: 'fadeIn 0.2s' }}>
+                      ⚠️ Las contraseñas no coinciden
+                    </span>
+                  )}
+                  {confirmarClave && clave && confirmarClave === clave && (
+                    <span style={{ color: '#22c55e', fontSize: '11px', fontWeight: '700', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', animation: 'fadeIn 0.2s' }}>
+                      ✓ Las contraseñas coinciden
+                    </span>
+                  )}
                 </div>
  
                 {error && <div style={styles.error}>{error}</div>}
@@ -338,6 +395,46 @@ const ResetPassword = () => {
 
         .login-hero-section { flex: 0 0 45%; }
         .login-form-wrapper { flex: 0 0 55%; }
+        .login-form-card { width: 100%; max-width: 400px; position: relative; }
+
+        .password-globito-balloon {
+          position: absolute;
+          right: calc(100% + 20px);
+          top: 30%;
+          transform: translateY(-50%);
+          width: 250px;
+          background: #0f172a;
+          border: 1px solid rgba(245, 200, 27, 0.45);
+          border-radius: 12px;
+          padding: 12px 14px;
+          box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 15px rgba(245, 200, 27, 0.15);
+          z-index: 100;
+          backdrop-filter: blur(8px);
+          animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          box-sizing: border-box;
+        }
+
+        .password-globito-balloon::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          right: -8px;
+          transform: translateY(-50%);
+          border-width: 8px 0 8px 8px;
+          border-style: solid;
+          border-color: transparent transparent transparent #0f172a;
+        }
+
+        .password-globito-balloon::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          right: -10px;
+          transform: translateY(-50%);
+          border-width: 9px 0 9px 9px;
+          border-style: solid;
+          border-color: transparent transparent transparent rgba(245, 200, 27, 0.5);
+        }
 
         @media (max-width: 900px) {
           .login-container-root { flex-direction: column !important; overflow-y: auto !important; }
@@ -345,6 +442,19 @@ const ResetPassword = () => {
           .login-form-wrapper { flex: 0 0 auto !important; padding-right: 0 !important; padding-bottom: 50px !important; }
           .login-form-card { max-width: 90% !important; padding: 20px 25px !important; }
           .back-link { left: 20px !important; top: 20px !important; }
+
+          .password-globito-balloon {
+            position: static !important;
+            width: 100% !important;
+            margin-top: 10px !important;
+            margin-bottom: 12px !important;
+            transform: none !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+          }
+          .password-globito-balloon::after,
+          .password-globito-balloon::before {
+            display: none !important;
+          }
         }
       `}</style>
     </div>

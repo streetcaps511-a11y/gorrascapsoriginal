@@ -316,34 +316,20 @@ export const useProductos = () => {
 
   // 🕵️‍♂️ Detectar si viene un id de producto en la URL para abrir el modal automáticamente
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const prodId = params.get('producto');
-    if (!prodId) return;
-
     if (initialProducts.length > 0) {
-      const found = initialProducts.find(p => String(p.id) === String(prodId));
-      if (found) {
-        const timer = setTimeout(() => {
-          openModal(found);
-        }, 100);
-        return () => clearTimeout(timer);
+      const params = new URLSearchParams(window.location.search);
+      const prodId = params.get('producto');
+      if (prodId) {
+        const found = initialProducts.find(p => String(p.id) === String(prodId));
+        if (found) {
+          // Un pequeño delay para que la transición visual sea suave
+          const timer = setTimeout(() => {
+            openModal(found);
+          }, 100);
+          return () => clearTimeout(timer);
+        }
       }
     }
-
-    // Si no está en initialProducts o aún no han cargado, buscar directamente por ID
-    let isMounted = true;
-    api.get(`/api/productos/${prodId}`)
-      .then(res => {
-        const pData = res?.data?.data;
-        if (isMounted && pData) {
-          openModal(mapProduct(pData));
-        }
-      })
-      .catch(err => {
-        console.warn("No se pudo cargar el producto compartido:", err);
-      });
-
-    return () => { isMounted = false; };
   }, [initialProducts]);
 
   return {

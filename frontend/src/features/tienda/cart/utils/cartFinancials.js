@@ -17,33 +17,31 @@ export const calculateCartFinancials = (cartItems = []) => {
     const qty = parseInt(item.quantity) || 1;
     totalUnits += qty;
 
-    // Precio unitario normal base redondeado
-    const rawNormal = Math.round(parseFloat(item.precioNormal || item.precio_normal || item.precio || 0));
-    const normalPrice = rawNormal > 0 ? rawNormal : Math.round(parseFloat(item.precio || 0));
+    // Precio unitario normal base
+    const rawNormal = parseFloat(item.precioNormal || item.precio_normal || item.precio || 0);
+    const normalPrice = rawNormal > 0 ? rawNormal : parseFloat(item.precio || 0);
 
-    // Precios al por mayor redondeados a enteros
-    const p80 = Math.round(parseFloat(item.precio_mayorista80 || item.precioMayorista80 || 0));
-    const p6 = Math.round(parseFloat(item.precio_mayorista6 || item.precioMayorista6 || 0));
+    // Precios al por mayor
+    const p80 = parseFloat(item.precio_mayorista80 || item.precioMayorista80 || 0);
+    const p6 = parseFloat(item.precio_mayorista6 || item.precioMayorista6 || 0);
     const isWholesale = (qty >= 80 && p80 > 0) || (qty >= 6 && p6 > 0);
     const wholesaleUnitPrice = (qty >= 80 && p80 > 0) ? p80 : ((qty >= 6 && p6 > 0) ? p6 : null);
 
     // Oferta activa (solo si no aplica al por mayor)
     const isOfferActive = !isWholesale && !!(item.enOfertaVenta || item.oferta || item.has_discount || item.hasDiscount || item.is_oferta);
-    const rawOfferPrice = (item.precioOferta != null) ? Math.round(parseFloat(item.precioOferta)) : ((item.precio_descuento != null) ? Math.round(parseFloat(item.precio_descuento)) : null);
+    const rawOfferPrice = (item.precioOferta != null) ? parseFloat(item.precioOferta) : ((item.precio_descuento != null) ? parseFloat(item.precio_descuento) : null);
     const isOffer = isOfferActive && rawOfferPrice != null && rawOfferPrice < normalPrice;
 
     retailSubtotal += normalPrice * qty;
 
     if (isWholesale && wholesaleUnitPrice != null && wholesaleUnitPrice < normalPrice) {
+      hasWholesale = true;
       wholesaleDiscount += (normalPrice - wholesaleUnitPrice) * qty;
     } else if (isOffer && rawOfferPrice != null) {
+      hasOffer = true;
       offerDiscount += (normalPrice - rawOfferPrice) * qty;
     }
   });
-
-  wholesaleDiscount = Math.round(wholesaleDiscount);
-  offerDiscount = Math.round(offerDiscount);
-  retailSubtotal = Math.round(retailSubtotal);
 
   const totalDiscount = offerDiscount + wholesaleDiscount;
   const finalTotal = Math.max(0, retailSubtotal - totalDiscount);

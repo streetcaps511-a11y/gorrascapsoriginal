@@ -9,7 +9,6 @@ import {
   FaShoppingCart,
   FaBan,
   FaLink,
-  FaShareAlt,
   FaCheck,
   FaChevronLeft,
   FaChevronRight,
@@ -69,40 +68,27 @@ const ProductModal = ({
   }, []);
 
   const [fullProduct, setFullProduct] = useState(null);
-  const [loadingFull, setLoadingFull] = useState(false);
-
-  // Reiniciar estado cuando cambia el producto
-  useEffect(() => {
-    setFullProduct(null);
-  }, [product?.id]);
 
   // Cargar info completa: siempre hace fetch si le faltan tallas O descripción
   useEffect(() => {
-    if (!product) return;
+    if (!product || fullProduct) return;
+    // Si ya tiene tallasStock con datos Y descripción real, no hace falta refetch
     const hasTallas = Array.isArray(product.tallasStock) && product.tallasStock.length > 0;
     const hasDesc = product.descripcion && product.descripcion.trim() !== "";
-    if (hasTallas && hasDesc) {
-      setLoadingFull(false);
-      return;
-    }
-    let isMounted = true;
+    if (hasTallas && hasDesc) return;
     const fetchFullData = async () => {
-      setLoadingFull(true);
       try {
         const { getProductoById } = await import('../../../tienda/cart/services/cartApi.js');
         const res = await getProductoById(product.id);
-        if (isMounted && res?.data?.data) {
+        if (res?.data?.data) {
           setFullProduct(res.data.data);
         }
       } catch (err) {
         console.error("Error fetching full product details:", err);
-      } finally {
-        if (isMounted) setLoadingFull(false);
       }
     };
     fetchFullData();
-    return () => { isMounted = false; };
-  }, [product?.id]);
+  }, [product, fullProduct]);
 
   if (!product) return null;
   const displayProduct = fullProduct || product;
@@ -123,6 +109,7 @@ const ProductModal = ({
   const sizes = normalizeSizes(displayProduct);
 
   // Si tenemos datos completos del producto (fullProduct), usamos su tallasStock directo
+  // para no depender del inventory construido desde datos minimal
   const effectiveInventory = fullProduct ? null : inventory;
 
   const getQtyInCartFor = (size) => {
@@ -133,50 +120,31 @@ const ProductModal = ({
     return itemInCart ? Number(itemInCart.quantity || 0) : 0;
   };
 
-  // Lógica de Stock de Base de Datos (Exacta y Case-Insensitive)
+  // Lógica de Stock de Base de Datos (Exacta)
   const getDatabaseStockFor = (size) => {
     let rawAvailable = 0;
-    const targetSize = String(size || '').trim().toLowerCase();
-
-    // 1. Prioridad: tallasStock de displayProduct
-    const tStock = displayProduct.tallasStock;
-    if (tStock) {
-      try {
-        const stockObj = typeof tStock === "string" ? JSON.parse(tStock) : tStock;
-        if (Array.isArray(stockObj)) {
-          const found = stockObj.find(item => String(item?.talla || "").trim().toLowerCase() === targetSize);
-          if (found !== undefined) {
-            return Math.max(0, Number(found?.cantidad || 0));
-          }
-        } else if (stockObj && typeof stockObj === "object") {
-          const key = Object.keys(stockObj).find(k => k.trim().toLowerCase() === targetSize);
-          if (key !== undefined) {
-            return Math.max(0, Number(stockObj[key] ?? 0));
-          }
-        }
-      } catch {
-        // Fallback
-      }
-    }
-
-    // 2. Si hay inventory proveniente del hook (con búsqueda case-insensitive)
     if (effectiveInventory) {
       const pid = String(product.id);
-      const invMap = effectiveInventory[pid];
-      if (invMap && typeof invMap === 'object') {
-        const key = Object.keys(invMap).find(k => k.trim().toLowerCase() === targetSize);
-        if (key !== undefined) {
-          return Math.max(0, Number(invMap[key] ?? 0));
-        }
-        if (invMap._total !== undefined) {
-          return Math.max(0, Number(invMap._total ?? 0));
+      rawAvailable = Math.max(0, Number(effectiveInventory?.[pid]?.[size] ?? 0));
+    } else {
+      // Fallback para vista de Productos
+      if (!displayProduct.tallasStock) {
+        rawAvailable = Number(displayProduct.stock || 0);
+      } else {
+        try {
+          const stockObj = typeof displayProduct.tallasStock === "string" ? JSON.parse(displayProduct.tallasStock) : displayProduct.tallasStock;
+          if (Array.isArray(stockObj)) {
+            const found = stockObj.find(item => String(item.talla || "").toLowerCase() === String(size).toLowerCase());
+            rawAvailable = found ? Number(found.cantidad || 0) : 0;
+          } else {
+            rawAvailable = Number(stockObj[size] ?? 0);
+          }
+        } catch {
+          rawAvailable = Number(displayProduct.stock || 0);
         }
       }
     }
-
-    // 3. Fallback: stock global del producto
-    rawAvailable = Number(displayProduct.stock ?? product?.stock ?? 0);
-    return Math.max(0, rawAvailable);
+    return rawAvailable;
   };
 
   // Lógica de Stock Disponible (Restando carrito)
@@ -195,17 +163,14 @@ const ProductModal = ({
     const globalQtyInCart = cartItems
       ? cartItems.filter(item => String(item.id) === String(product.id)).reduce((acc, item) => acc + Number(item.quantity || 0), 0)
       : 0;
-    return Math.max(0, Number(displayProduct.stock ?? product?.stock ?? 0) - globalQtyInCart);
+    return Math.max(0, Number(displayProduct.stock || 0) - globalQtyInCart);
   };
 
   const totalStock = getProductTotalStockLeft();
-
-  // No mostrar agotado mientras la información detallada esté cargando en segundo plano
-  const dataReady = !loadingFull && (
-    !!fullProduct || 
-    (Array.isArray(product?.tallasStock) && product.tallasStock.length > 0) || 
-    (typeof product?.stock === 'number' && product.stock > 0)
-  );
+  // Only show as agotado once we have complete product data.
+  // If fullProduct is not yet loaded AND the initial product lacks tallasStock,
+  // treat stock as unknown (not agotado) to avoid a false flash.
+  const dataReady = !!fullProduct || (Array.isArray(product?.tallasStock) && product.tallasStock.length > 0) || Number(product?.stock) > 0;
   const isAgotado = dataReady && totalStock <= 0;
   const isQtyDisabled = isAgotado || (sizes.length > 0 && !selectedSize);
 
@@ -267,43 +232,10 @@ const ProductModal = ({
     }
   };
 
-  const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/productos?producto=${product.id}`;
-    const shareData = {
-      title: displayProduct.nombre || 'Gorras Caps Original',
-      text: `Mira ${displayProduct.nombre || 'esta gorra'} en Gorras Caps Original`,
-      url: shareUrl
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-        return;
-      } catch (err) {
-        if (err.name === 'AbortError') return;
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      const input = document.createElement('input');
-      input.value = shareUrl;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand('copy');
-      document.body.removeChild(input);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const formatSizeName = (sz) => {
-    if (!sz) return "";
-    const s = String(sz).trim();
-    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/productos?producto=${product.id}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const hasMayorista = parseFloat(displayProduct.precioMayorista6) > 0;
@@ -314,8 +246,8 @@ const ProductModal = ({
         
         {/* ✅ BOTÓN COMPARTIR CON TOOLTIP (En la posición interna/izquierda) */}
         <div className="gm-modal-btn-tooltip-wrapper" style={{ position: 'absolute', top: '18px', right: '60px', zIndex: 10 }}>
-          <button className="gm-share-simple-btn" onClick={handleShare} type="button" aria-label="Compartir producto">
-            {copied ? <FaCheck size={16} /> : <FaShareAlt size={16} />}
+          <button className="gm-share-simple-btn" onClick={handleCopyLink} type="button" aria-label="Copiar enlace del producto">
+            {copied ? <FaCheck size={16} /> : <FaLink size={16} />}
           </button>
           <span className="gm-modal-btn-tooltip">Compartir</span>
         </div>
@@ -450,25 +382,21 @@ const ProductModal = ({
               <div className="gm-sizes">
                 <div className="gm-sizes-head"><span className="gm-sizes-label">Talla: </span></div>
                 <div className="gm-sizes-wrap">
-                  {sizes.map((t) => {
-                    const dbStock = getDatabaseStockFor(t);
-                    const isOutOfStock = dbStock <= 0;
-                    return (
-                      <div key={t} className="gm-size-chip-container">
-                        <div className="gm-size-tooltip">{isOutOfStock ? "Agotado" : `Disp: ${dbStock}`}</div>
-                        <button 
-                          type="button" 
-                          disabled={isOutOfStock}
-                          className={`gm-size-chip ${selectedSize === t ? "is-selected" : ""} ${isOutOfStock ? "is-disabled" : ""}`} 
-                          onClick={() => {
-                            if (!isOutOfStock) handleSizeSelect(t);
-                          }}
-                        >
-                          {formatSizeName(t)}
-                        </button>
-                      </div>
-                    );
-                  })}
+                  {sizes
+                    .filter((t) => {
+                      // ✅ Solo mostrar tallas con stock disponible (no mostrar agotadas)
+                      const dbStock = getDatabaseStockFor(t);
+                      return dbStock > 0;
+                    })
+                    .map((t) => {
+                      const dbStock = getDatabaseStockFor(t);
+                      return (
+                        <div key={t} className="gm-size-chip-container">
+                          <div className="gm-size-tooltip">{`Disp: ${dbStock}`}</div>
+                          <button type="button" className={`gm-size-chip ${selectedSize === t ? "is-selected" : ""}`} onClick={() => handleSizeSelect(t)}>{t}</button>
+                        </div>
+                      );
+                    })}
                 </div>
                 {showSizeError && <div className="gm-size-error-msg">⚠️ Selecciona una talla</div>}
               </div>

@@ -89,7 +89,7 @@ const ConfirmPurchaseModal = ({
             fontWeight: '800',
             margin: '12px 0'
           }}>
-            ${Math.round(total).toLocaleString('es-CO')}
+            ${total.toLocaleString()}
           </div>
           <p style={{
             color: '#94a3b8',

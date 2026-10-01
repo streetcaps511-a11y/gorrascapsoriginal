@@ -5,7 +5,7 @@
 // src/features/auth/pages/Login.jsx
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaArrowLeft, FaEye, FaEyeSlash, FaCheck, FaTimes } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { useAuth } from "../../shared/contexts";
 import SessionConflictModal from "../../shared/components/SessionConflictModal";
@@ -48,6 +48,7 @@ const Login = () => {
   const [showLoginPass, setShowLoginPass] = useState(false);
   const [showRegPass, setShowRegPass] = useState(false);
   const [showRegConfirmPass, setShowRegConfirmPass] = useState(false);
+  const [isClaveFocused, setIsClaveFocused] = useState(false);
 
   // ─── Verificación de PIN ─────────────────────────
   const [pinVerification, setPinVerification] = useState(false);
@@ -1031,39 +1032,102 @@ const Login = () => {
                     {fieldErrors.correo && <span style={styles.fieldError}>⚠️ {fieldErrors.correo}</span>}
                   </div>
 
-                  <div className="login-input-row">
-                    <div style={{ flex: 1 }}>
-                      <label style={styles.label}>Contraseña</label>
-                      <div style={styles.inputWrap}>
-                        <input
-                          style={{ ...styles.input, paddingRight: '40px', borderColor: fieldErrors.clave ? '#ff4d4d' : styles.input.border.split(' ')[2], marginBottom: 0 }}
-                          type={showRegPass ? "text" : "password"}
-                          autoComplete="new-password"
-                          placeholder="Crea una clave..."
-                          value={registerData.clave}
-                          onChange={(e) => setRegisterData({ ...registerData, clave: e.target.value })}
-                        />
-                        <button type="button" style={styles.eyeBtn} onClick={() => setShowRegPass(!showRegPass)}>
-                          {showRegPass ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
-                        </button>
-                        {fieldErrors.clave && <span style={styles.fieldError}>⚠️ {fieldErrors.clave}</span>}
+                  {/* Contraseña */}
+                  <div style={{ marginBottom: '10px', position: 'relative' }}>
+                    {/* 🎈 GLOBITO DE VALIDACIÓN AFUERA DEL CUADRO GENERAL */}
+                    {(isClaveFocused || registerData.clave.length > 0) && (
+                      <div className="password-globito-balloon">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px' }}>
+                          <span style={{ fontSize: '13px' }}>🔐</span>
+                          <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#FFC107', letterSpacing: '0.3px' }}>
+                            Requisitos de seguridad
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                          {[
+                            { label: 'Más de 6 caracteres', ok: registerData.clave.length > 6 },
+                            { label: 'Al menos una letra', ok: /[a-zA-Z]/.test(registerData.clave) },
+                            { label: 'Al menos un número', ok: /[0-9]/.test(registerData.clave) },
+                            { label: 'Al menos un carácter especial (!@#$...)', ok: /[^a-zA-Z0-9]/.test(registerData.clave) },
+                          ].map((rule, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', fontWeight: 600, color: rule.ok ? '#22c55e' : '#94a3b8', transition: 'all 0.2s' }}>
+                              {rule.ok
+                                ? <FaCheck style={{ fontSize: '9px', color: '#22c55e', flexShrink: 0 }} />
+                                : <FaTimes style={{ fontSize: '9px', color: '#ef4444', flexShrink: 0 }} />}
+                              <span style={{ color: rule.ok ? '#4ade80' : '#cbd5e1' }}>{rule.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {registerData.clave.length > 6 && /[a-zA-Z]/.test(registerData.clave) && /[0-9]/.test(registerData.clave) && /[^a-zA-Z0-9]/.test(registerData.clave) && (
+                          <div style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid rgba(34,197,94,0.2)', color: '#22c55e', fontSize: '10.5px', fontWeight: 800, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                            <FaCheck style={{ fontSize: '10px' }} /> ¡Contraseña segura!
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={styles.label}>Confirmar contraseña</label>
-                      <div style={styles.inputWrap}>
-                        <input
-                          style={{ ...styles.input, paddingRight: '40px', borderColor: fieldErrors.confirmarClave ? '#ff4d4d' : styles.input.border.split(' ')[2], marginBottom: 0 }}
-                          type={showRegConfirmPass ? "text" : "password"}
-                          autoComplete="new-password"
-                          placeholder="Repite tu clave..."
-                          value={registerData.confirmarClave}
-                          onChange={(e) => setRegisterData({ ...registerData, confirmarClave: e.target.value })}
-                        />
-                        <button type="button" style={styles.eyeBtn} onClick={() => setShowRegConfirmPass(!showRegConfirmPass)}>
-                          {showRegConfirmPass ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
-                        </button>
-                        {fieldErrors.confirmarClave && <span style={styles.fieldError}>⚠️ {fieldErrors.confirmarClave}</span>}
+                    )}
+
+                    <div className="login-input-row">
+                      <div style={{ flex: 1 }}>
+                        <label style={styles.label}>Contraseña</label>
+                        <div style={styles.inputWrap}>
+                          <input
+                            style={{ 
+                              ...styles.input, 
+                              paddingRight: '40px', 
+                              borderColor: fieldErrors.clave ? '#ff4d4d' : styles.input.border.split(' ')[2], 
+                              marginBottom: 0 
+                            }}
+                            type={showRegPass ? "text" : "password"}
+                            autoComplete="new-password"
+                            placeholder="Crea una clave..."
+                            value={registerData.clave}
+                            onFocus={() => setIsClaveFocused(true)}
+                            onBlur={() => setIsClaveFocused(false)}
+                            onChange={(e) => setRegisterData({ ...registerData, clave: e.target.value })}
+                          />
+                          <button type="button" style={styles.eyeBtn} onClick={() => setShowRegPass(!showRegPass)}>
+                            {showRegPass ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                          </button>
+                          {fieldErrors.clave && <span style={styles.fieldError}>⚠️ {fieldErrors.clave}</span>}
+                        </div>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={styles.label}>Confirmar contraseña</label>
+                        <div style={styles.inputWrap}>
+                          <input
+                            style={{ 
+                              ...styles.input, 
+                              paddingRight: '40px', 
+                              borderColor: registerData.confirmarClave 
+                                ? (registerData.confirmarClave === registerData.clave ? '#22c55e' : '#ef4444')
+                                : (fieldErrors.confirmarClave ? '#ff4d4d' : styles.input.border.split(' ')[2]), 
+                              marginBottom: 0 
+                            }}
+                            type={showRegConfirmPass ? "text" : "password"}
+                            autoComplete="new-password"
+                            placeholder="Repite tu clave..."
+                            value={registerData.confirmarClave}
+                            onChange={(e) => setRegisterData({ ...registerData, confirmarClave: e.target.value })}
+                          />
+                          <button type="button" style={styles.eyeBtn} onClick={() => setShowRegConfirmPass(!showRegConfirmPass)}>
+                            {showRegConfirmPass ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                          </button>
+                          
+                          {/* 🎯 Validación en tiempo real cuando la va poniendo */}
+                          {registerData.confirmarClave && registerData.confirmarClave !== registerData.clave && (
+                            <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: '700', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', animation: 'fadeIn 0.2s' }}>
+                              ⚠️ Las contraseñas no coinciden
+                            </span>
+                          )}
+                          {registerData.confirmarClave && registerData.clave && registerData.confirmarClave === registerData.clave && (
+                            <span style={{ color: '#22c55e', fontSize: '11px', fontWeight: '700', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', animation: 'fadeIn 0.2s' }}>
+                              ✓ Las contraseñas coinciden
+                            </span>
+                          )}
+                          {!registerData.confirmarClave && fieldErrors.confirmarClave && (
+                            <span style={styles.fieldError}>⚠️ {fieldErrors.confirmarClave}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1158,6 +1222,24 @@ const Login = () => {
                 />
                 {fieldErrors.clave && <span style={styles.fieldError}>⚠️ {fieldErrors.clave}</span>}
               </div>
+              {/* ✅ CHECKLIST RECUPERAR CONTRASEÑA */}
+              {registerData.clave && (
+                <div style={{ display:'flex', flexDirection:'column', gap:'4px', marginBottom:'10px', padding:'8px 10px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'8px', animation:'fadeIn 0.2s ease' }}>
+                  {[
+                    { label: 'Más de 6 caracteres',                    ok: registerData.clave.length > 6 },
+                    { label: 'Al menos una letra',                      ok: /[a-zA-Z]/.test(registerData.clave) },
+                    { label: 'Al menos un número',                      ok: /[0-9]/.test(registerData.clave) },
+                    { label: 'Al menos un carácter especial (!@#$...)', ok: /[^a-zA-Z0-9]/.test(registerData.clave) },
+                  ].map((rule, i) => (
+                    <div key={i} style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'10.5px', fontWeight:500, color: rule.ok ? '#22c55e' : '#6b7280', transition:'color 0.2s' }}>
+                      {rule.ok
+                        ? <FaCheck style={{ fontSize:'9px', color:'#22c55e', flexShrink:0 }} />
+                        : <FaTimes style={{ fontSize:'9px', color:'#ef4444', flexShrink:0 }} />}
+                      <span>{rule.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <label style={styles.label}>Repetir Contraseña</label>
               <div style={styles.inputWrap}>
@@ -1279,8 +1361,47 @@ const Login = () => {
 
         .login-hero-section { flex: 0 0 45%; }
         .login-form-wrapper { flex: 0 0 55%; }
-        .login-form-card { width: 100%; max-width: 400px; }
+        .login-form-card { width: 100%; max-width: 400px; position: relative; }
         .login-input-row { display: flex; gap: 12px; width: 100%; }
+
+        .password-globito-balloon {
+          position: absolute;
+          right: calc(100% + 20px);
+          top: 50%;
+          transform: translateY(-50%);
+          width: 250px;
+          background: #0f172a;
+          border: 1px solid rgba(245, 200, 27, 0.45);
+          border-radius: 12px;
+          padding: 12px 14px;
+          box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 15px rgba(245, 200, 27, 0.15);
+          z-index: 100;
+          backdrop-filter: blur(8px);
+          animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          box-sizing: border-box;
+        }
+
+        .password-globito-balloon::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          right: -8px;
+          transform: translateY(-50%);
+          border-width: 8px 0 8px 8px;
+          border-style: solid;
+          border-color: transparent transparent transparent #0f172a;
+        }
+
+        .password-globito-balloon::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          right: -10px;
+          transform: translateY(-50%);
+          border-width: 9px 0 9px 9px;
+          border-style: solid;
+          border-color: transparent transparent transparent rgba(245, 200, 27, 0.5);
+        }
 
         @media (max-width: 900px) {
           .login-input-row { flex-direction: column; gap: 0; }
@@ -1288,6 +1409,19 @@ const Login = () => {
           .login-hero-section { flex: 0 0 auto !important; padding: 60px 20px 30px 20px !important; }
           .login-form-wrapper { flex: 0 0 auto !important; padding-right: 0 !important; padding-bottom: 50px !important; }
           .login-form-card { max-width: 90% !important; padding: 20px 25px !important; }
+
+          .password-globito-balloon {
+            position: static !important;
+            width: 100% !important;
+            margin-top: 10px !important;
+            margin-bottom: 8px !important;
+            transform: none !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+          }
+          .password-globito-balloon::after,
+          .password-globito-balloon::before {
+            display: none !important;
+          }
         }
 
         input:-webkit-autofill,

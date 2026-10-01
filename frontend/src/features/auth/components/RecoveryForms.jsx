@@ -3,8 +3,33 @@
    Recibe información a través de 'props' y notifica eventos hacia arriba (a la Página principal). */
 
 import React from 'react';
-import { FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaArrowLeft, FaEye, FaEyeSlash, FaCheck, FaTimes } from "react-icons/fa";
 import '../styles/RecoveryForms.css';
+
+// Reglas de contraseña (igual que en Registro)
+const passwordRules = [
+  { id: 'length',  label: 'Más de 6 caracteres',                    test: (p) => p.length > 6 },
+  { id: 'letter',  label: 'Al menos una letra',                      test: (p) => /[a-zA-Z]/.test(p) },
+  { id: 'number',  label: 'Al menos un número',                      test: (p) => /[0-9]/.test(p) },
+  { id: 'special', label: 'Al menos un carácter especial (!@#$...)', test: (p) => /[^a-zA-Z0-9]/.test(p) },
+];
+
+const PasswordChecklist = ({ password }) => {
+  if (!password) return null;
+  return (
+    <div className="pw-checklist">
+      {passwordRules.map(rule => {
+        const ok = rule.test(password);
+        return (
+          <div key={rule.id} className={`pw-rule ${ok ? 'ok' : 'fail'}`}>
+            {ok ? <FaCheck className="pw-rule-icon" /> : <FaTimes className="pw-rule-icon" />}
+            <span>{rule.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 export const RecoverPasswordForm = ({ 
   recoverTo, 
@@ -94,6 +119,8 @@ export const ResetPasswordForm = ({
             {showNewPass ? <FaEyeSlash /> : <FaEye />}
           </button>
         </div>
+        {/* Checklist de seguridad de contraseña */}
+        <PasswordChecklist password={newPassData.pass} />
       </div>
       <div className="input-field-group">
         <label>Confirmar Nueva Contraseña</label>

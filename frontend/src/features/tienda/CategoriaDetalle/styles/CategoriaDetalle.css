@@ -43,7 +43,7 @@
 /* ===== BADGE CORNERS (shared between ProductCard + ProductModal) ===== */
 .gm-img-badge-corner { position: absolute; top: 10px; left: 10px; z-index: 4; padding: 4px 10px; border-radius: 6px; font-size: 0.68rem; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
 .gm-img-badge-corner.agotado { background: #dc2626 !important; color: #fff !important; opacity: 1 !important; border: none !important; font-weight: 900 !important; }
-.gm-img-badge-corner.oferta { background: rgba(245, 200, 27, 0.9); color: #000; border: 1px solid rgba(245, 200, 27, 0.5); }
+.gm-img-badge-corner.oferta { left: 10px !important; right: auto !important; background: rgba(245, 200, 27, 0.9); color: #000; border: 1px solid rgba(245, 200, 27, 0.5); }
 /* ===== RESPONSIVE BREAKPOINTS ===== */
 /* Tablet grande - mantener sidebar, reducir columnas */
 @media (max-width:1150px) { .gm-products-grid { grid-template-columns: repeat(3, 1fr); } }

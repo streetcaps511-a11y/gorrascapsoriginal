@@ -486,7 +486,10 @@ const authController = {
                 return res.status(401).json({ success: false, message: 'Usuario no identificado en el sistema' });
             }
 
-            // console.log(`🔑 [DEBUG AUTH] Cambiando clave para: ${user.email}`);
+            // Validar que no sea igual a la actual
+            if (user.clave && (await user.validarClave(newPwd))) {
+                return res.status(400).json({ success: false, message: 'La contraseña debe ser diferente a la actual' });
+            }
 
             // Actualizar directamente para evitar re-validaciones que puedan fallar
             user.clave = newPwd;
@@ -569,6 +572,10 @@ const authController = {
             const user = await Usuario.findOne({ where: { email: email.toLowerCase().trim() } });
             if (!user) {
                 return res.status(404).json({ success: false, message: 'Usuario no encontrado en SQL' });
+            }
+
+            if (user.clave && (await user.validarClave(password))) {
+                return res.status(400).json({ success: false, message: 'La contraseña debe ser diferente a la actual' });
             }
 
             user.clave = password; // El hook beforeUpdate se encargará de encriptarla
