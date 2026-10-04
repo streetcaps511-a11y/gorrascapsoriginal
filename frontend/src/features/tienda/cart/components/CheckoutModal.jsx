@@ -48,7 +48,6 @@ const CheckoutModal = ({
   const [showRemoveReceiptConfirm, setShowRemoveReceiptConfirm] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showAddressConfirmPrompt, setShowAddressConfirmPrompt] = useState(false);
-
   const paymentSectionRef = useRef(null);
   const deliverySectionRef = useRef(null);
   const addressSectionRef = useRef(null);
@@ -71,6 +70,7 @@ const CheckoutModal = ({
   const isDelivery = deliveryType === 'envio';
   const isNacional = deliveryType === 'nacional';
   const shippingText = !deliveryType ? 'Por seleccionar' : isPickup ? 'Recoger en local (Sin costo)' : isNacional ? 'Envío Nacional (Por coordinar)' : 'Envío local a domicilio (Por coordinar)';
+
   const scrollToPayment = () => paymentSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   const handleShare = async () => {
@@ -109,6 +109,12 @@ const CheckoutModal = ({
     setShowConfirmModal(true);
   };
 
+  // ✅ Calcular total de unidades y determinar tipo de descuento
+  const totalUnits = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  const discountTier = totalUnits >= 60 ? 60 : totalUnits >= 6 ? 6 : 0;
+  const discountLabel = discountTier === 60 ? '+60 unidades' : discountTier === 6 ? '+6 unidades' : '';
+  const isVentaNormal = discountTier === 0;
+
   // === VISTA COMPLETA: EDITAR DIRECCIÓN (MÓVIL) ===
   const renderAddressEditView = () => (
     <div className="gm-full-view">
@@ -120,9 +126,7 @@ const CheckoutModal = ({
           <h2 className="gm-full-title"> <FaMapMarkerAlt color="#F5C81B" size={18} /> Editar Dirección y Contacto </h2>
           <div className="gm-full-spacer" />
         </div>
-
         <div className="gm-full-body">
-          {/* Correo */}
           <div className="gm-full-field">
             <label className="gm-full-label"> <FaEnvelope size={12} /> Correo electrónico <span className="gm-required">*</span> </label>
             <div className="gm-full-input-wrapper">
@@ -131,8 +135,6 @@ const CheckoutModal = ({
             </div>
             {addressErrors.email && <p className="gm-full-error">⚠️ {addressErrors.email}</p>}
           </div>
-
-          {/* Nombre y Teléfono */}
           <div className="gm-full-row">
             <div className="gm-full-field">
               <label className="gm-full-label"> <FaUser size={12} /> Nombre completo <span className="gm-required">*</span> </label>
@@ -151,8 +153,6 @@ const CheckoutModal = ({
               {addressErrors.telefono && <p className="gm-full-error">⚠️ {addressErrors.telefono}</p>}
             </div>
           </div>
-
-          {/* Departamento y Ciudad */}
           <div className="gm-full-row">
             <div className="gm-full-field">
               <label className="gm-full-label"> <FaBuilding size={12} /> Departamento <span className="gm-required">*</span> </label>
@@ -160,7 +160,7 @@ const CheckoutModal = ({
                 <input type="text" value={addrForm.departamento} onChange={e => { setAddrForm(p => ({ ...p, departamento: e.target.value })); setAddressErrors(p => ({ ...p, departamento: '' })); }} placeholder="Ej: Antioquia" className={`gm-full-input ${addressErrors.departamento ? 'has-error' : ''}`} />
                 {addrForm.departamento && <button type="button" onClick={() => setAddrForm(p => ({ ...p, departamento: '' }))} className="gm-full-clear-btn"> <FaTimes size={12} /> </button>}
               </div>
-              {addressErrors.departamento && <p className="gm-full-error">⚠️ {addressErrors.departamento}</p>}
+              {addressErrors.departamento && <p className="gm-full-error">️ {addressErrors.departamento}</p>}
             </div>
             <div className="gm-full-field">
               <label className="gm-full-label"> <FaCity size={12} /> Municipio / Ciudad <span className="gm-required">*</span> </label>
@@ -171,8 +171,6 @@ const CheckoutModal = ({
               {addressErrors.ciudad && <p className="gm-full-error">⚠️ {addressErrors.ciudad}</p>}
             </div>
           </div>
-
-          {/* Dirección */}
           <div className="gm-full-field">
             <label className="gm-full-label"> <FaHome size={12} /> Dirección de entrega <span className="gm-required">*</span> </label>
             <div className="gm-full-input-wrapper">
@@ -181,18 +179,14 @@ const CheckoutModal = ({
             </div>
             {addressErrors.direccion && <p className="gm-full-error">⚠️ {addressErrors.direccion}</p>}
           </div>
-
-          {/* Fachada */}
           <div className="gm-full-field">
             <label className="gm-full-label"> <FaMapMarkerAlt size={12} /> Detalles de la fachada <span className="gm-required">*</span> </label>
             <div className="gm-full-input-wrapper">
               <input type="text" value={addrForm.fachada} onChange={e => { setAddrForm(p => ({ ...p, fachada: e.target.value })); setAddressErrors(p => ({ ...p, fachada: '' })); }} placeholder="Ej: Casa blanca de dos pisos..." className={`gm-full-input ${addressErrors.fachada ? 'has-error' : ''}`} />
               {addrForm.fachada && <button type="button" onClick={() => setAddrForm(p => ({ ...p, fachada: '' }))} className="gm-full-clear-btn"> <FaTimes size={12} /> </button>}
             </div>
-            {addressErrors.fachada ? <p className="gm-full-error">⚠️ {addressErrors.fachada}</p> : <span className="gm-full-hint">Información clave para que el domiciliario ubique tu casa.</span>}
+            {addressErrors.fachada ? <p className="gm-full-error">️ {addressErrors.fachada}</p> : <span className="gm-full-hint">Información clave para que el domiciliario ubique tu casa.</span>}
           </div>
-
-          {/* ✅ BOTONES DENTRO DEL BODY (NO FIJOS) */}
           <div className="gm-full-inline-actions">
             <button type="button" onClick={handleResetAddressForm} className="gm-full-undo-btn"> <FaUndo size={14} /> <span>Restablecer</span> </button>
             <button onClick={() => { setShowAddressModal(false); setAddressErrors({}); }} className="gm-full-cancel-btn">Cancelar</button>
@@ -211,10 +205,9 @@ const CheckoutModal = ({
           <button onClick={() => setShowProductsDetailModal(false)} className="gm-full-back-btn">
             <FaArrowLeft size={16} /> <span>Volver</span>
           </button>
-          <h2 className="gm-full-title"> <FaShoppingBag color="#F5C81B" size={18} /> Productos del Pedido ({cartItems.length}) </h2>
+          <h2 className="gm-full-title"> <FaShoppingBag color="#F5C81B" size={18} /> Productos del pedido ({cartItems.length}) </h2>
           <div className="gm-full-spacer" />
         </div>
-
         <div className="gm-full-body">
           {cartItems.map((item, index) => {
             const name = gPN ? gPN(item) : (item.nombre || 'Gorra');
@@ -223,7 +216,7 @@ const CheckoutModal = ({
             const img = Array.isArray(item.imagenes) && item.imagenes[0] ? item.imagenes[0] : (item.imagen || item.safeImg || 'https://placehold.co/100x100?text=Gorra');
             return (
               <div key={index} className="gm-checkout-product-card">
-                <div className="gm-checkout-product-img-wrapper" onClick={() => { setShowProductsDetailModal(false); setExpandedProductImage(img); }}>
+                <div className="gm-checkout-product-img-wrapper">
                   <img src={img} alt={name} className="gm-checkout-product-img" />
                 </div>
                 <div className="gm-checkout-product-details">
@@ -231,30 +224,15 @@ const CheckoutModal = ({
                   <span className="gm-product-qty-badge">x{qty}</span>
                 </div>
                 <div className="gm-checkout-product-subtotal-block">
-                  <span className="gm-checkout-product-subtotal-price">${(price * qty).toLocaleString('es-CO')}</span>
-                  {qty > 1 && <span style={{ fontSize: '10px', color: '#64748b' }}>${price.toLocaleString('es-CO')} c/u</span>}
+                  <span className="gm-checkout-product-subtotal-price">${Math.floor(price * qty).toLocaleString('es-CO')}</span>
                 </div>
               </div>
             );
           })}
-
-          {/* ✅ TOTAL DENTRO DEL BODY, DEBAJO DEL ÚLTIMO PRODUCTO */}
           <div className="gm-full-inline-total">
             <div className="gm-full-inline-total-row">
               <span className="gm-full-inline-total-label">Total</span>
               <strong className="gm-full-inline-total-value">${Math.floor(subtotal).toLocaleString('es-CO')}</strong>
-            </div>
-          </div>
-
-          {/* ✅ FOOTER CON DIRECCIÓN Y TELÉFONO */}
-          <div className="gm-products-summary-footer">
-            <div className="gm-products-summary-footer-row">
-              <FaMapMarkerAlt size={11} color="#FFC107" />
-              <span>{isPickup ? 'Retiro en punto físico' : (addrForm.direccion || address || 'Sin dirección')}</span>
-            </div>
-            <div className="gm-products-summary-footer-row">
-              <FaPhoneAlt size={11} color="#FFC107" />
-              <span>{addrForm.telefono || phone || '—'}</span>
             </div>
           </div>
         </div>
@@ -269,10 +247,9 @@ const CheckoutModal = ({
     <div className="gm-checkout-wrapper">
       <div className="gm-checkout-top-nav" style={{ marginBottom: '18px' }}>
         <div className="gm-checkout-breadcrumb">
-          <span>Carrito</span> <span>&gt;</span> <span style={{ color: '#F5C81B', fontWeight: '800' }}>Finalizar compra</span> <span>&gt;</span> <span>Pagar</span> <span>&gt;</span> <span>Pedido completo</span>
+          <span>Carrito</span> <span>›</span> <span style={{ color: '#F5C81B', fontWeight: '800' }}>Finalizar compra</span> <span>›</span> <span>Pagar</span> <span>›</span> <span>Pedido completo</span>
         </div>
       </div>
-
       <div className="gm-hero" style={{ background: 'transparent', borderRadius: '16px', overflow: 'hidden', marginBottom: '22px' }}>
         <div className="gm-hero-bg" style={{ background: `radial-gradient(circle at 25% 25%, rgba(255,215,0, 0.10), transparent 55%), linear-gradient(90deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.60) 50%, rgba(0,0,0,0.85) 100%), url("https://res.cloudinary.com/dm8696z6p/image/upload/v1740927653/Banner_3_1_d9o2ay.png")`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'saturate(1.05) contrast(1.02)' }} />
         <div className="gm-hero-fade-top" />
@@ -282,11 +259,9 @@ const CheckoutModal = ({
           <p className="gm-hero-sub" style={{ color: '#cbd5e1' }}>Revisa tus datos de entrega y selecciona tu método de pago</p>
         </div>
       </div>
-
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
         <button onClick={onClose} className="gm-checkout-back-btn"><FaArrowLeft size={13} /><span className="gm-btn-label-full">Volver al carrito</span></button>
       </div>
-
       <div className="gm-checkout-layout">
         <div className="gm-checkout-main">
           <div className="gm-checkout-unified-card">
@@ -295,20 +270,30 @@ const CheckoutModal = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <FaMapMarkerAlt color="#FFC107" size={18} />
-                  <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>Dirección de Envío y Contacto</h2>
+                  <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff', display: 'inline-flex', alignItems: 'center' }}>Dirección de envío y contacto</h2>
                 </div>
                 <button onClick={() => setShowAddressModal(true)} className="gm-checkout-edit-btn"><FaEdit size={12} /><span className="gm-edit-btn-text">Editar datos</span></button>
               </div>
               {addressError && <div className="gm-alert-error">⚠️ {addressError}</div>}
               {phoneError && <div className="gm-alert-error">⚠️ {phoneError}</div>}
-              <div className="gm-checkout-info-grid" style={{ gridTemplateColumns: '1fr', gap: '8px', marginTop: '6px' }}>
+              <div className="gm-checkout-info-grid-3">
                 <div className="gm-checkout-info-item">
-                  <label className="gm-checkout-info-label">Dirección de entrega</label>
-                  <div className="gm-checkout-info-value">{isPickup ? 'Retiro en punto físico GM CAPS' : (addrForm.direccion || address || '—')}</div>
+                  <label className="gm-checkout-info-label">Correo electrónico</label>
+                  <div className="gm-checkout-info-value">{addrForm.email || user?.correo || user?.email || '—'}</div>
+                </div>
+                <div className="gm-checkout-info-item">
+                  <label className="gm-checkout-info-label">Nombre del destinatario</label>
+                  <div className="gm-checkout-info-value">{addrForm.nombre || user?.nombre || user?.nombreCompleto || '—'}</div>
                 </div>
                 <div className="gm-checkout-info-item">
                   <label className="gm-checkout-info-label">Teléfono</label>
                   <div className="gm-checkout-info-value">{addrForm.telefono || phone || '—'}</div>
+                </div>
+              </div>
+              <div className="gm-checkout-info-grid" style={{ gridTemplateColumns: '1fr', gap: '8px', marginTop: '12px' }}>
+                <div className="gm-checkout-info-item">
+                  <label className="gm-checkout-info-label">Dirección de entrega</label>
+                  <div className="gm-checkout-info-value">{isPickup ? 'Retiro en punto físico GM CAPS' : (addrForm.direccion || address || '—')}</div>
                 </div>
               </div>
               {editSuccessAlert && <div className="gm-alert-success"><FaCheckCircle size={13} /> Información editada con éxito</div>}
@@ -319,7 +304,7 @@ const CheckoutModal = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <FaShoppingBag color="#FFC107" size={18} />
-                  <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>Productos del Pedido ({cartItems.length})</h2>
+                  <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800', color: '#fff' }}>Productos del pedido ({cartItems.length})</h2>
                 </div>
                 <button type="button" onClick={() => setShowProductsDetailModal(true)} className="gm-checkout-edit-btn gm-products-btn-desktop-only"><FaEye size={12} /><span className="gm-edit-btn-text">Ver detalles</span></button>
               </div>
@@ -342,13 +327,13 @@ const CheckoutModal = ({
 
             {/* === SECCIÓN TIPO DE ENVÍO === */}
             <section ref={deliverySectionRef} className={`gm-checkout-unified-section ${deliveryTypeError ? 'gm-shipping-error-banner' : ''}`} style={{ border: deliveryTypeError ? '1.5px solid #ff4d4d' : undefined }}>
-              <h2 style={{ margin: '0 0 14px 0', fontSize: '16px', fontWeight: '900', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}><FaTruck color="#F5C81B" size={16} /> Seleccione Tipo de Envío</h2>
+              <h2 style={{ margin: '0 0 14px 0', fontSize: '16px', fontWeight: '900', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}><FaTruck color="#F5C81B" size={16} /> Seleccione tipo de envío</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {[['envio', 'Envío a Domicilio (Urbano)', 'Entrega directa a tu dirección registrada', 'Por Coordinar'], ['nacional', 'Envío Nacional (Intermunicipal)', 'Despacho por transportadora a cualquier ciudad', 'Por Coordinar'], ['recoger', 'Recoger en Tienda Física', 'Retira personalmente tu paquete sin ningún costo', 'GRATIS']].map(([type, title, desc, price]) => (
+                {[['envio', 'Envío a domicilio (urbano)', 'Entrega directa a tu dirección registrada', 'Por coordinar'], ['nacional', 'Envío nacional (intermunicipal)', 'Despacho por transportadora a cualquier ciudad', 'Por coordinar'], ['recoger', 'Recoger en tienda física', 'Retira personalmente tu paquete sin ningún costo', 'GRATIS']].map(([type, title, desc, price]) => (
                   <label key={type} onClick={() => { setDeliveryType(type); setDeliveryTypeError(''); if (type === 'recoger') setAddressError(''); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderRadius: '10px', background: deliveryType === type ? 'rgba(255, 255, 255, 0.04)' : '#070b14', border: '1px solid rgba(255, 255, 255, 0.06)', borderLeft: deliveryType === type ? '4px solid #F5C81B' : '4px solid transparent', cursor: 'pointer', transition: 'all 0.2s' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: deliveryType === type ? '5px solid #F5C81B' : '2px solid #64748b', background: '#000', boxSizing: 'border-box' }} />
-                      <div><strong style={{ fontSize: '13px', color: '#fff', display: 'block' }}>{title}</strong><span style={{ fontSize: '11px', color: '#94a3b8' }}>{desc}</span></div>
+                      <div><strong style={{ fontSize: '13px', color: '#fff', display: 'block', textTransform: 'capitalize' }}>{title}</strong><span style={{ fontSize: '11px', color: '#94a3b8' }}>{desc}</span></div>
                     </div>
                     <span style={{ fontSize: '12px', color: '#10B981', fontWeight: '700' }}>{price}</span>
                   </label>
@@ -359,7 +344,7 @@ const CheckoutModal = ({
 
             {/* === SECCIÓN FORMA DE PAGO === */}
             <section id="seccion-formas-de-pago" ref={paymentSectionRef} className="gm-checkout-unified-section gm-checkout-unified-section-last">
-              <h2 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '900', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}><FaReceipt color="#F5C81B" /> Forma De Pago</h2>
+              <h2 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '900', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}><FaReceipt color="#F5C81B" /> Forma de pago</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '22px' }}>
                 {PAYMENT_METHODS.map(m => (
                   <label key={m.id} onClick={() => { setSelectedMethod(m.id); setMethodError(''); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderRadius: '10px', background: selectedMethod === m.id ? 'rgba(255, 255, 255, 0.04)' : '#070b14', border: '1px solid rgba(255, 255, 255, 0.06)', borderLeft: selectedMethod === m.id ? '4px solid #F5C81B' : '4px solid transparent', cursor: 'pointer', transition: 'all 0.2s' }}>
@@ -372,8 +357,7 @@ const CheckoutModal = ({
                   </label>
                 ))}
               </div>
-              {methodError && <p style={{ color: '#ff4d4d', fontSize: '12px', fontWeight: '700', margin: '-10px 0 16px 0' }}>️ {methodError}</p>}
-
+              {methodError && <p style={{ color: '#ff4d4d', fontSize: '12px', fontWeight: '700', margin: '-10px 0 16px 0' }}>⚠️ {methodError}</p>}
               {(selectedMethod === 'nequi' || selectedMethod === 'bancolombia') && currentMethod && (
                 <div style={{ padding: '22px', background: '#070b14', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', alignItems: 'center' }}>
                   <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -385,16 +369,15 @@ const CheckoutModal = ({
                     <span style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>Clic en el QR para ampliar</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <label style={{ color: '#e2e8f0', fontSize: '13px', fontWeight: '800', marginBottom: '8px' }}>Comprobante de Pago<span style={{ color: '#ff4d4d' }}>*</span></label>
+                    <label style={{ color: '#e2e8f0', fontSize: '13px', fontWeight: '800', marginBottom: '8px' }}>Comprobante de pago<span style={{ color: '#ff4d4d' }}>*</span></label>
                     <div style={{ minHeight: '150px', border: fileError ? '2px dashed #ff4d4d' : (!receiptFile ? '1.5px dashed rgba(245, 200, 27, 0.4)' : '2px solid #10B981'), borderRadius: '10px', background: receiptFile ? '#000' : 'rgba(255, 255, 255, 0.02)', padding: receiptFile ? '0' : '16px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', overflow: 'hidden' }}>
                       {!receiptFile && <input type="file" accept="image/*" onChange={e => { if (e.target.files?.[0]) { setReceiptFile(e.target.files[0]); setFileError(''); } }} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', zIndex: 10 }} />}
                       {!receiptFile ? (<div style={{ pointerEvents: 'none' }}><FaReceipt size={26} color="#F5C81B" style={{ marginBottom: '6px' }} /><p style={{ color: '#fff', fontSize: '12px', fontWeight: '700', margin: '0 0 4px 0' }}>Adjuntar comprobante</p><span style={{ fontSize: '11px', color: '#F5C81B', background: 'rgba(245, 200, 27, 0.1)', padding: '4px 10px', borderRadius: '6px', fontWeight: '700' }}>Seleccionar imagen</span></div>) : (<><button onClick={e => { e.stopPropagation(); setShowRemoveReceiptConfirm(true); }} style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(0,0,0,0.85)', border: '1px solid #ff4d4d', color: '#ff4d4d', borderRadius: '6px', padding: '6px', cursor: 'pointer', zIndex: 20 }}><FaTrash size={12} /></button><img src={URL.createObjectURL(receiptFile)} alt="Comprobante" onClick={() => setIsReceiptExpanded(true)} style={{ width: '100%', height: '150px', objectFit: 'contain', cursor: 'zoom-in' }} /><div style={{ position: 'absolute', bottom: '6px', left: '6px', background: 'rgba(0,0,0,0.85)', padding: '3px 8px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid rgba(16, 185, 129, 0.3)' }}><FaCheckCircle color="#10B981" size={10} /><span style={{ color: '#10B981', fontSize: '9px', fontWeight: 'bold' }}>Subido</span></div></>)}
                     </div>
-                    {fileError ? <p style={{ color: '#ff4d4d', fontSize: '11px', margin: '6px 0 0 0', fontWeight: '700' }}>️ {fileError}</p> : (!receiptFile && <p style={{ color: '#94a3b8', fontSize: '10px', margin: '4px 0 0 0' }}>El comprobante es obligatorio.</p>)}
+                    {fileError ? <p style={{ color: '#ff4d4d', fontSize: '11px', margin: '6px 0 0 0', fontWeight: '700' }}>⚠️ {fileError}</p> : (!receiptFile && <p style={{ color: '#94a3b8', fontSize: '10px', margin: '4px 0 0 0' }}>El comprobante es obligatorio.</p>)}
                   </div>
                 </div>
               )}
-
               {selectedMethod === 'bold' && (
                 <div style={{ padding: '22px', background: '#070b14', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', alignItems: 'center' }}>
                   <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -419,18 +402,52 @@ const CheckoutModal = ({
         {/* === SIDEBAR RESUMEN === */}
         <div className="gm-checkout-sidebar">
           <div className="gm-checkout-summary-box">
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '17px', fontWeight: '900', color: '#fff', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>Resumen Del Pedido</h2>
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '17px', fontWeight: '900', color: '#fff', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>Resumen del pedido</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}><span>Precio al por menor:</span><span style={{ color: '#fff', fontWeight: '700' }}>${financials.retailSubtotal.toLocaleString('es-CO')}</span></div>
-              {financials.hasOffer && <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f87171', fontWeight: '700' }}><span>Promociones</span><span>-${financials.offerDiscount.toLocaleString('es-CO')}</span></div>}
-              {financials.hasWholesale && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: '#f87171', fontWeight: '700' }}><div><span>Descuento al por mayor</span><span style={{ display: 'block', fontSize: '11px', color: '#94a3b8', fontWeight: '500' }}>(Queda en: ${financials.wholesaleResult.toLocaleString('es-CO')})</span></div><span>-${financials.wholesaleDiscount.toLocaleString('es-CO')}</span></div>}
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}><span>Precio de envío:</span><span style={{ color: !deliveryType ? '#94a3b8' : '#cbd5e1', fontWeight: '700', fontSize: '12px' }}>{!deliveryType ? 'Por seleccionar' : (isPickup ? 'Sin costo' : 'Por Coordinar')}</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}><span>Método seleccionado:</span><span style={{ color: '#cbd5e1', fontWeight: '700' }}>{currentMethod?.name || 'Por elegir'}</span></div>
-              <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '14px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><strong style={{ fontSize: '15px', color: '#fff' }}>Total del pedido:</strong><strong style={{ fontSize: '22px', color: '#F5C81B', fontWeight: '900' }}>${total.toLocaleString('es-CO')}</strong></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                <span>Precio al por menor:</span>
+                <span style={{ color: '#fff', fontWeight: '700' }}>${Math.floor(financials.retailSubtotal).toLocaleString('es-CO')}</span>
+              </div>
+
+              {/* ✅ Venta normal - sin descuento */}
+              {isVentaNormal && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94a3b8' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                    Venta normal
+                    <span className="gm-venta-normal-badge">Sin descuento</span>
+                  </span>
+                </div>
+              )}
+
+              {/* ✅ Promociones */}
+              {financials.hasOffer && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f87171', fontWeight: '700' }}>
+                  <span>Promociones</span>
+                  <span>-${Math.floor(financials.offerDiscount).toLocaleString('es-CO')}</span>
+                </div>
+              )}
+
+              {/* ✅ Descuento por mayor - CON BADGE +6 o +60 */}
+              {financials.hasWholesale && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: '#f87171', fontWeight: '700' }}>
+                  <div>
+                    <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                      Descuento al por mayor
+                      {discountLabel && <span className="gm-discount-badge">{discountLabel}</span>}
+                    </span>
+                    <span className="gm-discount-detail">(Queda en: ${Math.floor(financials.wholesaleResult).toLocaleString('es-CO')})</span>
+                  </div>
+                  <span>-${Math.floor(financials.wholesaleDiscount).toLocaleString('es-CO')}</span>
+                </div>
+              )}
+
+              <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '14px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <strong style={{ fontSize: '15px', color: '#fff' }}>Total del pedido:</strong>
+                <strong style={{ fontSize: '22px', color: '#F5C81B', fontWeight: '900' }}>${Math.floor(total).toLocaleString('es-CO')}</strong>
+              </div>
             </div>
             <button onClick={handleProceedToConfirm} disabled={isProcessing} style={{ width: '100%', marginTop: '20px', padding: '16px', background: '#F5C81B', border: 'none', borderRadius: '10px', color: '#000', fontWeight: '900', fontSize: '15px', cursor: isProcessing ? 'not-allowed' : 'pointer', boxShadow: '0 6px 20px rgba(245, 200, 27, 0.4)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>{isProcessing ? 'Procesando...' : 'Confirmar'}</button>
           </div>
-
           <div style={{ background: '#0d1527', borderRadius: '14px', padding: '18px 20px', border: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '11px', color: '#94a3b8' }}>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}><FaShieldAlt color="#10B981" size={16} style={{ flexShrink: 0, marginTop: '2px' }} /><div><strong style={{ color: '#fff', fontSize: '12px', display: 'block' }}>Seguridad de pago</strong><span>Tus pagos son validados de forma directa y protegida.</span></div></div>
             <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}><FaTruck color="#F5C81B" size={16} style={{ flexShrink: 0, marginTop: '2px' }} /><div><strong style={{ color: '#fff', fontSize: '12px', display: 'block' }}>Garantía de envío</strong><span>Despachamos con número de guía y seguimiento.</span></div></div>
@@ -452,9 +469,9 @@ const CheckoutModal = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}><span style={{ color: '#94a3b8' }}>Forma de pago:</span><span style={{ color: '#fff', fontWeight: '700', textAlign: 'right' }}>{currentMethod?.name || 'Por elegir'}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}><span style={{ color: '#94a3b8' }}>Entrega:</span><span style={{ color: '#fff', fontWeight: '700', textAlign: 'right' }}>{shippingText}</span></div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}><span style={{ color: '#94a3b8' }}>Dirección:</span><span style={{ color: '#fff', fontWeight: '600', textAlign: 'right' }}>{isPickup ? 'Recogida en local' : (address || 'Sin dirección')}</span></div>
-              {financials.hasOffer && <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', color: '#f87171' }}><span style={{ fontWeight: '600' }}>Promociones:</span><span style={{ fontWeight: '700' }}>-{financials.offerDiscount.toLocaleString('es-CO')}</span></div>}
-              {financials.hasWholesale && <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', color: '#38bdf8' }}><span style={{ fontWeight: '600' }}>Descuento por mayor:</span><span style={{ fontWeight: '700' }}>-{financials.wholesaleDiscount.toLocaleString('es-CO')}</span></div>}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', marginTop: '4px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}><span style={{ color: '#fff', fontWeight: '700', fontSize: '14px' }}>Total a pagar:</span><strong style={{ color: '#F5C81B', fontSize: '18px', fontWeight: '800' }}>${total.toLocaleString('es-CO')}</strong></div>
+              {financials.hasOffer && <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', color: '#f87171' }}><span style={{ fontWeight: '600' }}>Promociones:</span><span style={{ fontWeight: '700' }}>-${Math.floor(financials.offerDiscount).toLocaleString('es-CO')}</span></div>}
+              {financials.hasWholesale && <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', color: '#38bdf8' }}><span style={{ fontWeight: '600' }}>Descuento por mayor {discountLabel && `(${discountLabel})`}:</span><span style={{ fontWeight: '700' }}>-${Math.floor(financials.wholesaleDiscount).toLocaleString('es-CO')}</span></div>}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', marginTop: '4px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}><span style={{ color: '#fff', fontWeight: '700', fontSize: '14px' }}>Total a pagar:</span><strong style={{ color: '#F5C81B', fontSize: '18px', fontWeight: '800' }}>${Math.floor(total).toLocaleString('es-CO')}</strong></div>
             </div>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', width: '100%', marginTop: '6px' }}>
               <button onClick={() => setShowConfirmModal(false)} className="gm-btn gm-btn-cancel">Volver</button>
@@ -484,14 +501,18 @@ const CheckoutModal = ({
 
       {editSuccessAlert && <div className="gm-toast-success"><FaCheckCircle color="#10B981" size={18} /><span>Dirección cambiada con éxito</span></div>}
 
+      {/* === MODAL PRODUCTOS (DESKTOP) === */}
       {showProductsDetailModal && !isMobileView && (
         <div className="gm-modal-overlay-responsive gm-modal-overlay-no-close">
           <div className="gm-modal-dialog-responsive" onClick={e => e.stopPropagation()} style={{ border: '1.5px solid rgba(245, 200, 27, 0.3)' }}>
             <div className="gm-modal-header">
-              <div className="gm-modal-title"><FaShoppingBag color="#FFC107" size={15} /> Productos del Pedido ({cartItems.length})</div>
+              <div className="gm-modal-title">
+                
+                <span style={{ textTransform: 'capitalize', whiteSpace: 'nowrap' }}>Productos del pedido ({cartItems.length})</span>
+              </div>
               <button onClick={() => setShowProductsDetailModal(false)} className="gm-modal-close-btn"><FaTimes /></button>
             </div>
-            <div className="gm-modal-body">
+            <div className="gm-modal-body" style={{ padding: '0' }}>
               {cartItems.map((item, index) => {
                 const name = gPN ? gPN(item) : (item.nombre || 'Gorra');
                 const price = gPP ? gPP(item) : (item.precio || 0);
@@ -499,7 +520,7 @@ const CheckoutModal = ({
                 const img = Array.isArray(item.imagenes) && item.imagenes[0] ? item.imagenes[0] : (item.imagen || item.safeImg || 'https://placehold.co/100x100?text=Gorra');
                 return (
                   <div key={index} className="gm-checkout-product-card">
-                    <div className="gm-checkout-product-img-wrapper" onClick={() => { setShowProductsDetailModal(false); setExpandedProductImage(img); }}>
+                    <div className="gm-checkout-product-img-wrapper">
                       <img src={img} alt={name} className="gm-checkout-product-img" />
                     </div>
                     <div className="gm-checkout-product-details">
@@ -507,16 +528,17 @@ const CheckoutModal = ({
                       <span className="gm-product-qty-badge">x{qty}</span>
                     </div>
                     <div className="gm-checkout-product-subtotal-block">
-                      <span className="gm-checkout-product-subtotal-price">${(price * qty).toLocaleString('es-CO')}</span>
-                      {qty > 1 && <span style={{ fontSize: '10px', color: '#64748b' }}>${price.toLocaleString('es-CO')} c/u</span>}
+                      <span className="gm-checkout-product-subtotal-price">${Math.floor(price * qty).toLocaleString('es-CO')}</span>
                     </div>
                   </div>
                 );
               })}
             </div>
             <div className="gm-modal-footer">
-              <div><span className="gm-modal-total-label">Total</span><strong className="gm-modal-total-value">${subtotal.toLocaleString('es-CO')}</strong></div>
-              <button type="button" onClick={() => setShowProductsDetailModal(false)} className="gm-btn-back"><FaArrowLeft size={11} /> Volver al pedido</button>
+              <div className="gm-modal-total-row">
+                <span className="gm-modal-total-label">Total</span>
+                <strong className="gm-modal-total-value">${Math.floor(subtotal).toLocaleString('es-CO')}</strong>
+              </div>
             </div>
           </div>
         </div>
@@ -535,21 +557,26 @@ const CheckoutModal = ({
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                 <span style={{ color: '#94a3b8', fontSize: '13px' }}>Precio unitario:</span>
-                <span style={{ color: '#F5C81B', fontSize: '18px', fontWeight: 'bold' }}>${(selectedDetailProduct.precio || 0).toLocaleString()}</span>
+                <span style={{ color: '#F5C81B', fontSize: '18px', fontWeight: 'bold' }}>${Math.floor(selectedDetailProduct.precio || 0).toLocaleString()}</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* === MODAL DIRECCIÓN (DESKTOP) === */}
       {showAddressModal && !isMobileView && (
         <div className="gm-modal-overlay-responsive gm-address-modal-overlay" onClick={e => e.stopPropagation()}>
-          <div className="gm-modal-dialog-responsive gm-address-modal-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: '680px', maxHeight: 'none', overflow: 'visible' }}>
+          <div className="gm-modal-dialog-responsive gm-address-modal-dialog" onClick={e => e.stopPropagation()} style={{ maxHeight: 'none', overflow: 'visible' }}>
             <div className="gm-modal-header">
-              <div className="gm-modal-title"><FaMapMarkerAlt color="#F5C81B" size={15} /> Dirección de envío y contacto</div>
+              <div className="gm-modal-title">
+                
+                <span style={{ textTransform: 'capitalize', whiteSpace: 'nowrap' }}>Dirección de envío y contacto</span>
+              </div>
               <button onClick={() => { setShowAddressModal(false); setAddressErrors({}); }} className="gm-modal-close-btn"><FaTimes /></button>
             </div>
-            <div style={{ padding: '12px 20px 8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="gm-form-content">
+              {/* Fila 1: Correo, Nombre, Teléfono */}
               <div className="gm-form-grid gm-form-grid-3">
                 <div>
                   <label className="gm-form-label">Correo electrónico</label>
@@ -576,6 +603,7 @@ const CheckoutModal = ({
                   {addressErrors.telefono && <p className="gm-form-error">⚠️ {addressErrors.telefono}</p>}
                 </div>
               </div>
+              {/* Fila 2: Departamento, Ciudad, Ubicación */}
               <div className="gm-form-grid gm-form-grid-location">
                 <div>
                   <label className="gm-form-label">Departamento</label>
@@ -583,7 +611,7 @@ const CheckoutModal = ({
                     <input type="text" value={addrForm.departamento} onChange={e => { setAddrForm(p => ({ ...p, departamento: e.target.value })); setAddressErrors(p => ({ ...p, departamento: '' })); }} placeholder="Ej: Antioquia" className={`gm-form-input ${addressErrors.departamento ? 'has-error' : ''}`} />
                     {addrForm.departamento && <button type="button" onClick={() => setAddrForm(p => ({ ...p, departamento: '' }))} className="gm-form-clear-btn"><FaTimes size={10} /></button>}
                   </div>
-                  {addressErrors.departamento && <p className="gm-form-error">⚠️ {addressErrors.departamento}</p>}
+                  {addressErrors.departamento && <p className="gm-form-error">️ {addressErrors.departamento}</p>}
                 </div>
                 <div>
                   <label className="gm-form-label">Municipio / Ciudad*</label>
@@ -598,6 +626,7 @@ const CheckoutModal = ({
                   <div className="gm-location-badge">Colombia 🇨🇴</div>
                 </div>
               </div>
+              {/* Fila 3: Dirección (completa) */}
               <div>
                 <label className="gm-form-label">Dirección de entrega</label>
                 <div className="gm-form-input-wrapper">
@@ -606,13 +635,24 @@ const CheckoutModal = ({
                 </div>
                 {addressErrors.direccion && <p className="gm-form-error">⚠️ {addressErrors.direccion}</p>}
               </div>
-              <div>
-                <label className="gm-form-label">Detalles de la fachada</label>
-                <div className="gm-form-input-wrapper">
-                  <input type="text" value={addrForm.fachada} onChange={e => { setAddrForm(p => ({ ...p, fachada: e.target.value })); setAddressErrors(p => ({ ...p, fachada: '' })); }} placeholder="Ej: Casa blanca de dos pisos..." className={`gm-form-input ${addressErrors.fachada ? 'has-error' : ''}`} />
-                  {addrForm.fachada && <button type="button" onClick={() => setAddrForm(p => ({ ...p, fachada: '' }))} className="gm-form-clear-btn"><FaTimes size={10} /></button>}
+              {/* Fila 4: Fachada y Teléfono (paralelos en 2 columnas) */}
+              <div className="gm-form-grid gm-form-grid-2">
+                <div>
+                  <label className="gm-form-label">Detalles de la fachada</label>
+                  <div className="gm-form-input-wrapper">
+                    <input type="text" value={addrForm.fachada} onChange={e => { setAddrForm(p => ({ ...p, fachada: e.target.value })); setAddressErrors(p => ({ ...p, fachada: '' })); }} placeholder="Ej: Casa blanca de dos pisos..." className={`gm-form-input ${addressErrors.fachada ? 'has-error' : ''}`} />
+                    {addrForm.fachada && <button type="button" onClick={() => setAddrForm(p => ({ ...p, fachada: '' }))} className="gm-form-clear-btn"><FaTimes size={10} /></button>}
+                  </div>
+                  {addressErrors.fachada ? <p className="gm-form-error">⚠️ {addressErrors.fachada}</p> : <span className="gm-form-hint">Información clave para que el domiciliario ubique tu casa.</span>}
                 </div>
-                {addressErrors.fachada ? <p className="gm-form-error">️ {addressErrors.fachada}</p> : <span className="gm-form-hint">Información clave para que el domiciliario ubique tu casa.</span>}
+                <div>
+                  <label className="gm-form-label">Teléfono de contacto</label>
+                  <div className="gm-form-input-wrapper">
+                    <input type="tel" value={addrForm.telefono} onChange={e => { setAddrForm(p => ({ ...p, telefono: e.target.value.replace(/\D/g, '') })); setAddressErrors(p => ({ ...p, telefono: '' })); }} placeholder="Ej: 3228977086" className={`gm-form-input ${addressErrors.telefono ? 'has-error' : ''}`} />
+                    {addrForm.telefono && <button type="button" onClick={() => setAddrForm(p => ({ ...p, telefono: '' }))} className="gm-form-clear-btn"><FaTimes size={10} /></button>}
+                  </div>
+                  {addressErrors.telefono && <p className="gm-form-error">⚠️ {addressErrors.telefono}</p>}
+                </div>
               </div>
             </div>
             <div className="gm-modal-footer" style={{ background: 'rgba(0, 0, 0, 0.35)' }}>
@@ -650,7 +690,7 @@ const CheckoutModal = ({
           <div className="gm-zoomed-container" onClick={e => e.stopPropagation()}>
             <button onClick={() => setIsReceiptExpanded(false)} className="gm-zoomed-btn success"><FaTimes /></button>
             <img src={URL.createObjectURL(receiptFile)} alt="Comprobante Ampliado" className="gm-zoomed-image" />
-            <p className="gm-zoomed-text success">Comprobante de Pago Adjuntado</p>
+            <p className="gm-zoomed-text success">Comprobante de pago adjuntado</p>
           </div>
         </div>
       )}
