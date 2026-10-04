@@ -170,7 +170,7 @@ const ProductModal = ({
   // Only show as agotado once we have complete product data.
   // If fullProduct is not yet loaded AND the initial product lacks tallasStock,
   // treat stock as unknown (not agotado) to avoid a false flash.
-  const dataReady = !!fullProduct || (Array.isArray(product?.tallasStock) && product.tallasStock.length > 0) || Number(product?.stock) > 0;
+  const dataReady = !!fullProduct || (Array.isArray(product?.tallasStock) && product.tallasStock.length > 0);
   const isAgotado = dataReady && totalStock <= 0;
   const isQtyDisabled = isAgotado || (sizes.length > 0 && !selectedSize);
 
@@ -241,7 +241,7 @@ const ProductModal = ({
   const hasMayorista = parseFloat(displayProduct.precioMayorista6) > 0;
 
   return (
-    <div className="gm-modal-overlay" onClick={closeModal}>
+    <div className="gm-modal-overlay" onClick={e => e.stopPropagation()}>
       <div className={`gm-modal ${(product?.nombre || "").length <= 28 ? "gm-modal--short-name" : ""}`} onClick={(e) => e.stopPropagation()}>
         
         {/* ✅ BOTÓN COMPARTIR CON TOOLTIP (En la posición interna/izquierda) */}

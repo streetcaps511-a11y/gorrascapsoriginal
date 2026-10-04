@@ -211,6 +211,54 @@ export const useClientesLogic = () => {
       setErrors(newErr);
     }
     
+    // 🔍 VALIDACIÓN EN TIEMPO REAL: Nombre duplicado (insensible a mayúsculas/minúsculas)
+    if (field === 'fullName' && value.trim().length >= 3) {
+      const nombreNorm = value.trim().toLowerCase();
+      const editingId = modalState.cliente?.id;
+      const duplicado = clientes.find(c =>
+        (c.nombreCompleto || '').trim().toLowerCase() === nombreNorm &&
+        c.id !== editingId
+      );
+      if (duplicado) {
+        setErrors(prev => ({
+          ...prev,
+          fullName: `Ya existe un cliente con el nombre "${duplicado.nombreCompleto}"`
+        }));
+      }
+    }
+
+    // 🔍 VALIDACIÓN EN TIEMPO REAL: Email duplicado
+    if (field === 'email' && value.trim().length > 5 && value.includes('@')) {
+      const emailNorm = value.trim().toLowerCase();
+      const editingId = modalState.cliente?.id;
+      const duplicado = clientes.find(c =>
+        (c.email || '').trim().toLowerCase() === emailNorm &&
+        c.id !== editingId
+      );
+      if (duplicado) {
+        setErrors(prev => ({
+          ...prev,
+          email: `Ya existe un cliente con ese email (${duplicado.nombreCompleto})`
+        }));
+      }
+    }
+
+    // 🔍 VALIDACIÓN EN TIEMPO REAL: Documento duplicado
+    if (field === 'documentNumber' && value.trim().length >= 6) {
+      const docNorm = value.trim().replace(/\D/g, '');
+      const editingId = modalState.cliente?.id;
+      const duplicado = clientes.find(c =>
+        (c.numeroDocumento || '').replace(/\D/g, '') === docNorm &&
+        c.id !== editingId
+      );
+      if (duplicado) {
+        setErrors(prev => ({
+          ...prev,
+          documentNumber: `Ya existe un cliente con ese documento (${duplicado.nombreCompleto})`
+        }));
+      }
+    }
+    
     if (field === 'country') {
       setFormData(prev => ({ ...prev, country: value, city: '' }));
     } else if (field === 'documentType') {
@@ -278,11 +326,27 @@ export const useClientesLogic = () => {
       }
     } else if (formData.documentNumber.trim().length < 6 || formData.documentNumber.trim().length > 15) {
       newErrors.documentNumber = 'El documento debe tener entre 6 y 15 caracteres';
+    } else {
+      // 🔍 Validar documento duplicado (insensible)
+      const docNorm = formData.documentNumber.trim().replace(/\D/g, '');
+      const editingId = modalState.cliente?.id;
+      const dupDoc = clientes.find(c =>
+        (c.numeroDocumento || '').replace(/\D/g, '') === docNorm && c.id !== editingId
+      );
+      if (dupDoc) newErrors.documentNumber = `Ya existe un cliente con ese documento (${dupDoc.nombreCompleto})`;
     }
     if (!formData.fullName?.trim()) {
       newErrors.fullName = 'Nombre completo es obligatorio';
     } else if (formData.fullName.trim().length < 3) {
       newErrors.fullName = 'El nombre debe tener al menos 3 caracteres';
+    } else {
+      // 🔍 Validar nombre duplicado (insensible a mayúsculas/minúsculas)
+      const nombreNorm = formData.fullName.trim().toLowerCase();
+      const editingId = modalState.cliente?.id;
+      const dupNombre = clientes.find(c =>
+        (c.nombreCompleto || '').trim().toLowerCase() === nombreNorm && c.id !== editingId
+      );
+      if (dupNombre) newErrors.fullName = `Ya existe un cliente con el nombre "${dupNombre.nombreCompleto}"`;
     }
     if (!formData.email?.trim()) {
       newErrors.email = 'Email es obligatorio';

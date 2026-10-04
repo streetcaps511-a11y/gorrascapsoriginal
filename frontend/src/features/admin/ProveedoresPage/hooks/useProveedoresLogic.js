@@ -157,6 +157,54 @@ export const useProveedoresLogic = () => {
     });
 
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+
+    // 🔍 VALIDACIÓN EN TIEMPO REAL: companyName duplicado (insensible a mayúsculas/minúsculas)
+    if (name === 'companyName' && value.trim().length >= 3) {
+      const nombreNorm = value.trim().toLowerCase();
+      const editingId = modalState.proveedor?.id;
+      const duplicado = proveedores.find(p =>
+        (p.companyName || '').trim().toLowerCase() === nombreNorm &&
+        p.id !== editingId
+      );
+      if (duplicado) {
+        setErrors(prev => ({
+          ...prev,
+          companyName: `Ya existe un proveedor con el nombre "${duplicado.companyName}"`
+        }));
+      }
+    }
+
+    // 🔍 VALIDACIÓN EN TIEMPO REAL: email duplicado
+    if (name === 'email' && value.trim().length > 5 && value.includes('@')) {
+      const emailNorm = value.trim().toLowerCase();
+      const editingId = modalState.proveedor?.id;
+      const duplicado = proveedores.find(p =>
+        (p.email || '').trim().toLowerCase() === emailNorm &&
+        p.id !== editingId
+      );
+      if (duplicado) {
+        setErrors(prev => ({
+          ...prev,
+          email: `Ya existe un proveedor con ese email (${duplicado.companyName})`
+        }));
+      }
+    }
+
+    // 🔍 VALIDACIÓN EN TIEMPO REAL: documento duplicado
+    if (name === 'documentNumber' && value.trim().length >= 6) {
+      const docNorm = value.trim().replace(/[^0-9]/g, '');
+      const editingId = modalState.proveedor?.id;
+      const duplicado = proveedores.find(p => {
+        const existingDoc = (p.documentNumber || '').replace(/[^0-9]/g, '');
+        return existingDoc === docNorm && p.id !== editingId;
+      });
+      if (duplicado) {
+        setErrors(prev => ({
+          ...prev,
+          documentNumber: `Ya existe un proveedor con ese documento (${duplicado.companyName})`
+        }));
+      }
+    }
   };
 
   const handleBlur = (e) => {
@@ -200,6 +248,7 @@ export const useProveedoresLogic = () => {
   const validate = () => {
     const newErrors = {};
     const isJuridica = formData.supplierType?.toLowerCase() === 'persona jurídica';
+    const editingId = modalState.proveedor?.id;
 
     // ⚡ VALIDACIÓN: solo mostrar el error del primer campo vacío encontrado
     const requiredFields = [
@@ -218,6 +267,46 @@ export const useProveedoresLogic = () => {
     for (const field of requiredFields) {
       if (!formData[field.key] || formData[field.key].toString().trim() === '') {
         newErrors[field.key] = `${field.label} es requerido`;
+        setErrors(newErrors);
+        return false;
+      }
+    }
+
+    // 🔍 VALIDAR: companyName duplicado (insensible a mayúsculas/minúsculas)
+    if (formData.companyName && formData.companyName.trim().length >= 3) {
+      const nombreNorm = formData.companyName.trim().toLowerCase();
+      const dupNombre = proveedores.find(p =>
+        (p.companyName || '').trim().toLowerCase() === nombreNorm && p.id !== editingId
+      );
+      if (dupNombre) {
+        newErrors.companyName = `Ya existe un proveedor con el nombre "${dupNombre.companyName}"`;
+        setErrors(newErrors);
+        return false;
+      }
+    }
+
+    // 🔍 VALIDAR: email duplicado (insensible a mayúsculas/minúsculas)
+    if (formData.email) {
+      const emailNorm = formData.email.trim().toLowerCase();
+      const dupEmail = proveedores.find(p =>
+        (p.email || '').trim().toLowerCase() === emailNorm && p.id !== editingId
+      );
+      if (dupEmail) {
+        newErrors.email = `Ya existe un proveedor con ese email (${dupEmail.companyName})`;
+        setErrors(newErrors);
+        return false;
+      }
+    }
+
+    // 🔍 VALIDAR: documentNumber duplicado
+    if (formData.documentNumber && formData.documentNumber.trim().length >= 6) {
+      const docNorm = formData.documentNumber.trim().replace(/[^0-9]/g, '');
+      const dupDoc = proveedores.find(p => {
+        const existing = (p.documentNumber || '').replace(/[^0-9]/g, '');
+        return existing === docNorm && p.id !== editingId;
+      });
+      if (dupDoc) {
+        newErrors.documentNumber = `Ya existe un proveedor con ese documento (${dupDoc.companyName})`;
         setErrors(newErrors);
         return false;
       }

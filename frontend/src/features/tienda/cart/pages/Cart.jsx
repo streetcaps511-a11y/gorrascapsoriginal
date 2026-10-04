@@ -253,7 +253,7 @@ const Cart = () => {
   // Renderizado: Vista completa de Checkout (mantiene Header y Footer del sitio)
   if (showCheckout) {
     return (
-      <div className="page-container" style={{ minHeight: '80vh', backgroundColor: '#030712', paddingTop: '20px', paddingBottom: '60px' }}>
+      <div className="page-container" style={{ minHeight: '80vh', backgroundColor: '#030712', paddingTop: '80px', paddingBottom: '60px' }}>
         <CheckoutModal
           isOpen={showCheckout}
           onClose={cancelCheckout}

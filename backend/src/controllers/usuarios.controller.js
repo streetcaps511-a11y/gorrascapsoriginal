@@ -154,7 +154,18 @@ const usuarioController = {
         if (emailExists) {
           return res.status(400).json({ 
             success: false, 
-            message: 'El correo electrónico ya está registrado por otro usuario.' 
+            message: `El correo electrónico ya está registrado por otro usuario (${emailExists.nombre}).`
+          });
+        }
+      }
+
+      // 🔍 Validar nombre duplicado (insensible a mayúsculas/minúsculas)
+      if (createData.nombre) {
+        const nombreExists = await Usuario.findOne({ where: { nombre: { [Op.iLike]: createData.nombre.trim() } } });
+        if (nombreExists) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Ya existe un usuario con el nombre "${nombreExists.nombre}".`
           });
         }
       }
@@ -217,7 +228,23 @@ const usuarioController = {
         if (emailExists) {
           return res.status(400).json({ 
             success: false, 
-            message: 'El correo electrónico ya está registrado por otro usuario.' 
+            message: `El correo electrónico ya está registrado por otro usuario (${emailExists.nombre}).`
+          });
+        }
+      }
+
+      // 🔍 Validar nombre duplicado (insensible a mayúsculas/minúsculas)
+      if (updateData.nombre) {
+        const nombreExists = await Usuario.findOne({ 
+          where: { 
+            nombre: { [Op.iLike]: updateData.nombre.trim() },
+            id: { [Op.ne]: req.params.id }
+          } 
+        });
+        if (nombreExists) {
+          return res.status(400).json({ 
+            success: false, 
+            message: `Ya existe un usuario con el nombre "${nombreExists.nombre}".`
           });
         }
       }

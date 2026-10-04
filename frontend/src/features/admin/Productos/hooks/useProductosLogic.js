@@ -260,6 +260,16 @@ export const useProductosLogic = () => {
       newErrors.nombre = "El nombre es obligatorio";
     } else if (formData.nombre.trim().length < 3) {
       newErrors.nombre = "El nombre debe tener al menos 3 caracteres";
+    } else {
+      // 🔍 Validar nombre duplicado (insensible a mayúsculas/minúsculas)
+      const nombreNorm = formData.nombre.trim().toLowerCase();
+      const duplicado = productos.find(p =>
+        p.nombre.trim().toLowerCase() === nombreNorm &&
+        p.id !== productoEditando?.id
+      );
+      if (duplicado) {
+        newErrors.nombre = `Ya existe un producto con el nombre "${duplicado.nombre}"`;
+      }
     }
 
     // ✅ VALIDAR CATEGORÍA (independiente - sin else)
@@ -394,6 +404,27 @@ export const useProductosLogic = () => {
 
   const handleToggleStatus = async (producto) => {
     const newStatus = !producto.isActive;
+
+    // 🚨 Si se intenta ACTIVAR, verificar que tenga colores, imágenes y precio de venta
+    if (newStatus === true) {
+      const tieneColores = Array.isArray(producto.colores) && producto.colores.some(c => c && c.trim());
+      const tieneImagenes = Array.isArray(producto.imagenes) && producto.imagenes.some(i => i && i.trim());
+      const tienePrecio = parseFloat(producto.precioVenta) > 0;
+
+      const faltantes = [];
+      if (!tieneColores) faltantes.push('colores');
+      if (!tieneImagenes) faltantes.push('imágenes');
+      if (!tienePrecio) faltantes.push('precio de venta');
+
+      if (faltantes.length > 0) {
+        showAlert(
+          `No se puede publicar el producto. Le falt${faltantes.length === 1 ? 'a' : 'an'}: ${faltantes.join(', ')}. Edita el producto y completa esa información antes de activarlo.`,
+          'error'
+        );
+        return;
+      }
+    }
+
     const previousProductos = [...productos];
     setProductos(prev => prev.map(p => p.id === producto.id ? { ...p, isActive: newStatus } : p));
     try {
@@ -541,6 +572,21 @@ export const useProductosLogic = () => {
           delete newErrors[name];
           return newErrors;
         });
+      }
+
+      // 🔍 VALIDACIÓN EN TIEMPO REAL: Nombre duplicado (insensible a mayúsculas/minúsculas)
+      if (name === 'nombre' && value.trim().length >= 3) {
+        const nombreNorm = value.trim().toLowerCase();
+        const duplicado = productos.find(p =>
+          p.nombre.trim().toLowerCase() === nombreNorm &&
+          p.id !== productoEditando?.id
+        );
+        if (duplicado) {
+          setErrors(prev => ({
+            ...prev,
+            nombre: `Ya existe un producto con el nombre "${duplicado.nombre}"`
+          }));
+        }
       }
     },
     handleVerDetalle: (p) => { setProductoViendo(p); setModoVista("detalle"); },

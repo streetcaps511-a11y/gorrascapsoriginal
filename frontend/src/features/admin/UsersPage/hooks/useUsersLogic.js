@@ -191,7 +191,9 @@ export const useUsersLogic = () => {
     setErrors({});
   };
 
+
   const handleInputChange = (field, value) => {
+    // Limpiar error previo del campo
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -199,8 +201,29 @@ export const useUsersLogic = () => {
         return newErrors;
       });
     }
+
+    // ✅ VALIDACIÓN EN TIEMPO REAL: Email duplicado
+    if (field === 'email') {
+      const emailTrimmed = value.trim().toLowerCase();
+      // Solo validar si tiene formato básico de email
+      const looksLikeEmail = emailTrimmed.includes('@') && emailTrimmed.includes('.');
+      if (looksLikeEmail) {
+        const duplicate = users.find(u =>
+          u.email.toLowerCase() === emailTrimmed &&
+          u.id !== editingUser?.id
+        );
+        if (duplicate) {
+          setErrors(prev => ({
+            ...prev,
+            email: `Email ya registrado (${duplicate.nombre || duplicate.nombreCompleto || duplicate.email})`
+          }));
+        }
+      }
+    }
+
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
 
   // ====== VALIDACIÓN MEJORADA CON DUPLICADOS ======
   const validate = () => {
@@ -321,35 +344,6 @@ export const useUsersLogic = () => {
     
     setLoading(true);
     
-    // 🔍 Validar duplicados en base de datos
-    try {
-      const params = {
-        email: formData.email.trim(),
-        documento: formData.numeroDocumento.trim()
-      };
-      if (editingUser?.id) {
-        params.excludeUserId = editingUser.id;
-      }
-      
-      const checkResponse = await api.get('/api/auth/check-exists', { params });
-      if (checkResponse.data.success) {
-        const newErrors = {};
-        if (checkResponse.data.emailExists) {
-          newErrors.email = 'El correo electrónico ya está registrado por otro usuario.';
-        }
-        if (checkResponse.data.documentoExists) {
-          newErrors.numeroDocumento = 'El número de documento ya está registrado.';
-        }
-        if (Object.keys(newErrors).length > 0) {
-          setErrors(prev => ({ ...prev, ...newErrors }));
-          setLoading(false);
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn("Error checking existence:", err);
-    }
-    
     const nombre = (formData.nombreCompleto || '').trim();
     const finalIdRol = isAdministrador(editingUser) ? 1 : (formData.rol || formData.idRol);
     
@@ -400,7 +394,25 @@ export const useUsersLogic = () => {
       
       closeModal();
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Error al guardar usuario';
+      const resp = err?.response?.data;
+      const msg = resp?.message || 'Error al guardar usuario';
+      
+      // 🎯 Mapear errores del backend a campos específicos del formulario
+      const fieldErrors = {};
+      if (msg.toLowerCase().includes('nombre') && msg.toLowerCase().includes('ya existe')) {
+        fieldErrors.nombreCompleto = msg;
+      } else if (msg.toLowerCase().includes('email') || msg.toLowerCase().includes('correo')) {
+        fieldErrors.email = msg;
+      } else if (msg.toLowerCase().includes('documento')) {
+        fieldErrors.numeroDocumento = msg;
+      } else if (msg.toLowerCase().includes('teléfono') || msg.toLowerCase().includes('telefono')) {
+        fieldErrors.contacto = msg;
+      }
+      
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors(prev => ({ ...prev, ...fieldErrors }));
+      }
+      
       showAlert(msg, 'error');
       fetchData();
     }

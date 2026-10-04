@@ -1,7 +1,6 @@
-/* === COMPONENTE REUTILIZABLE === 
-   Pieza modular de interfaz (como Tarjetas, Modales o Botones). 
-   Recibe información a través de 'props' y notifica eventos hacia arriba (a la Página principal). */
-
+/* === COMPONENTE REUTILIZABLE ===
+Pieza modular de interfaz (como Tarjetas, Modales o Botones).
+Recibe información a través de 'props' y notifica eventos hacia arriba (a la Página principal). */
 import '../../styles/EntityTable.css';
 import React from 'react';
 import { FaEye, FaEdit, FaTrash, FaBan, FaCheckCircle, FaTimesCircle, FaExclamationCircle } from 'react-icons/fa';
@@ -43,7 +42,6 @@ const EntityTable = ({
   isRestrictedActionCheck = null,
 }) => {
   const getEstadoField = () => estadoField || isActiveField || 'estado';
-
   const isAdministrador = (row) =>
     isAdministradorCheck ? isAdministradorCheck(row) : false;
 
@@ -59,7 +57,6 @@ const EntityTable = ({
   };
 
   const isEmpty = !entities || entities.length === 0;
-
   const getEmptyMessage = () => {
     switch (moduleType?.toLowerCase()) {
       case 'ventas': return 'No hay ventas registradas';
@@ -74,6 +71,9 @@ const EntityTable = ({
       default: return 'No hay datos para mostrar';
     }
   };
+
+  // 🔍 TAMAÑO DE ICONOS (aumentado de 18 a 22)
+  const ICON_SIZE = 22;
 
   return (
     <div className="entity-table-container">
@@ -149,7 +149,7 @@ const EntityTable = ({
                         <div className="actions-wrapper">
                           {onView && (
                             <span data-tooltip="Ver detalles" title="Ver detalles">
-                              <FaEye size={18} className="action-icon" onClick={() => onView(row)} />
+                              <FaEye size={ICON_SIZE} className="action-icon" onClick={() => onView(row)} />
                             </span>
                           )}
                         </div>
@@ -157,12 +157,12 @@ const EntityTable = ({
                         <div className="actions-wrapper">
                           {onView && (
                             <span data-tooltip="Ver detalles" title="Ver detalles">
-                              <FaEye size={18} className="action-icon" onClick={() => onView(row)} />
+                              <FaEye size={ICON_SIZE} className="action-icon" onClick={() => onView(row)} />
                             </span>
                           )}
                           {onEdit && (
                             <span data-tooltip="Editar" title="Editar">
-                              <FaEdit size={18} className="action-icon" onClick={() => onEdit(row)} />
+                              <FaEdit size={ICON_SIZE} className="action-icon" onClick={() => onEdit(row)} />
                             </span>
                           )}
                         </div>
@@ -177,44 +177,39 @@ const EntityTable = ({
                               inactiveColor={switchProps.inactiveColor}
                             />
                           )}
-
                           {onComplete && moduleType === 'compras' && row.estado === 'Pendiente' && (
                             <span data-tooltip="Marcar como completada" title="Marcar como completada">
-                              <FaCheckCircle size={18} className="action-icon" onClick={() => onComplete(row)} style={{ color: '#10b981' }} />
+                              <FaCheckCircle size={ICON_SIZE} className="action-icon" onClick={() => onComplete(row)} style={{ color: '#10b981' }} />
                             </span>
                           )}
-
                           {onApprove && row.estado === 'Pendiente' && (
                             <span data-tooltip="Aprobar" title="Aprobar">
-                              <FaCheckCircle size={18} className="action-icon action-approve" onClick={() => onApprove(row)} style={{ color: '#10b981' }} />
+                              <FaCheckCircle size={ICON_SIZE} className="action-icon action-approve" onClick={() => onApprove(row)} style={{ color: '#10b981' }} />
                             </span>
                           )}
-
                           {onReject && row.estado === 'Pendiente' && (
                             <span data-tooltip="Rechazar" title="Rechazar">
-                              <FaTimesCircle size={18} className="action-icon action-reject" onClick={() => onReject(row)} style={{ color: '#ef4444' }} />
+                              <FaTimesCircle size={ICON_SIZE} className="action-icon action-reject" onClick={() => onReject(row)} style={{ color: '#ef4444' }} />
                             </span>
                           )}
-
                           {onPartialPago && (row.estado === 'Pendiente' || row.estado === 'Pago Incompleto') && (
                             <span data-tooltip="Pago Incompleto" title="Pago Incompleto">
-                              <FaExclamationCircle size={18} className="action-icon action-partial" onClick={() => onPartialPago(row)} style={{ color: '#f59e0b' }} />
+                              <FaExclamationCircle size={ICON_SIZE} className="action-icon action-partial" onClick={() => onPartialPago(row)} style={{ color: '#f59e0b' }} />
                             </span>
                           )}
-
                           {onEnviar && moduleType === 'ventas' && String(row.estado || '').toLowerCase().includes('completad') && (() => {
                             if (row.tipoEntrega === 'recoger') {
                               const sEnvio = row.statusenvio || 'Preparando';
                               if (sEnvio === 'Preparando') {
                                 return (
                                   <span data-tooltip="Marcar como Preparado" title="Marcar como Preparado">
-                                    <FaCheckCircle size={18} className="action-icon action-enviar" onClick={() => onEnviar(row, 'Por entregar')} style={{ color: '#a855f7' }} />
+                                    <FaCheckCircle size={ICON_SIZE} className="action-icon action-enviar" onClick={() => onEnviar(row, 'Por entregar')} style={{ color: '#a855f7' }} />
                                   </span>
                                 );
                               } else if (sEnvio === 'Por entregar') {
                                 return (
                                   <span data-tooltip="Marcar como Entregado" title="Marcar como Entregado">
-                                    <FaCheckCircle size={18} className="action-icon action-enviar" onClick={() => onEnviar(row, 'Entregado')} style={{ color: '#4ade80' }} />
+                                    <FaCheckCircle size={ICON_SIZE} className="action-icon action-enviar" onClick={() => onEnviar(row, 'Entregado')} style={{ color: '#4ade80' }} />
                                   </span>
                                 );
                               }
@@ -223,37 +218,31 @@ const EntityTable = ({
                               if (sEnvio === 'Por enviar') {
                                 return (
                                   <span data-tooltip="Marcar como Enviado" title="Marcar como Enviado">
-                                    <FaCheckCircle size={18} className="action-icon action-enviar" onClick={() => onEnviar(row, 'Enviado')} style={{ color: '#3b82f6' }} />
+                                    <FaCheckCircle size={ICON_SIZE} className="action-icon action-enviar" onClick={() => onEnviar(row, 'Enviado')} style={{ color: '#3b82f6' }} />
                                   </span>
                                 );
                               }
                             }
                             return null;
                           })()}
-
                           {onView && (
                             <span data-tooltip="Ver detalles" title="Ver detalles">
-                              <FaEye size={18} className="action-icon" onClick={() => onView(row)} />
+                              <FaEye size={ICON_SIZE} className="action-icon" onClick={() => onView(row)} />
                             </span>
                           )}
-
                           {onEdit && moduleType !== 'ventas' && moduleType !== 'compras' && (
                             <span data-tooltip="Editar" title="Editar">
-                              <FaEdit size={18} className="action-icon" onClick={() => onEdit(row)} />
+                              <FaEdit size={ICON_SIZE} className="action-icon" onClick={() => onEdit(row)} />
                             </span>
                           )}
-
-                          {/* Anular Compra: visible para cualquier compra que NO esté ya anulada */}
                           {onAnular && moduleType === 'compras' && row.estado !== 'Anulada' && (
                             <span data-tooltip="Anular compra" title="Anular compra">
-                              <FaBan size={18} className="action-icon" onClick={() => onAnular(row)} style={{ color: '#F5C81B' }} />
+                              <FaBan size={ICON_SIZE} className="action-icon" onClick={() => onAnular(row)} style={{ color: '#F5C81B' }} />
                             </span>
                           )}
-
-
                           {onDelete && moduleType !== 'ventas' && moduleType !== 'compras' && (
                             <span data-tooltip="Eliminar" title="Eliminar">
-                              <FaTrash size={18} className="action-icon" onClick={() => onDelete(row)} />
+                              <FaTrash size={ICON_SIZE} className="action-icon" onClick={() => onDelete(row)} />
                             </span>
                           )}
                         </>

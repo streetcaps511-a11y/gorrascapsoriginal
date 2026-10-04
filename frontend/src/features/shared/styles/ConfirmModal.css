@@ -1,0 +1,184 @@
+/* src/features/shared/styles/ConfirmModal.css */
+
+/* ═══════════════════════════════════════════
+   OVERLAY CON BLUR SUTIL
+   ═══════════════════════════════════════════ */
+.custom-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999999;
+    animation: fadeIn 0.2s ease;
+    padding: 20px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ═══════════════════════════════════════════
+   CONTENIDO DEL MODAL - MÁS ESTRECHO
+   ═══════════════════════════════════════════ */
+.custom-modal-content {
+    background: #0B1220;
+    border: 1px solid #ffc107;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 380px;
+    /* ← Reducido de 450px a 380px */
+    padding: 24px 28px;
+    /* ← Padding más compacto */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideIn 0.25s ease;
+}
+
+/* ═══════════════════════════════════════════
+   BODY DEL MODAL
+   ═══════════════════════════════════════════ */
+.custom-modal-body {
+    text-align: center;
+    margin-bottom: 20px;
+    /* ← Reducido */
+}
+
+.custom-modal-title {
+    color: #ffc107;
+    font-size: 20px;
+    /* ← Reducido de 24px */
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.custom-modal-message {
+    color: #ffffff;
+    font-size: 13px;
+    /* ← Reducido de 15px */
+    line-height: 1.5;
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ═══════════════════════════════════════════
+   FOOTER CON BOTONES
+   ═══════════════════════════════════════════ */
+.custom-modal-footer {
+    display: flex;
+    gap: 10px;
+    /* ← Reducido */
+    justify-content: center;
+}
+
+.custom-modal-footer button {
+    flex: 1;
+    padding: 10px 18px;
+    /* ← Más compacto */
+    border-radius: 8px;
+    font-size: 13px;
+    /* ← Reducido */
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border: none;
+    outline: none;
+}
+
+.custom-modal-footer button:active {
+    transform: scale(0.98);
+}
+
+/* ═══════════════════════════════════════════
+   BOTÓN CANCELAR (Continuar) - FLAT
+   ═══════════════════════════════════════════ */
+.btn-custom-cancel {
+    background: transparent;
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-custom-cancel:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ═══════════════════════════════════════════
+   BOTÓN CONFIRMAR (Sí, Salir)
+   ═══════════════════════════════════════════ */
+.btn-custom-confirm {
+    background: #ffc107;
+    color: #000000;
+    border: 1px solid #ffc107;
+}
+
+.btn-custom-confirm:hover {
+    background: #e6ac00;
+    border-color: #e6ac00;
+}
+
+/* ══════════════════════════════════════════
+   VARIANTES DE TIPO
+   ═══════════════════════════════════════════ */
+.custom-modal-content.danger {
+    border-color: #dc3545;
+}
+
+.custom-modal-content.danger .custom-modal-title {
+    color: #dc3545;
+}
+
+.custom-modal-content.danger .btn-custom-confirm {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: #ffffff;
+}
+
+.custom-modal-content.danger .btn-custom-confirm:hover {
+    background: #c82333;
+    border-color: #c82333;
+}
+
+.custom-modal-content.info {
+    border-color: #0d6efd;
+}
+
+.custom-modal-content.info .custom-modal-title {
+    color: #0d6efd;
+}
+
+.custom-modal-content.info .btn-custom-confirm {
+    background: #0d6efd;
+    border-color: #0d6efd;
+    color: #ffffff;
+}
+
+.custom-modal-content.info .btn-custom-confirm:hover {
+    background: #0b5ed7;
+    border-color: #0b5ed7;
+}

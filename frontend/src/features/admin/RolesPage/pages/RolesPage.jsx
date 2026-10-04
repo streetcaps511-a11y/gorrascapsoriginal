@@ -3,10 +3,11 @@
    Se encarga de dibujar el HTML/JSX e invoca el Hook para obtener todas las funciones y estados necesarios. */
 
 import '../style/index.css';
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 // ===== COMPONENTES COMPARTIDOS =====
 import { Alert, EntityTable, SearchInput, UniversalModal, ConfirmDeleteModal, CustomPagination, StatusPill } from '../../../shared/services';
+import ConfirmModal from '../../../shared/components/admin/ConfirmModal';
 import RoleFormFields from '../components/RoleFormFields';
 import StatusFilter from '../components/StatusFilter';
 
@@ -45,6 +46,7 @@ const roleColumns = [
 
 const RolesPage = () => {
   const {
+    roles,
     searchTerm, setSearchTerm,
     filterStatus, setFilterStatus,
     currentPage, setCurrentPage,
@@ -77,7 +79,37 @@ const RolesPage = () => {
     return 'Registrar rol';
   };
 
-  
+  // 🔒 ConfirmModal al cancelar con datos
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const initialRoleRef = useRef(null);
+
+  // Capturar estado inicial cuando se abre el modal de edición/creación
+  useEffect(() => {
+    if (modalState.isOpen && modalState.mode !== 'details') {
+      initialRoleRef.current = JSON.stringify(currentRole);
+    } else {
+      initialRoleRef.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalState.isOpen, modalState.mode]);
+
+  const hasRoleChanges = () => {
+    if (!initialRoleRef.current) return false;
+    return JSON.stringify(currentRole) !== initialRoleRef.current;
+  };
+
+  const handleTryCancelModal = () => {
+    if (hasRoleChanges()) {
+      setShowCancelConfirm(true);
+    } else {
+      closeModal();
+    }
+  };
+
+  const handleConfirmExit = () => {
+    setShowCancelConfirm(false);
+    closeModal();
+  };
 
   return (
     <div className="roles-page-wrapper">
@@ -102,9 +134,20 @@ const RolesPage = () => {
 
       </>
 
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleConfirmExit}
+        title="¿Desea cancelar?"
+        message="Se perderán los datos del rol ingresados. ¿Está seguro de salir sin guardar?"
+        confirmText="Sí, Salir"
+        cancelText="Continuar"
+        type="warning"
+      />
+
      <UniversalModal
   isOpen={modalState.isOpen}
-  onClose={closeModal}
+  onClose={modalState.mode !== 'details' ? handleTryCancelModal : closeModal}
   title={getModalTitle()}
   subtitle={
     modalState.mode === 'create' ? 'Registre un nuevo rol y asigne sus permisos' : 
@@ -115,6 +158,8 @@ const RolesPage = () => {
   showActions={true}
   onConfirm={modalState.mode !== 'details' ? handleSave : closeModal}
   confirmText={modalState.mode === 'details' ? 'Cerrar' : (loading ? 'Guardando...' : 'Guardar')}
+  cancelText="Cancelar"
+  onCancel={modalState.mode !== 'details' ? handleTryCancelModal : undefined}
   showCancel={modalState.mode !== 'details'}  // ✅ AGREGAR: Ocultar cancelar en detalles
 >
   <div className="roles-modal-content">
@@ -129,6 +174,7 @@ const RolesPage = () => {
       handleSave={handleSave}
       isAdministrador={isAdministrador}
       isRestrictedRole={isRestrictedRole}
+      roles={roles}
     />
   </div>
 </UniversalModal>

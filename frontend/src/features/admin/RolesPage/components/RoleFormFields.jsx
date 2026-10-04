@@ -27,7 +27,8 @@ const RoleFormFields = ({
   fieldErrors, 
   setFieldErrors, 
   availablePermissions, 
-  isRestrictedRole
+  isRestrictedRole,
+  roles = []
 }) => {
   const isView = modalMode === 'details';
   const isAdminRole = isSelectedRoleAdmin(currentRole);
@@ -37,6 +38,51 @@ const RoleFormFields = ({
     if (!role) return false;
     return (role.name || "").toLowerCase() === "administrador";
   }
+
+  // ⚡ Validación instantánea de duplicados (nombre, admin y combinación de permisos)
+  const checkRoleDuplicates = (nameVal, permsVal) => {
+    const nameTrimmed = (nameVal || '').trim().toLowerCase();
+    let nameErr = null;
+    let permErr = null;
+
+    if (nameTrimmed) {
+      if (nameTrimmed === 'administrador' || nameTrimmed === 'admin') {
+        const existingAdmin = (roles || []).find(r => 
+          (r.name || '').trim().toLowerCase() === 'administrador' && 
+          r.id !== currentRole.id
+        );
+        if (existingAdmin || !currentRole.id) {
+          nameErr = 'No se puede registrar otro rol Administrador';
+        }
+      } else {
+        const duplicate = (roles || []).find(r => 
+          (r.name || '').trim().toLowerCase() === nameTrimmed && 
+          r.id !== currentRole.id
+        );
+        if (duplicate) {
+          nameErr = `Ya existe un rol con el nombre "${duplicate.name}"`;
+        }
+      }
+    }
+
+    const rolePerms = permsVal || [];
+    if (rolePerms.length > 0 && nameTrimmed !== 'administrador') {
+      const currentPermsSet = new Set(rolePerms);
+      const duplicatePerms = (roles || []).find(r => {
+        if (r.id === currentRole.id) return false;
+        if ((r.name || '').trim().toLowerCase() === 'administrador') return false;
+        const otherPerms = r.permissions || [];
+        if (otherPerms.length === 0 || otherPerms.length !== rolePerms.length) return false;
+        return otherPerms.every(p => currentPermsSet.has(p));
+      });
+
+      if (duplicatePerms) {
+        permErr = `Estos permisos son idénticos a los del rol "${duplicatePerms.name}"`;
+      }
+    }
+
+    return { nameErr, permErr };
+  };
   
   return (
     <div className={`role-form ${isView ? 'view-mode' : ''}`}>
@@ -44,7 +90,7 @@ const RoleFormFields = ({
         <FormField 
           label="Nombre" 
           required={!isView}
-          error={!isView && fieldErrors.name ? "El nombre del rol es obligatorio" : null}
+          error={!isView && fieldErrors.name ? (typeof fieldErrors.name === 'string' ? fieldErrors.name : "El nombre del rol es obligatorio") : null}
           isViewMode={isView}
           viewValue={currentRole?.name}
         >
@@ -59,10 +105,14 @@ const RoleFormFields = ({
               className={`form-input ${fieldErrors.name ? 'has-error' : ''} ${isRestricted ? 'disabled-field' : ''}`}
               onChange={(e) => {
                 if (isRestricted) return;
-                setCurrentRole({ ...currentRole, name: e.target.value });
-                if (e.target.value.trim() && fieldErrors.name) {
-                  setFieldErrors(prev => ({ ...prev, name: false }));
-                }
+                const newName = e.target.value;
+                setCurrentRole({ ...currentRole, name: newName });
+                const { nameErr, permErr } = checkRoleDuplicates(newName, currentRole.permissions);
+                setFieldErrors(prev => ({
+                  ...prev,
+                  name: nameErr || (!newName.trim() ? "El nombre del rol es obligatorio" : false),
+                  ...(permErr ? { permissions: permErr } : {})
+                }));
               }}
             />
           )}
@@ -108,7 +158,12 @@ const RoleFormFields = ({
                         ? (currentRole.permissions || []).filter(p => p !== perm.id) 
                         : [...(currentRole.permissions || []), perm.id];
                       setCurrentRole({ ...currentRole, permissions: newPerms });
-                      if (newPerms.length > 0 && fieldErrors.permissions) setFieldErrors(prev => ({ ...prev, permissions: false }));
+                      const { nameErr, permErr } = checkRoleDuplicates(currentRole.name, newPerms);
+                      setFieldErrors(prev => ({
+                        ...prev,
+                        permissions: permErr || (newPerms.length === 0 ? "Debe seleccionar al menos un permiso" : false),
+                        ...(nameErr ? { name: nameErr } : {})
+                      }));
                     }}
                     className="permission-checkbox"
                   />
@@ -117,7 +172,11 @@ const RoleFormFields = ({
               );
             })}
           </div>
-          {!isView && fieldErrors.permissions && <div className="field-error">Debe seleccionar al menos un permiso</div>}
+          {!isView && fieldErrors.permissions && (
+            <div className="field-error">
+              {typeof fieldErrors.permissions === 'string' ? fieldErrors.permissions : "Debe seleccionar al menos un permiso"}
+            </div>
+          )}
         </div>
       </div>
     </div>

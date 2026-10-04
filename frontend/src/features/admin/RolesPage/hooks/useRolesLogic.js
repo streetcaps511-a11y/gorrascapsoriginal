@@ -124,17 +124,79 @@ export const useRolesLogic = () => {
   };
 
   const validate = () => {
+    const nameTrimmed = (currentRole.name || '').trim().toLowerCase();
+    let nameError = false;
+    let permError = false;
+
+    if (!nameTrimmed) {
+      nameError = "El nombre del rol es obligatorio";
+    } else if (nameTrimmed === 'administrador' || nameTrimmed === 'admin') {
+      const existingAdmin = roles.find(r => 
+        (r.name || '').trim().toLowerCase() === 'administrador' && 
+        r.id !== currentRole.id
+      );
+      if (existingAdmin || !currentRole.id) {
+        nameError = "No se puede registrar otro rol Administrador";
+      }
+    } else {
+      const dupName = roles.find(r => 
+        (r.name || '').trim().toLowerCase() === nameTrimmed && 
+        r.id !== currentRole.id
+      );
+      if (dupName) {
+        nameError = `Ya existe un rol con el nombre "${dupName.name}"`;
+      }
+    }
+
+    const rolePerms = currentRole.permissions || [];
+    if (rolePerms.length === 0 && !isAdministrador(currentRole)) {
+      permError = "Debe seleccionar al menos un permiso";
+    } else if (rolePerms.length > 0 && nameTrimmed !== 'administrador') {
+      const currentPermsSet = new Set(rolePerms);
+      const dupPerms = roles.find(r => {
+        if (r.id === currentRole.id) return false;
+        if ((r.name || '').trim().toLowerCase() === 'administrador') return false;
+        const otherPerms = r.permissions || [];
+        if (otherPerms.length === 0 || otherPerms.length !== rolePerms.length) return false;
+        return otherPerms.every(p => currentPermsSet.has(p));
+      });
+      if (dupPerms) {
+        permError = `Estos permisos son idénticos a los del rol "${dupPerms.name}"`;
+      }
+    }
+
     const errors = {
-      name: !currentRole.name?.trim(),
-      permissions: currentRole.permissions.length === 0 && !isAdministrador(currentRole)
+      name: nameError,
+      permissions: permError
     };
     setFieldErrors(errors);
-    return !errors.name && !errors.permissions;
+    return !nameError && !permError;
   };
 
   const handleSave = async () => {
     if (!validate()) {
-      showAlert("Complete todos los campos requeridos", "error");
+      const nameTrimmed = (currentRole.name || '').trim().toLowerCase();
+      const dupName = roles.find(r => (r.name || '').trim().toLowerCase() === nameTrimmed && r.id !== currentRole.id);
+      if (nameTrimmed === 'administrador' || nameTrimmed === 'admin') {
+        showAlert("No se puede registrar otro rol Administrador", "error");
+      } else if (dupName) {
+        showAlert(`Ya existe un rol con el nombre "${dupName.name}"`, "error");
+      } else if (!nameTrimmed) {
+        showAlert("El nombre del rol es obligatorio", "error");
+      } else {
+        const rolePerms = currentRole.permissions || [];
+        const currentPermsSet = new Set(rolePerms);
+        const dupPerms = roles.find(r => {
+          if (r.id === currentRole.id) return false;
+          const otherPerms = r.permissions || [];
+          return otherPerms.length > 0 && otherPerms.length === rolePerms.length && otherPerms.every(p => currentPermsSet.has(p));
+        });
+        if (dupPerms) {
+          showAlert(`Estos permisos son idénticos a los del rol "${dupPerms.name}"`, "error");
+        } else {
+          showAlert("Complete todos los campos requeridos correctamente", "error");
+        }
+      }
       return;
     }
     setLoading(true);

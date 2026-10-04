@@ -459,6 +459,8 @@ const productoController = {
       // 🛡️ REGLA DE NEGOCIO: No permitir desactivar si el producto está en pedidos en proceso / pendientes
       if (req.body.isActive !== undefined) {
         const wantsToDeactivate = req.body.isActive === false || req.body.isActive === 0 || req.body.isActive === 'false';
+        const wantsToActivate = req.body.isActive === true || req.body.isActive === 1 || req.body.isActive === 'true';
+
         if (wantsToDeactivate && producto.isActive) {
           const ventaPendiente = await DetalleVenta.findOne({
             where: { idProducto: id },
@@ -482,6 +484,32 @@ const productoController = {
             });
           }
         }
+
+        // 🚨 VALIDACIÓN: No se puede activar si faltan colores, imágenes o precio de venta
+        if (wantsToActivate && !producto.isActive) {
+          const productData = req.body;
+          const coloresCheck = productData.colores ?? producto.colores;
+          const imagenesCheck = productData.imagenes ?? producto.imagenes;
+          const precioCheck = productData.precioVenta ?? producto.precioVenta;
+
+          const tieneColores = Array.isArray(coloresCheck) && coloresCheck.some(c => c && String(c).trim());
+          const tieneImagenes = Array.isArray(imagenesCheck) && imagenesCheck.some(i => i && String(i).trim());
+          const tienePrecio = parseFloat(precioCheck) > 0;
+
+          const faltantes = [];
+          if (!tieneColores) faltantes.push('colores');
+          if (!tieneImagenes) faltantes.push('imágenes');
+          if (!tienePrecio) faltantes.push('precio de venta');
+
+          if (faltantes.length > 0) {
+            await transaction.rollback();
+            return res.status(400).json({
+              success: false,
+              message: `No se puede publicar el producto en la tienda. Falt${faltantes.length === 1 ? 'a' : 'an'}: ${faltantes.join(', ')}. Edite el producto y complete esta información primero.`
+            });
+          }
+        }
+
         sanitizedData.isActive = req.body.isActive;
       }
 

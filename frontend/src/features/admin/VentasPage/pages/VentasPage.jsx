@@ -672,7 +672,6 @@ const VentasPage = () => {
       {confirmAbortRejectModal && (
         <div className="gm-zoom-overlay-admin" style={{ display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10008 }}>
           <div style={{ backgroundColor: "#0b1220", border: "1.5px solid #FFC300", borderRadius: "16px", padding: "24px", maxWidth: "380px", width: "90%", textAlign: "center", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
-            <div style={{ fontSize: "28px", marginBottom: "8px" }}>⚠️</div>
             <h3 style={{ color: "#FFC300", fontSize: "18px", fontWeight: "800", marginBottom: "10px" }}>¿Desea cancelar?</h3>
             <p style={{ color: "#fff", fontSize: "13px", marginBottom: "16px" }}>Se perderán los datos y el motivo ingresado. ¿Está seguro de salir sin rechazar la venta?</p>
             <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
@@ -698,7 +697,6 @@ const VentasPage = () => {
       {confirmRejectModal.isOpen && (
         <div className="gm-zoom-overlay-admin" style={{ display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10007 }}>
           <div style={{ backgroundColor: "#0b1220", border: "1.5px solid #ef4444", borderRadius: "16px", padding: "24px", maxWidth: "400px", width: "90%", textAlign: "center", boxShadow: "0 10px 30px rgba(239, 68, 68, 0.25)" }}>
-            <div style={{ fontSize: "30px", marginBottom: "8px" }}>⚠️</div>
             <h3 style={{ color: "#ef4444", fontSize: "18px", fontWeight: "800", marginBottom: "10px" }}>¿Confirmar Rechazo?</h3>
             <p style={{ color: "#fff", fontSize: "13px", marginBottom: "12px" }}>¿Está seguro de rechazar la venta de <strong style={{ color: "#FFC300" }}>{confirmRejectModal.cliente}</strong> (Venta #<strong>{confirmRejectModal.venta?.noVenta || confirmRejectModal.venta?.id}</strong>)?</p>
             <div style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "8px", padding: "10px 12px", marginBottom: "14px", fontSize: "12px", textAlign: "left" }}>

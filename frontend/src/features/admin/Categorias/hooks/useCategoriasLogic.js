@@ -138,6 +138,22 @@ export const useCategoriasLogic = () => {
     handleInputChange: (field, value) => {
       setFormData(prev => ({ ...prev, [field]: value }));
       if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }));
+
+      // 🔍 VALIDACIÓN EN TIEMPO REAL: Nombre duplicado (insensible a mayúsculas/minúsculas)
+      if (field === 'nombre' && value.trim().length >= 2) {
+        const nombreNorm = value.trim().toLowerCase();
+        const editingId = modalState.category?.id;
+        const duplicado = categorias.find(c =>
+          c.nombre.trim().toLowerCase() === nombreNorm &&
+          c.id !== editingId
+        );
+        if (duplicado) {
+          setErrors(prev => ({
+            ...prev,
+            nombre: `Ya existe una categoría con el nombre "${duplicado.nombre}"`
+          }));
+        }
+      }
     },
     handlePageChange: (p) => setCurrentPage(p),
     handleFilterSelect: (s) => { setFilterStatus(s); setCurrentPage(1); },
@@ -154,6 +170,16 @@ export const useCategoriasLogic = () => {
       // ⚡ Validación MÚLTIPLE (Simultánea)
       const newErrors = {};
       if (!formData.nombre || !formData.nombre.trim()) newErrors.nombre = 'El nombre es obligatorio';
+      else {
+        // 🔍 Validar nombre duplicado (insensible a mayúsculas/minúsculas)
+        const nombreNorm = formData.nombre.trim().toLowerCase();
+        const editingId = modalState.category?.id;
+        const duplicado = categorias.find(c =>
+          c.nombre.trim().toLowerCase() === nombreNorm &&
+          c.id !== editingId
+        );
+        if (duplicado) newErrors.nombre = `Ya existe una categoría con el nombre "${duplicado.nombre}"`;
+      }
       if (!formData.descripcion || !formData.descripcion.trim()) newErrors.descripcion = 'La descripción es obligatoria';
       if (!formData.imagenUrl || !formData.imagenUrl.trim()) newErrors.imagenUrl = 'La URL de imagen es obligatoria';
 

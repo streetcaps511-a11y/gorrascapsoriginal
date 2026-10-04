@@ -4,10 +4,11 @@
    e invoca el Hook useUsersLogic para obtener todas las funciones y estados necesarios. */
 
 import '../style/index.css';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 
 // ===== COMPONENTES COMPARTIDOS =====
 import { Alert, EntityTable, SearchInput, UniversalModal, ConfirmDeleteModal, CustomPagination, StatusPill } from '../../../shared/services';
+import ConfirmModal from '../../../shared/components/admin/ConfirmModal';
 
 // ===== COMPONENTES LOCALES =====
 import StatusFilter from '../components/StatusFilter';
@@ -18,6 +19,38 @@ import { useUsersLogic } from '../hooks/useUsersLogic';
 
 const UsersPage = () => {
   const { users, searchTerm, setSearchTerm, filterStatus, setFilterStatus, currentPage, setCurrentPage, loading, alert, setAlert, formData, errors, isModalOpen, editingUser, isConfirmOpen, userToDelete, isDetailsOpen, selectedUser, filteredUsers, paginatedUsers, totalPages, openModal, closeModal, handleInputChange, handleSave, openDeleteModal, closeDeleteModal, handleDelete, viewUserDetails, closeDetails, isAdministrador, availableStatuses: _availableStatuses, availableRoles, handleToggleStatus } = useUsersLogic();
+
+  // 🔒 ConfirmModal al cancelar con datos
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const initialFormRef = useRef(null);
+
+  // Capturar estado inicial cuando se abre el modal
+  useEffect(() => {
+    if (isModalOpen) {
+      initialFormRef.current = JSON.stringify(formData);
+    } else {
+      initialFormRef.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isModalOpen]);
+
+  const hasFormChanges = () => {
+    if (!initialFormRef.current) return false;
+    return JSON.stringify(formData) !== initialFormRef.current;
+  };
+
+  const handleTryCancelModal = () => {
+    if (hasFormChanges()) {
+      setShowCancelConfirm(true);
+    } else {
+      closeModal();
+    }
+  };
+
+  const handleConfirmExit = () => {
+    setShowCancelConfirm(false);
+    closeModal();
+  };
 
   // Definir columnas dentro del componente para acceder a las funciones del hook
   const columns = useMemo(() => [
@@ -158,15 +191,26 @@ const UsersPage = () => {
         </div>
       </div>
 
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleConfirmExit}
+        title="¿Desea cancelar?"
+        message="Se perderán los datos del usuario ingresados. ¿Está seguro de salir sin guardar?"
+        confirmText="Sí, Salir"
+        cancelText="Continuar"
+        type="warning"
+      />
+
       <UniversalModal
         isOpen={isModalOpen}
-        onClose={closeModal}
+        onClose={handleTryCancelModal}
         title={editingUser?.id ? 'Editar usuario' : 'Registrar usuario'}
         subtitle={editingUser?.id ? "Modifique los datos de acceso y perfil del usuario" : "Complete el formulario para crear un nuevo acceso al sistema"}
         size="medium"
         onSave={handleSave}
         actions={[
-          { label: 'Cancelar', variant: 'secondary', onClick: closeModal },
+          { label: 'Cancelar', variant: 'secondary', onClick: handleTryCancelModal },
           { label: editingUser?.id ? 'Actualizar' : 'Guardar', variant: 'primary', onClick: handleSave }
         ]}
       >

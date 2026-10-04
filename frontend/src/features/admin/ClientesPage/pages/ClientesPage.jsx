@@ -3,8 +3,9 @@
    Se encarga de dibujar el HTML/JSX e invoca el Hook para obtener todas las funciones y estados necesarios. */
 
 import '../style/index.css';
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { EntityTable, Alert, SearchInput, UniversalModal, ConfirmDeleteModal, CustomPagination, StatusPill } from '../../../shared/services';
+import ConfirmModal from '../../../shared/components/admin/ConfirmModal';
 
 import { useClientesLogic } from '../hooks/useClientesLogic';
 import { StatusFilter } from '../components/StatusFilter';
@@ -52,6 +53,37 @@ const ClientesPage = () => {
     openDeleteModal, closeDeleteModal, handleDelete, handleToggleStatus
   } = useClientesLogic();
 
+  // 🔒 ConfirmModal al cancelar con datos
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const initialFormRef = useRef(null);
+
+  // Capturar estado inicial cuando se abre el modal de edición/creación
+  useEffect(() => {
+    if (modalState.isOpen && modalState.mode !== 'view') {
+      initialFormRef.current = JSON.stringify(formData);
+    } else {
+      initialFormRef.current = null;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modalState.isOpen, modalState.mode]);
+
+  const hasFormChanges = () => {
+    if (!initialFormRef.current) return false;
+    return JSON.stringify(formData) !== initialFormRef.current;
+  };
+
+  const handleTryCancelModal = () => {
+    if (hasFormChanges()) {
+      setShowCancelConfirm(true);
+    } else {
+      closeModal();
+    }
+  };
+
+  const handleConfirmExit = () => {
+    setShowCancelConfirm(false);
+    closeModal();
+  };
 
 
   return (
@@ -127,9 +159,19 @@ const ClientesPage = () => {
       </div>
 
       {/* MODAL DE FORMULARIO */}
+      <ConfirmModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleConfirmExit}
+        title="¿Desea cancelar?"
+        message="Se perderán los datos del cliente ingresados. ¿Está seguro de salir sin guardar?"
+        confirmText="Sí, Salir"
+        cancelText="Continuar"
+        type="warning"
+      />
       <UniversalModal
         isOpen={modalState.isOpen}
-        onClose={closeModal}
+        onClose={modalState.mode !== 'view' ? handleTryCancelModal : closeModal}
         title={
           modalState.mode === 'create' ? 'Registrar cliente' : 
           modalState.mode === 'edit' ? 'Editar cliente' : 
@@ -141,7 +183,7 @@ const ClientesPage = () => {
         actions={modalState.mode === 'view' ? [
           { label: 'Cerrar', variant: 'primary', onClick: closeModal }
         ] : [
-          { label: 'Cancelar', variant: 'secondary', onClick: closeModal },
+          { label: 'Cancelar', variant: 'secondary', onClick: handleTryCancelModal },
           { label: modalState.mode === 'edit' ? 'Guardar Cambios' : 'Guardar', variant: 'primary', onClick: handleSave }
         ]}
       >

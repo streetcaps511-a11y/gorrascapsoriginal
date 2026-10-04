@@ -1,33 +1,375 @@
-.entity-table-container { width: 100%; overflow-x: hidden; border-radius: 0; border: none; background-color: transparent; margin-bottom: 0; padding-bottom: 0; box-shadow: none; display: flex; flex-direction: column; }
-.entity-table { width: 100%; border-collapse: collapse; background-color: transparent; table-layout: auto; }
-/* Header Styles */
-.entity-table thead tr { background: #000000; height: 52px; border-bottom: 2px solid #FFC300; }
-.entity-table th { padding: 10px 10px; color: #FFFFFF; font-weight: 400; text-align: left; font-size: 13px; letter-spacing: 0.5px; text-transform: none; border-bottom: 1px solid #222; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.entity-table th.actions-header { text-align: right; width: 120px; }
-/* Body Styles */
-.entity-table tbody tr { border-bottom: 1px solid rgba(255, 255, 255, 0.08); transition: background-color 0.2s ease; }
-.entity-table tbody tr.row-even { background-color: transparent; }
-.entity-table tbody tr.row-odd { background-color: transparent; }
-.entity-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); position: relative; z-index: 10; }
-.entity-table tbody tr.entity-table-empty-row:hover { background-color: transparent; }
-.entity-table tbody tr:last-child { border-bottom: none; }
-.entity-table-cell { padding: 6px 10px; color: #fff; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
-.actions-cell { padding: 8px 10px; overflow: visible !important; position: relative; }
-.actions-wrapper { display: flex; gap: 8px; justify-content: flex-end; align-items: center; min-height: 26px; }
-.action-icon { cursor: pointer; color: #FFC300; transition: transform 0.2s ease, opacity 0.2s ease; }
-.action-icon:hover { transform: scale(1.05); opacity: 0.8; }
-.status-pill { display: inline-flex; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-.status-pill-active { background-color: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.5); }
-.status-pill-inactive { background-color: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.5); }
-.entity-table-empty { padding: 40px 20px; text-align: center; color: #9ca3af; font-size: 14px; font-style: italic; background-color: transparent; }
-.custom-switch { width: 32px; height: 16px; border-radius: 8px; border: 1px solid #333; background-color: var(--switch-off-color, #ef4444); position: relative; padding: 0; display: inline-flex; align-items: center; justify-content: flex-start; cursor: pointer; }
-.custom-switch.active { background-color: var(--switch-on-color, #10b981); justify-content: flex-end; }
-.custom-switch.inactive { background-color: var(--switch-off-color, #ef4444); justify-content: flex-start; }
-.custom-switch-thumb { width: 14px; height: 14px; background-color: #fff; border-radius: 50%; margin: 1px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.3s ease; }
+/* src/features/shared/styles/EntityTable.css */
 
-/* Responsive adjustments for EntityTable */
+.entity-table-container {
+  width: 100%;
+  overflow-x: hidden;
+  border-radius: 0;
+  border: none;
+  background-color: transparent;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.entity-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: transparent;
+  table-layout: auto;
+}
+
+/* ═══════════════════════════════════════════
+   HEADER STYLES
+   ══════════════════════════════════════════ */
+.entity-table thead tr {
+  background: #000000;
+  height: 52px;
+  border-bottom: 2px solid #FFC300;
+}
+
+.entity-table th {
+  padding: 10px 10px;
+  color: #FFFFFF;
+  font-weight: 400;
+  text-align: left;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  text-transform: none;
+  border-bottom: 1px solid #222;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entity-table th.actions-header {
+  text-align: right;
+  width: 200px;
+}
+
+/* ═══════════════════════════════════════════
+   BODY STYLES
+   ═══════════════════════════════════════════ */
+.entity-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background-color 0.2s ease;
+}
+
+.entity-table tbody tr.row-even {
+  background-color: transparent;
+}
+
+.entity-table tbody tr.row-odd {
+  background-color: transparent;
+}
+
+.entity-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  position: relative;
+  z-index: 10;
+}
+
+.entity-table tbody tr.entity-table-empty-row:hover {
+  background-color: transparent;
+}
+
+.entity-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.entity-table-cell {
+  padding: 6px 10px;
+  color: #fff;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+/* ═══════════════════════════════════════════
+   ACCIONES - ICONOS MÁS GRANDES
+   ══════════════════════════════════════════ */
+.actions-cell {
+  padding: 8px 10px;
+  overflow: visible !important;
+  position: relative;
+}
+
+.actions-wrapper {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 40px;
+}
+
+/* Icono base */
+.action-icon {
+  cursor: pointer;
+  color: #FFC300;
+  transition: transform 0.18s ease, opacity 0.18s ease, color 0.18s ease;
+  padding: 4px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-icon:hover {
+  transform: scale(1.1);
+  opacity: 1;
+  background: rgba(255, 195, 0, 0.14);
+  border-color: rgba(255, 195, 0, 0.35);
+  color: #FFD700;
+}
+
+/* ═══════════════════════════════════════════
+   COLORES POR TIPO DE ACCIÓN
+   ═══════════════════════════════════════════ */
+
+/* Ver = azul suave */
+span[data-tooltip="Ver detalles"] .action-icon,
+span[title="Ver detalles"] .action-icon {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.07);
+  border-color: rgba(96, 165, 250, 0.18);
+}
+
+span[data-tooltip="Ver detalles"] .action-icon:hover,
+span[title="Ver detalles"] .action-icon:hover {
+  color: #93c5fd;
+  background: rgba(96, 165, 250, 0.18);
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+/* Editar = amarillo */
+span[data-tooltip="Editar"] .action-icon,
+span[title="Editar"] .action-icon {
+  color: #FFC300;
+  background: rgba(255, 195, 0, 0.07);
+  border-color: rgba(255, 195, 0, 0.18);
+}
+
+span[data-tooltip="Editar"] .action-icon:hover,
+span[title="Editar"] .action-icon:hover {
+  color: #FFD700;
+  background: rgba(255, 195, 0, 0.18);
+  border-color: rgba(255, 195, 0, 0.4);
+}
+
+/* Eliminar = rojo */
+span[data-tooltip="Eliminar"] .action-icon,
+span[title="Eliminar"] .action-icon {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.07);
+  border-color: rgba(248, 113, 113, 0.18);
+}
+
+span[data-tooltip="Eliminar"] .action-icon:hover,
+span[title="Eliminar"] .action-icon:hover {
+  color: #ef4444;
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.4);
+}
+
+/* Aprobar = verde */
+span[data-tooltip="Aprobar"] .action-icon,
+span[title="Aprobar"] .action-icon {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.07);
+  border-color: rgba(16, 185, 129, 0.18);
+}
+
+span[data-tooltip="Aprobar"] .action-icon:hover,
+span[title="Aprobar"] .action-icon:hover {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* Rechazar = rojo */
+span[data-tooltip="Rechazar"] .action-icon,
+span[title="Rechazar"] .action-icon {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.07);
+  border-color: rgba(239, 68, 68, 0.18);
+}
+
+span[data-tooltip="Rechazar"] .action-icon:hover,
+span[title="Rechazar"] .action-icon:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Pago Incompleto = naranja */
+span[data-tooltip="Pago Incompleto"] .action-icon,
+span[title="Pago Incompleto"] .action-icon {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.07);
+  border-color: rgba(245, 158, 11, 0.18);
+}
+
+span[data-tooltip="Pago Incompleto"] .action-icon:hover,
+span[title="Pago Incompleto"] .action-icon:hover {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+/* Marcar como Enviado = azul */
+span[data-tooltip="Marcar como Enviado"] .action-icon,
+span[title="Marcar como Enviado"] .action-icon {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.07);
+  border-color: rgba(59, 130, 246, 0.18);
+}
+
+span[data-tooltip="Marcar como Enviado"] .action-icon:hover,
+span[title="Marcar como Enviado"] .action-icon:hover {
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* Marcar como Preparado = morado */
+span[data-tooltip="Marcar como Preparado"] .action-icon,
+span[title="Marcar como Preparado"] .action-icon {
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.07);
+  border-color: rgba(168, 85, 247, 0.18);
+}
+
+span[data-tooltip="Marcar como Preparado"] .action-icon:hover,
+span[title="Marcar como Preparado"] .action-icon:hover {
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+/* Marcar como Entregado = verde claro */
+span[data-tooltip="Marcar como Entregado"] .action-icon,
+span[title="Marcar como Entregado"] .action-icon {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.07);
+  border-color: rgba(74, 222, 128, 0.18);
+}
+
+span[data-tooltip="Marcar como Entregado"] .action-icon:hover,
+span[title="Marcar como Entregado"] .action-icon:hover {
+  color: #86efac;
+  background: rgba(74, 222, 128, 0.18);
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+/* Anular compra = amarillo */
+span[data-tooltip="Anular compra"] .action-icon,
+span[title="Anular compra"] .action-icon {
+  color: #F5C81B;
+  background: rgba(245, 200, 27, 0.07);
+  border-color: rgba(245, 200, 27, 0.18);
+}
+
+span[data-tooltip="Anular compra"] .action-icon:hover,
+span[title="Anular compra"] .action-icon:hover {
+  color: #FFD700;
+  background: rgba(245, 200, 27, 0.18);
+  border-color: rgba(245, 200, 27, 0.4);
+}
+
+/* Marcar como completada = verde */
+span[data-tooltip="Marcar como completada"] .action-icon,
+span[title="Marcar como completada"] .action-icon {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.07);
+  border-color: rgba(16, 185, 129, 0.18);
+}
+
+span[data-tooltip="Marcar como completada"] .action-icon:hover,
+span[title="Marcar como completada"] .action-icon:hover {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* ═══════════════════════════════════════════
+   STATUS PILLS
+   ═══════════════════════════════════════════ */
+.status-pill {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-pill-active {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.5);
+}
+
+.status-pill-inactive {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}
+
+.entity-table-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  font-style: italic;
+  background-color: transparent;
+}
+
+/* ═══════════════════════════════════════════
+   CUSTOM SWITCH
+   ═══════════════════════════════════════════ */
+.custom-switch {
+  width: 36px;
+  height: 18px;
+  border-radius: 9px;
+  border: 1px solid #333;
+  background-color: var(--switch-off-color, #ef4444);
+  position: relative;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: pointer;
+}
+
+.custom-switch.active {
+  background-color: var(--switch-on-color, #10b981);
+  justify-content: flex-end;
+}
+
+.custom-switch.inactive {
+  background-color: var(--switch-off-color, #ef4444);
+  justify-content: flex-start;
+}
+
+.custom-switch-thumb {
+  width: 14px;
+  height: 14px;
+  background-color: #fff;
+  border-radius: 50%;
+  margin: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
 @media (max-width: 1024px) {
-  /* Hide the 5th column if it's not the last-child (Actions) */
+
   .entity-table th:nth-child(5):not(:last-child),
   .entity-table td:nth-child(5):not(:last-child) {
     display: none;
@@ -35,7 +377,7 @@
 }
 
 @media (max-width: 850px) {
-  /* Hide the 4th column */
+
   .entity-table th:nth-child(4):not(:last-child),
   .entity-table td:nth-child(4):not(:last-child) {
     display: none;
@@ -43,7 +385,7 @@
 }
 
 @media (max-width: 700px) {
-  /* Hide the 3rd column */
+
   .entity-table th:nth-child(3):not(:last-child),
   .entity-table td:nth-child(3):not(:last-child) {
     display: none;
@@ -51,25 +393,29 @@
 }
 
 @media (max-width: 480px) {
-  /* Hide all columns except the first and the last (Actions) */
+
   .entity-table th:not(:first-child):not(:last-child),
   .entity-table td:not(:first-child):not(:last-child) {
     display: none;
   }
-  
-  /* Reduce padding and font-size slightly for a better mobile fit */
-  .entity-table th, 
+
+  .entity-table th,
   .entity-table-cell {
     padding: 6px 8px;
     font-size: 11px;
   }
-  
+
   .entity-table th.actions-header {
     width: auto;
     min-width: 70px;
   }
-  
+
   .actions-wrapper {
     gap: 4px;
+  }
+
+  .action-icon {
+    padding: 4px;
+    border-radius: 6px;
   }
 }

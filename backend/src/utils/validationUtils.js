@@ -62,13 +62,23 @@ export const sanitizeCategoria = (data) => {
 // ============================================
 export const validateProducto = async (data, id = null) => {
     const errors = [];
-    const { nombre, precioVenta, stock, idCategoria } = data;
+    const { nombre, precioVenta, idCategoria } = data;
     const isCreate = !id;
 
     if (isCreate && !nombre) {
         errors.push('El nombre del producto es obligatorio');
     } else if (nombre !== undefined && nombre.trim().length < 3) {
         errors.push('El nombre debe tener al menos 3 caracteres');
+    } else if (nombre !== undefined && nombre.trim().length >= 3) {
+        // 🔍 Validar nombre duplicado (insensible a mayúsculas/minúsculas)
+        try {
+            const whereClause = { nombre: { [Op.iLike]: nombre.trim() } };
+            if (id) whereClause.id = { [Op.ne]: id };
+            const existing = await Producto.findOne({ where: whereClause });
+            if (existing) errors.push(`Ya existe un producto con el nombre "${existing.nombre}"`);
+        } catch (error) {
+            errors.push('Error al verificar nombre duplicado de producto');
+        }
     }
 
     if (precioVenta !== undefined && (isNaN(precioVenta) || precioVenta < 0)) {
@@ -118,6 +128,17 @@ export const validateProveedor = async (data, id = null) => {
 
     if (companyName !== undefined && (!companyName || companyName.trim().length < 3)) {
         errors.push('El nombre de empresa debe tener al menos 3 caracteres');
+    } else if (companyName !== undefined && companyName.trim().length >= 3) {
+        // 🔍 Validar companyName duplicado (insensible a mayúsculas/minúsculas)
+        try {
+            const existing = await Proveedor.findOne({ where: { 
+                companyName: { [Op.iLike]: companyName.trim() },
+                ...(id && { id: { [Op.ne]: id } })
+            }});
+            if (existing) errors.push(`Ya existe un proveedor con el nombre "${existing.companyName}"`);
+        } catch (error) {
+            errors.push('Error al verificar nombre duplicado de proveedor');
+        }
     }
 
     const validationPromises = [];
@@ -143,7 +164,7 @@ export const validateProveedor = async (data, id = null) => {
                     documentNumber: documentNumber.toString().trim(),
                     ...(id && { id: { [Op.ne]: id } })
                 }}).then(existing => {
-                    if (existing) errors.push('Ya existe un proveedor con ese documento');
+                    if (existing) errors.push(`Ya existe un proveedor con ese documento (${existing.companyName})`);
                 })
             );
         }
@@ -156,7 +177,7 @@ export const validateProveedor = async (data, id = null) => {
                 email: email.toLowerCase().trim(),
                 ...(id && { id: { [Op.ne]: id } })
             }}).then(existing => {
-                if (existing) errors.push('Ya existe un proveedor con ese email');
+                if (existing) errors.push(`Ya existe un proveedor con ese email (${existing.companyName})`);
             })
         );
     }
@@ -209,6 +230,17 @@ export const validateCliente = async (data, id = null) => {
 
     if (nombreCompleto !== undefined && (!nombreCompleto || nombreCompleto.trim().length < 3)) {
         errors.push('El nombre debe tener al menos 3 caracteres');
+    } else if (nombreCompleto !== undefined && nombreCompleto.trim().length >= 3) {
+        // 🔍 Validar nombreCompleto duplicado (insensible a mayúsculas/minúsculas)
+        try {
+            const existing = await Cliente.findOne({ where: { 
+                nombreCompleto: { [Op.iLike]: nombreCompleto.trim() },
+                ...(id && { id: { [Op.ne]: id } })
+            }});
+            if (existing) errors.push(`Ya existe un cliente con el nombre "${existing.nombreCompleto}"`);
+        } catch (error) {
+            errors.push('Error al verificar nombre duplicado de cliente');
+        }
     }
 
     if (email !== undefined) {
@@ -216,7 +248,7 @@ export const validateCliente = async (data, id = null) => {
             email: email.toLowerCase().trim(),
             ...(id && { id: { [Op.ne]: id } })
         }});
-        if (existing) errors.push('Ya existe un cliente con ese email');
+        if (existing) errors.push(`Ya existe un cliente con ese email (${existing.nombreCompleto})`);
     }
 
     if (numeroDocumento !== undefined && numeroDocumento) {
@@ -228,7 +260,7 @@ export const validateCliente = async (data, id = null) => {
                 numeroDocumento: cleanDoc.trim(),
                 ...(id && { id: { [Op.ne]: id } })
             }});
-            if (existing) errors.push('Ya existe un cliente con ese documento');
+            if (existing) errors.push(`Ya existe un cliente con ese documento (${existing.nombreCompleto})`);
         }
     }
 
@@ -275,6 +307,17 @@ export const validateUsuario = async (data, id = null) => {
             errors.push('El nombre es requerido');
         } else if (!nombre.trim().includes(' ')) {
             errors.push('Debe ingresar nombre y apellido separados por un espacio');
+        } else {
+            // 🔍 Validar nombre duplicado (insensible a mayúsculas/minúsculas)
+            try {
+                const existing = await Usuario.findOne({ where: { 
+                    nombre: { [Op.iLike]: nombre.trim() },
+                    ...(id && { id: { [Op.ne]: id } })
+                }});
+                if (existing) errors.push(`Ya existe un usuario con el nombre "${existing.nombre}"`);
+            } catch (error) {
+                errors.push('Error al verificar nombre duplicado de usuario');
+            }
         }
     }
 
@@ -283,7 +326,7 @@ export const validateUsuario = async (data, id = null) => {
             email: email.toLowerCase().trim(),
             ...(id && { id: { [Op.ne]: id } })
         }});
-        if (existing) errors.push('El email ya está en uso');
+        if (existing) errors.push(`El email ya está en uso (${existing.nombre})`);
     }
 
     if (idRol !== undefined && idRol) {
@@ -336,11 +379,12 @@ export const validateRol = async (data, id = null) => {
     if (data.nombre !== undefined) {
         if (!data.nombre || data.nombre.trim() === '') errors.push('El nombre del rol es requerido');
         else {
+            // 🔍 Validación insensible a mayúsculas/minúsculas
             const existing = await Rol.findOne({ where: { 
-                nombre: data.nombre.trim(),
+                nombre: { [Op.iLike]: data.nombre.trim() },
                 ...(id && { id: { [Op.ne]: id } })
             }});
-            if (existing) errors.push('Ya existe un rol con ese nombre');
+            if (existing) errors.push(`Ya existe un rol con el nombre "${existing.nombre}"`);
         }
     }
     return errors;

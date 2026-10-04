@@ -1,33 +1,31 @@
-/* === PÁGINA PRINCIPAL === 
-   Este componente es la interfaz visual principal de la ruta. 
-   Se encarga de dibujar el HTML/JSX e invoca el Hook para obtener todas las funciones y estados necesarios. */
-
+/* === PÁGINA PRINCIPAL ===
+Este componente es la interfaz visual principal de la ruta.
+Se encarga de dibujar el HTML/JSX e invoca el Hook para obtener todas las funciones y estados necesarios. */
 import '../style/index.css';
-import React from 'react';
-
+import React, { useState, useEffect, useRef } from 'react';
 // ===== COMPONENTES COMPARTIDOS =====
 import { Alert, EntityTable, SearchInput, UniversalModal, ConfirmDeleteModal, CustomPagination, StatusPill } from '../../../shared/services';
 // ===== COMPONENTES LOCALES =====
 import ProveedorFormFields from '../components/ProveedorFormFields';
 import StatusFilter from '../components/StatusFilter';
-
+import ConfirmModal from '../../../shared/components/admin/ConfirmModal';
 // ===== HOOKS =====
 import { useProveedoresLogic } from '../hooks/useProveedoresLogic';
 
 const columns = [
-  { 
-    header: 'Tipo Proveedor', 
-    field: 'supplierType', 
+  {
+    header: 'Tipo Proveedor',
+    field: 'supplierType',
     width: '100px',
     render: (item) => (
       <span className="supplier-type-text">
         {item.supplierType?.toLowerCase() === 'persona natural' ? 'Natural' : 'Jurídica'}
       </span>
     )
-  }, 
-  { 
-    header: 'Nombre/Empresa', 
-    field: 'companyName', 
+  },
+  {
+    header: 'Nombre/Empresa',
+    field: 'companyName',
     width: '140px',
     render: (item) => (
       <div className="company-name-text">
@@ -35,9 +33,9 @@ const columns = [
       </div>
     )
   },
-  { 
-    header: 'Documento/NIT', 
-    field: 'documentNumber', 
+  {
+    header: 'Documento/NIT',
+    field: 'documentNumber',
     width: '100px',
     render: (item) => (
       <div className="document-number-text">
@@ -45,12 +43,12 @@ const columns = [
       </div>
     )
   },
-  { 
-    header: 'Email', 
-    field: 'email', 
+  {
+    header: 'Email',
+    field: 'email',
     width: '480px',
     render: (item) => (
-      <a 
+      <a
         href={`mailto:${item.email}`}
         className="email-link"
         title={item.email}
@@ -59,9 +57,9 @@ const columns = [
       </a>
     )
   },
-  { 
-    header: 'Teléfono', 
-    field: 'phone', 
+  {
+    header: 'Teléfono',
+    field: 'phone',
     width: '140px',
     render: (item) => (
       <span className="phone-text">
@@ -106,13 +104,55 @@ const ProveedoresPage = () => {
     handleToggleStatus
   } = useProveedoresLogic();
 
+  // 🔒 Estados para el modal de confirmación
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const initialFormDataRef = useRef(null);
+
+  // Detectar cambios en formData cuando el modal está abierto
+  useEffect(() => {
+    if (modalState.isOpen) {
+      // Guardar datos iniciales cuando se abre el modal
+      if (initialFormDataRef.current === null) {
+        initialFormDataRef.current = JSON.stringify(formData);
+      }
+
+      // Comparar datos actuales con los iniciales
+      const currentData = JSON.stringify(formData);
+      const changed = currentData !== initialFormDataRef.current;
+      setHasChanges(changed);
+    } else {
+      // Resetear cuando se cierra el modal
+      initialFormDataRef.current = null;
+      setHasChanges(false);
+    }
+  }, [formData, modalState.isOpen]);
+
+  // Función wrapper para cerrar el modal con validación
+  const handleCloseModal = () => {
+    if (hasChanges && modalState.mode !== 'view') {
+      setShowConfirmModal(true);
+    } else {
+      closeModal();
+    }
+  };
+
+  // Confirmar salida (pierde los cambios)
+  const handleConfirmExit = () => {
+    setShowConfirmModal(false);
+    closeModal();
+  };
+
+  // Cancelar salida (mantiene los datos)
+  const handleCancelExit = () => {
+    setShowConfirmModal(false);
+  };
+
   const getModalTitle = () => {
     if (modalState.mode === 'view') return 'Detalle del proveedor';
     if (modalState.mode === 'edit') return 'Editar proveedor';
     return 'Registrar proveedor';
   };
-
-  
 
   return (
     <div className="proveedores-page-wrapper">
@@ -125,18 +165,15 @@ const ProveedoresPage = () => {
       )}
 
       {/* MODAL DE ELIMINACIÓN */}
-      <>
-        <ConfirmDeleteModal
-          isOpen={deleteModal.isOpen}
-          onClose={closeDeleteModal}
-          onConfirm={handleDelete}
-          entityName="proveedor"
-          entityData={deleteModal.proveedor}
-          loading={actionLoading}
-          loadingText={actionLoadingText}
-        />
-
-      </>
+      <ConfirmDeleteModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDelete}
+        entityName="proveedor"
+        entityData={deleteModal.proveedor}
+        loading={actionLoading}
+        loadingText={actionLoadingText}
+      />
 
       <div className="proveedores-container">
         {/* HEADER */}
@@ -153,7 +190,6 @@ const ProveedoresPage = () => {
               Registrar Proveedor
             </button>
           </div>
-
           <div className="proveedores-controls">
             <div style={{ flex: 1, marginRight: '20px' }}>
               <SearchInput
@@ -164,9 +200,9 @@ const ProveedoresPage = () => {
                 fullWidth={true}
               />
             </div>
-            <StatusFilter 
-              filterStatus={filterStatus} 
-              onFilterSelect={setFilterStatus} 
+            <StatusFilter
+              filterStatus={filterStatus}
+              onFilterSelect={setFilterStatus}
               statuses={availableStatuses}
             />
           </div>
@@ -190,7 +226,6 @@ const ProveedoresPage = () => {
               loading={loading}
             />
           </div>
-
           <CustomPagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -203,50 +238,61 @@ const ProveedoresPage = () => {
         </div>
       </div>
 
-     <UniversalModal
-  isOpen={modalState.isOpen}
-  onClose={closeModal}
-  title={getModalTitle()}
-  subtitle={modalState.mode === 'create' ? "Ingrese la información básica de su nuevo proveedor" : modalState.mode === 'edit' ? "Actualice la información del proveedor seleccionado" : "Detalles completos de la ficha del proveedor"}
-  size="medium"
-  loading={actionLoading}
-  loadingText={actionLoadingText}
-  actions={modalState.mode === 'view' ? [
-    { 
-      label: 'Cerrar', 
-      variant: 'primary', 
-      key: 'close',
-      closeOnClick: true,
-      onClick: closeModal
-    }
-  ] : [
-    { 
-      label: 'Cancelar', 
-      variant: 'secondary', 
-      key: 'cancel',
-      closeOnClick: true 
-    },
-    { 
-      label: 'Guardar', 
-      variant: 'primary', 
-      key: 'save',
-      closeOnClick: false,
-      onClick: handleSave
-    }
-  ]}
->
-  <div className="proveedores-form-wrapper yellow-scrollbar">
-    <ProveedorFormFields 
-      modalMode={modalState.mode}
-      formData={formData}
-      handleFieldChange={handleFieldChange}
-      errors={errors}
-      closeModal={closeModal}
-      handleSave={handleSave}
-      availableStatuses={availableStatuses}
-    />
-  </div>
-</UniversalModal>
+      <UniversalModal
+        isOpen={modalState.isOpen}
+        onClose={handleCloseModal}
+        title={getModalTitle()}
+        subtitle={modalState.mode === 'create' ? "Ingrese la información básica de su nuevo proveedor" : modalState.mode === 'edit' ? "Actualice la información del proveedor seleccionado" : "Detalles completos de la ficha del proveedor"}
+        size="medium"
+        loading={actionLoading}
+        loadingText={actionLoadingText}
+        actions={modalState.mode === 'view' ? [
+          {
+            label: 'Cerrar',
+            variant: 'primary',
+            key: 'close',
+            closeOnClick: true,
+            onClick: closeModal
+          }
+        ] : [
+          {
+            label: 'Cancelar',
+            variant: 'secondary',
+            key: 'cancel',
+            closeOnClick: false,
+            onClick: handleCloseModal
+          },
+          {
+            label: 'Guardar',
+            variant: 'primary',
+            key: 'save',
+            closeOnClick: false,
+            onClick: handleSave
+          }
+        ]}
+      >
+        <div className="proveedores-form-wrapper yellow-scrollbar">
+          <ProveedorFormFields
+            modalMode={modalState.mode}
+            formData={formData}
+            handleFieldChange={handleFieldChange}
+            errors={errors}
+            availableStatuses={availableStatuses}
+          />
+        </div>
+      </UniversalModal>
+
+      {/* 🔒 Modal de Confirmación al Cancelar */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={handleCancelExit}
+        onConfirm={handleConfirmExit}
+        title="¿Desea cancelar?"
+        message="Se perderán los datos del proveedor ingresados. ¿Está seguro de salir sin guardar?"
+        confirmText="Sí, Salir"
+        cancelText="Continuar"
+        type="warning"
+      />
     </div>
   );
 };

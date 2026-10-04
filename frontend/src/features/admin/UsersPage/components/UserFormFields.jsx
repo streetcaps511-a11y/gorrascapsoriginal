@@ -8,7 +8,8 @@ const UserFormFields = ({
   errors,
   isAdministrador,
   availableRoles = [],
-  isReadOnly = false
+  isReadOnly = false,
+  users = []
 }) => {
   const isEditingAdmin = editingUser && isAdministrador(editingUser);
 
@@ -35,10 +36,12 @@ const UserFormFields = ({
     // Opciones para selects
     let fieldOptions = options;
     if (isSelectField && fieldName === 'rol') {
+      const hasAdmin = (users || []).some(u => isAdministrador(u) && u.id !== editingUser?.id);
       fieldOptions = availableRoles
         .filter(r => {
           const isAdminRole = (r.id === 1 || r.id === "1" || (r.name || r.Nombre || "").toLowerCase() === 'administrador');
           if (isAdminRole) {
+            if (hasAdmin) return false;
             return editingUser && isAdministrador(editingUser);
           }
           return true;
@@ -187,15 +190,11 @@ const UserFormFields = ({
           </div>
         </div>
 
-        {/* Fila 2: Nombre completo (ancho completo) */}
+        {/* Fila 2: Nombre completo | Email en paralelo */}
         <div className="form-row">
           <div className="col">
             {renderField('Nombre completo', 'nombreCompleto', 'text')}
           </div>
-        </div>
-
-        {/* Fila 3: Email (ancho completo) */}
-        <div className="form-row">
           <div className="col">
             {renderField('Email', 'email', 'text')}
           </div>
