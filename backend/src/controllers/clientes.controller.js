@@ -1,10 +1,5 @@
-/* === CONTROLADOR DE BACKEND === 
-   Recibe las solicitudes (Requests) desde las Rutas, procesa las variables enviadas por el cliente, 
-   ejecuta las consultas a la base de datos protegiendo contra inyección SQL, 
-   y devuelve las respuestas en formato JSON. */
-
-// controllers/clientes.controller.js
 import { Op } from 'sequelize';
+import crypto from 'crypto';
 import Cliente from '../models/clientes.model.js';
 import Usuario from '../models/usuarios.model.js';
 import Venta from '../models/ventas.model.js';
@@ -12,781 +7,627 @@ import { validateCliente, sanitizeCliente } from '../utils/validationUtils.js';
 import { sequelize } from '../config/db.js';
 import * as Brevo from '@getbrevo/brevo';
 
-// 🔐 OTP en memoria: { email -> { code, expires, phone } }
 const otpStore = new Map();
-
+const deletionRequests = new Map();
+const deactivationRequests = new Map();
+const emailHistory = []; // ✅ NUEVO: Trazabilidad de correos enviados
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-const sendOtpBrevo = async (toEmail, toName, code) => {
-  try {
-    const apiInstance = new Brevo.TransactionalEmailsApi();
-    apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
-    const mail = new Brevo.SendSmtpEmail();
-    mail.subject = `Tu código de verificación: ${code} — Gorras Medellin`;
-    mail.sender = { name: process.env.BREVO_SENDER_NAME || 'Gorras Medellin', email: process.env.BREVO_SENDER_EMAIL || 'streetcaps511@gmail.com' };
-    mail.to = [{ email: toEmail, name: toName || 'Cliente' }];
-    mail.htmlContent = `
-      <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;background:#0b0f1a;border-radius:14px;padding:36px;">
-        <h2 style="color:#FFC107;text-align:center;margin:0 0 8px">Gorras Medellin</h2>
-        <p style="color:#94a3b8;text-align:center;margin:0 0 28px">Verificación de correo electrónico</p>
-        <div style="background:#1e293b;border-radius:12px;padding:28px;text-align:center;">
-          <p style="color:#e2e8f0;font-size:15px;margin:0 0 20px">Tu código de verificación es:</p>
-          <div style="font-size:42px;font-weight:900;letter-spacing:12px;color:#FFC107;margin:0 0 20px">${code}</div>
-          <p style="color:#64748b;font-size:13px;margin:0">Este código expira en <strong>10 minutos</strong>.</p>
-        </div>
-        <p style="color:#475569;font-size:12px;text-align:center;margin-top:24px">Si no solicitaste este código, ignora este mensaje.</p>
-      </div>`;
-    await apiInstance.sendTransacEmail(mail);
-    return true;
-  } catch (err) {
-    console.error('Error enviando OTP por email:', err?.response?.body || err.message);
-    return false;
-  }
+// === FUNCIONES DE EMAIL ===
+const sendEmail = async (to, subject, html) => {
+    try {
+        const api = new Brevo.TransactionalEmailsApi();
+        api.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+        const mail = new Brevo.SendSmtpEmail();
+        mail.subject = subject;
+        mail.sender = { name: 'Gorras Medellín', email: process.env.BREVO_SENDER_EMAIL || 'streetcaps511@gmail.com' };
+        mail.to = [{ email: to }];
+        mail.htmlContent = html;
+        await api.sendTransacEmail(mail);
+        return true;
+    } catch (err) {
+        console.error('❌ Error enviando email:', err.message);
+        return false;
+    }
 };
 
-/**
- * Controlador de Clientes
- * Maneja todas las operaciones CRUD para clientes
- */
+// ✅ NUEVO: Correo de confirmación de DESACTIVACIÓN (solo cuando el cliente aprueba)
+const sendDeactivationApprovalEmail = async (toEmail, toName) => {
+    return sendEmail(toEmail, '✅ Tu cuenta ha sido desactivada - Gorras Medellín',
+        `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#0b0f1a;border-radius:14px;padding:36px;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <h1 style="color:#FFC107;margin:0;font-size:32px;">GM</h1>
+        <p style="color:#94a3b8;margin:4px 0 0 0;font-size:14px;">Gorras Medellín</p>
+      </div>
+      <h2 style="color:#fff;text-align:center;margin:0 0 20px 0;">Cuenta Desactivada</h2>
+      <div style="background:#1e293b;border-radius:12px;padding:24px;margin-bottom:20px;">
+        <p style="color:#e2e8f0;font-size:15px;margin:0 0 12px;">Hola <strong style="color:#FFC107">${toName}</strong>,</p>
+        <p style="color:#e2e8f0;font-size:14px;line-height:1.6;margin:0 0 16px;">
+          Tu cuenta ha sido <strong style="color:#ff6b6b">desactivada exitosamente</strong> según tu solicitud.
+        </p>
+        <div style="background:rgba(255,107,107,0.1);border-left:4px solid #ff6b6b;padding:12px;border-radius:6px;margin:16px 0;">
+          <p style="color:#ff6b6b;font-size:13px;margin:0;"><strong>⚠️ Importante:</strong></p>
+          <ul style="color:#cbd5e1;font-size:13px;margin:8px 0 0 0;padding-left:20px;">
+            <li>No podrás iniciar sesión hasta contactar a soporte</li>
+            <li>Tu historial de compras permanece en nuestro sistema</li>
+            <li>Para reactivar: escribe a <strong style="color:#FFC107">soporte@gorrascaps.com</strong></li>
+          </ul>
+        </div>
+      </div>
+      <p style="color:#64748b;font-size:12px;text-align:center;margin:20px 0 0;">
+        Si no solicitaste esta desactivación, contacta inmediatamente a soporte.
+      </p>
+    </div>`
+    );
+};
+
+// ✅ NUEVO: Correo de confirmación de ELIMINACIÓN (solo cuando el cliente aprueba)
+const sendDeletionApprovalEmail = async (toEmail, toName) => {
+    return sendEmail(toEmail, '✅ Tu cuenta ha sido eliminada - Gorras Medellín',
+        `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#0b0f1a;border-radius:14px;padding:36px;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <h1 style="color:#FFC107;margin:0;font-size:32px;">GM</h1>
+        <p style="color:#94a3b8;margin:4px 0 0 0;font-size:14px;">Gorras Medellín</p>
+      </div>
+      <h2 style="color:#fff;text-align:center;margin:0 0 20px 0;">Cuenta Eliminada</h2>
+      <div style="background:#1e293b;border-radius:12px;padding:24px;margin-bottom:20px;">
+        <p style="color:#e2e8f0;font-size:15px;margin:0 0 12px;">Hola <strong style="color:#FFC107">${toName}</strong>,</p>
+        <p style="color:#e2e8f0;font-size:14px;line-height:1.6;margin:0 0 16px;">
+          Tu cuenta ha sido <strong style="color:#ff6b6b">eliminada permanentemente</strong> de nuestro sistema.
+        </p>
+        <div style="background:rgba(255,107,107,0.1);border-left:4px solid #ff6b6b;padding:12px;border-radius:6px;margin:16px 0;">
+          <p style="color:#ff6b6b;font-size:13px;margin:0;"><strong>⚠️ Información importante:</strong></p>
+          <ul style="color:#cbd5e1;font-size:13px;margin:8px 0 0 0;padding-left:20px;">
+            <li>Tu historial de compras ha sido conservado por motivos legales</li>
+            <li>Tus datos personales han sido eliminados</li>
+            <li>Si deseas volver a comprar, deberás registrarte nuevamente</li>
+          </ul>
+        </div>
+      </div>
+      <p style="color:#64748b;font-size:12px;text-align:center;margin:20px 0 0;">
+        Gracias por haber sido parte de Gorras Medellín.
+      </p>
+    </div>`
+    );
+};
+
+// === CONTROLADOR ===
 const clienteController = {
-    /**
-     * Obtener todos los clientes con filtros
-     * @route GET /api/clientes
-     */
     getAllClientes: async (req, res) => {
         try {
             const { page = 1, limit = 7, search = '', ciudad, estado, tipoDocumento } = req.query;
             const offset = (page - 1) * limit;
+            const where = {};
+            if (search) where[Op.or] = [
+                { nombreCompleto: { [Op.iLike]: `%${search}%` } },
+                { email: { [Op.iLike]: `%${search}%` } },
+                { telefono: { [Op.iLike]: `%${search}%` } }
+            ];
+            if (ciudad) where.ciudad = { [Op.iLike]: `%${ciudad}%` };
+            if (tipoDocumento) where.tipoDocumento = tipoDocumento;
+            if (estado !== undefined) where.isActive = estado === 'true' || estado === 'Activo';
 
-            const whereClause = {};
-            
-            if (search) {
-                whereClause[Op.or] = [
-                    { nombreCompleto: { [Op.iLike]: `%${search}%` } },
-                    { email: { [Op.iLike]: `%${search}%` } },
-                    { telefono: { [Op.iLike]: `%${search}%` } },
-                    { ciudad: { [Op.iLike]: `%${search}%` } }
-                ];
-            }
-            
-            if (ciudad) {
-                whereClause.ciudad = { [Op.iLike]: `%${ciudad}%` };
-            }
-            
-            if (tipoDocumento) {
-                whereClause.tipoDocumento = tipoDocumento;
-            }
-            
-            if (estado !== undefined) {
-                whereClause.isActive = estado === 'true' || estado === 'Activo';
-            }
+            const { count, rows } = await Cliente.findAndCountAll({ where, limit: +limit, offset: +offset, order: [['nombreCompleto', 'ASC']] });
 
-            const { count, rows } = await Cliente.findAndCountAll({
-                where: whereClause,
-                limit: parseInt(limit),
-                offset: parseInt(offset),
-                order: [['nombreCompleto', 'ASC']]
-            });
-
-            const clientesFormateados = await Promise.all(rows.map(async (cliente) => {
-                const totalCompras = await Venta.sum('total', {
-                    where: { idCliente: cliente.id }
-                }) || 0;
-                
-                const cantidadCompras = await Venta.count({
-                    where: { idCliente: cliente.id }
-                });
-
-                return {
-                    id: cliente.id,
-                    nombre: cliente.nombreCompleto,
-                    nombreCompleto: cliente.nombreCompleto,
-                    email: cliente.email,
-                    numeroDocumento: cliente.numeroDocumento,
-                    telefono: cliente.telefono || 'No registrado',
-                    ciudad: cliente.ciudad || 'No registrada',
-                    direccion: cliente.direccion || 'No registrada',
-                    isActive: cliente.isActive,
-                    estadoTexto: cliente.isActive ? 'Activo' : 'Inactivo',
-                    tipoDocumento: cliente.getTipoDocumentoTexto(),
-                    documentoCompleto: cliente.formatearDocumento(),
-                    estadisticas: {
-                        totalCompras,
-                        cantidadCompras,
-                        promedioCompras: cantidadCompras > 0 ? totalCompras / cantidadCompras : 0
-                    }
-                };
-            }));
-
-            const totalPages = Math.ceil(count / limit);
-
-            res.status(200).json({
-                success: true,
-                data: clientesFormateados,
-                pagination: {
-                    currentPage: parseInt(page),
-                    totalPages,
-                    totalItems: count,
-                    itemsPerPage: parseInt(limit),
-                    showingFrom: offset + 1,
-                    showingTo: Math.min(offset + parseInt(limit), count)
+            const data = await Promise.all(rows.map(async c => ({
+                id: c.id, nombre: c.nombreCompleto, email: c.email,
+                numeroDocumento: c.numeroDocumento, telefono: c.telefono || 'No registrado',
+                ciudad: c.ciudad || 'No registrada', direccion: c.direccion || 'No registrada',
+                isActive: c.isActive, estadoTexto: c.isActive ? 'Activo' : 'Inactivo',
+                tipoDocumento: c.getTipoDocumentoTexto(), documentoCompleto: c.formatearDocumento(),
+                estadisticas: {
+                    totalCompras: await Venta.sum('total', { where: { idCliente: c.id } }) || 0,
+                    cantidadCompras: await Venta.count({ where: { idCliente: c.id } })
                 }
-            });
+            })));
 
+            res.json({ success: true, data, pagination: { currentPage: +page, totalPages: Math.ceil(count / limit), totalItems: count, itemsPerPage: +limit } });
         } catch (error) {
-            console.error('❌ Error en getAllClientes:', error);
+            console.error('Error getAllClientes:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Obtener un cliente por ID
-     * @route GET /api/clientes/:id
-     */
     getClienteById: async (req, res) => {
         try {
             const { id } = req.params;
-
-            if (isNaN(id)) {
-                return res.status(400).json({ success: false, message: 'ID de cliente inválido' });
-            }
-
+            if (isNaN(id)) return res.status(400).json({ success: false, message: 'ID inválido' });
             const cliente = await Cliente.findByPk(id);
-            if (!cliente) {
-                return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
-            }
+            if (!cliente) return res.status(404).json({ success: false, message: 'No encontrado' });
 
-            const compras = await Venta.findAll({
-                where: { idCliente: id },
-                order: [['fecha', 'DESC']],
-                limit: 10,
-                include: ['Detalles']
-            });
-
+            const compras = await Venta.findAll({ where: { idCliente: id }, order: [['fecha', 'DESC']], limit: 10 });
             const totalCompras = await Venta.sum('total', { where: { idCliente: id } }) || 0;
             const cantidadCompras = await Venta.count({ where: { idCliente: id } });
 
-            res.status(200).json({
+            res.json({
                 success: true,
                 data: {
                     ...cliente.toJSON(),
                     TipoDocumentoTexto: cliente.getTipoDocumentoTexto(),
                     DocumentoFormateado: cliente.formatearDocumento(),
-                    EstadoTexto: cliente.Estado ? 'Activo' : 'Inactivo',
-                    Estadisticas: {
-                        totalCompras,
-                        cantidadCompras,
-                        promedioCompras: cantidadCompras > 0 ? totalCompras / cantidadCompras : 0
-                    },
-                    UltimasCompras: compras.map(c => ({
-                        IdVenta: c.IdVenta,
-                        Fecha: c.Fecha,
-                        Total: c.Total,
-                        Productos: c.Detalles?.length || 0
-                    }))
+                    EstadoTexto: cliente.isActive ? 'Activo' : 'Inactivo',
+                    Estadisticas: { totalCompras, cantidadCompras, promedioCompras: cantidadCompras > 0 ? totalCompras / cantidadCompras : 0 },
+                    UltimasCompras: compras.map(c => ({ IdVenta: c.IdVenta, Fecha: c.Fecha, Total: c.Total }))
                 }
             });
-
         } catch (error) {
-            console.error('❌ Error en getClienteById:', error);
+            console.error('Error getClienteById:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Crear un nuevo cliente
-     * @route POST /api/clientes
-     */
     createCliente: async (req, res) => {
         const transaction = await sequelize.transaction();
-        
         try {
-            const data = req.body;
+            const errors = await validateCliente(req.body);
+            if (errors.length > 0) { await transaction.rollback(); return res.status(400).json({ success: false, errors }); }
 
-            const validationErrors = await validateCliente(data);
-            if (validationErrors.length > 0) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, errors: validationErrors });
-            }
-
-            const sanitizedData = sanitizeCliente(data);
-            const nuevoCliente = await Cliente.create({
-                ...sanitizedData,
-                isActive: true
-            }, { transaction });
-
+            const cliente = await Cliente.create({ ...sanitizeCliente(req.body), isActive: true }, { transaction });
             await transaction.commit();
 
-            res.status(201).json({
-                success: true,
-                data: {
-                    ...nuevoCliente.toJSON(),
-                    tipoDocumentoTexto: nuevoCliente.getTipoDocumentoTexto()
-                },
-                message: 'Cliente registrado exitosamente'
-            });
-
+            res.status(201).json({ success: true, data: { ...cliente.toJSON(), tipoDocumentoTexto: cliente.getTipoDocumentoTexto() }, message: 'Cliente registrado' });
         } catch (error) {
             await transaction.rollback();
-            console.error('❌ Error en createCliente:', error);
-            
-            if (error.name === 'SequelizeUniqueConstraintError') {
-                return res.status(400).json({ success: false, message: 'El documento o email ya está registrado' });
-            }
-            
+            console.error('Error createCliente:', error);
+            if (error.name === 'SequelizeUniqueConstraintError') return res.status(400).json({ success: false, message: 'Documento o email ya registrado' });
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Actualizar un cliente
-     * @route PUT /api/clientes/:id
-     */
     updateCliente: async (req, res) => {
         const transaction = await sequelize.transaction();
-        
         try {
             const { id } = req.params;
-            const data = req.body;
-
-            if (isNaN(id)) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, message: 'ID de cliente inválido' });
-            }
+            if (isNaN(id)) { await transaction.rollback(); return res.status(400).json({ success: false, message: 'ID inválido' }); }
 
             const cliente = await Cliente.findByPk(id);
-            if (!cliente) {
-                await transaction.rollback();
-                return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
-            }
+            if (!cliente) { await transaction.rollback(); return res.status(404).json({ success: false, message: 'No encontrado' }); }
 
-            const validationErrors = await validateCliente(data, id);
-            if (validationErrors.length > 0) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, errors: validationErrors });
-            }
+            const errors = await validateCliente(req.body, id);
+            if (errors.length > 0) { await transaction.rollback(); return res.status(400).json({ success: false, errors }); }
 
-            const sanitizedData = sanitizeCliente(data);
-            await cliente.update(sanitizedData, { transaction });
+            await cliente.update(sanitizeCliente(req.body), { transaction });
             await transaction.commit();
 
-            res.status(200).json({
-                success: true,
-                data: {
-                    ...cliente.toJSON(),
-                    tipoDocumentoTexto: cliente.getTipoDocumentoTexto()
-                },
-                message: 'Cliente actualizado exitosamente'
-            });
-
+            res.json({ success: true, data: { ...cliente.toJSON(), tipoDocumentoTexto: cliente.getTipoDocumentoTexto() }, message: 'Actualizado' });
         } catch (error) {
             await transaction.rollback();
-            console.error('❌ Error en updateCliente:', error);
-            
-            if (error.name === 'SequelizeUniqueConstraintError') {
-                return res.status(400).json({ success: false, message: 'El documento o email ya está registrado' });
-            }
-            
+            console.error('Error updateCliente:', error);
+            if (error.name === 'SequelizeUniqueConstraintError') return res.status(400).json({ success: false, message: 'Documento o email ya registrado' });
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Eliminar un cliente (borrado lógico)
-     * @route DELETE /api/clientes/:id
-     */
+    // ✅ MODIFICADO: Eliminación con solicitud (NO envía correo al solicitar)
     deleteCliente: async (req, res) => {
         const transaction = await sequelize.transaction();
-        
         try {
             const { id } = req.params;
-
-            if (isNaN(id)) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, message: 'ID de cliente inválido' });
-            }
+            if (isNaN(id)) { await transaction.rollback(); return res.status(400).json({ success: false, message: 'ID inválido' }); }
 
             const cliente = await Cliente.findByPk(id);
-            if (!cliente) {
-                await transaction.rollback();
-                return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
-            }
+            if (!cliente) { await transaction.rollback(); return res.status(404).json({ success: false, message: 'No encontrado' }); }
 
-            // 🛡️ REGLA: No se puede eliminar si tiene ventas asociadas que no estén anuladas
-            const activeSalesCount = await Venta.count({
-                where: {
-                    idCliente: id,
-                    idEstado: {
-                        [Op.notIn]: ['Anulada', 'anulada']
-                    }
-                }
-            });
+            const activeSales = await Venta.count({ where: { idCliente: id, idEstado: { [Op.notIn]: ['Anulada', 'anulada'] } } });
 
-            if (activeSalesCount > 0) {
+            if (activeSales > 0) {
+                // ✅ Solo crear solicitud, NO enviar correo
+                const requestId = `del-${id}-${Date.now()}`;
+                deletionRequests.set(requestId, {
+                    id: requestId,
+                    clienteId: id,
+                    clienteNombre: cliente.nombreCompleto,
+                    clienteEmail: cliente.email,
+                    ventasActivas: activeSales,
+                    fecha: new Date().toISOString(),
+                    adminEmail: req.usuario?.email || 'admin@gorrascaps.com',
+                    tipo: 'eliminacion'
+                });
+
                 await transaction.rollback();
-                return res.status(400).json({
-                    success: false,
-                    message: `No se puede eliminar el cliente porque tiene ${activeSalesCount} venta(s) asociada(s) activa(s).`
+                return res.json({
+                    success: true,
+                    requiresConfirmation: true,
+                    requestId: requestId,
+                    message: `Solicitud de eliminación creada. El cliente tiene ${activeSales} venta(s) activa(s).`
                 });
             }
 
-            // 1. Desvincular ventas sin perder el nombre (Historial)
-            await Venta.update(
-                { 
-                    idCliente: null 
-                },
-                { where: { idCliente: id }, transaction }
-            );
-
-            // 2. Eliminar Usuario vinculado si existe
-            if (cliente.email) {
-                await Usuario.destroy({
-                    where: { email: { [Op.iLike]: cliente.email } },
-                    transaction
-                });
-            }
-
-            // 3. Eliminar Cliente permanentemente
+            // Sin ventas activas: eliminar directamente
+            await Venta.update({ idCliente: null }, { where: { idCliente: id }, transaction });
             await cliente.destroy({ transaction });
-
             await transaction.commit();
 
-            res.status(200).json({ 
-                success: true, 
-                message: 'Cliente y su acceso eliminados permanentemente ✅ El historial de ventas se conservó con su nombre.' 
-            });
-
+            res.json({ success: true, message: 'Cliente eliminado correctamente' });
         } catch (error) {
             await transaction.rollback();
-            console.error('❌ Error en deleteCliente:', error);
+            console.error('Error deleteCliente:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
+    // ✅ MODIFICADO: Desactivación con solicitud (NO envía correo al solicitar)
     toggleClienteStatus: async (req, res) => {
         const transaction = await sequelize.transaction();
-        
         try {
             const { id } = req.params;
-
-            if (isNaN(id)) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, message: 'ID de cliente inválido' });
-            }
+            if (isNaN(id)) { await transaction.rollback(); return res.status(400).json({ success: false, message: 'ID inválido' }); }
 
             const cliente = await Cliente.findByPk(id);
-            if (!cliente) {
-                await transaction.rollback();
-                return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
-            }
+            if (!cliente) { await transaction.rollback(); return res.status(404).json({ success: false, message: 'No encontrado' }); }
 
             const nuevoEstado = !cliente.isActive;
-            await cliente.update({ isActive: nuevoEstado }, { transaction });
 
-            // Sincronizar con la tabla Usuarios
+            // Si va a DESACTIVAR y tiene compras activas → crear solicitud (sin enviar correo)
+            if (nuevoEstado === false) {
+                const activeSales = await Venta.count({
+                    where: { idCliente: id, idEstado: { [Op.notIn]: ['Anulada', 'anulada'] } }
+                });
+
+                if (activeSales > 0) {
+                    const requestId = `desact-${id}-${Date.now()}`;
+                    deactivationRequests.set(requestId, {
+                        id: requestId,
+                        clienteId: id,
+                        clienteNombre: cliente.nombreCompleto,
+                        clienteEmail: cliente.email,
+                        ventasActivas: activeSales,
+                        fecha: new Date().toISOString(),
+                        adminEmail: req.usuario?.email || 'admin@gorrascaps.com',
+                        tipo: 'desactivacion'
+                    });
+
+                    await transaction.rollback();
+                    return res.json({
+                        success: true,
+                        requiresConfirmation: true,
+                        requestId: requestId,
+                        message: `Solicitud de desactivación creada. El cliente tiene ${activeSales} compra(s) activa(s).`
+                    });
+                }
+            }
+
+            // Sin compras activas o va a ACTIVAR → proceder directamente
+            await cliente.update({ isActive: nuevoEstado }, { transaction });
             if (cliente.email) {
                 await Usuario.update(
                     { estado: nuevoEstado ? 'activo' : 'inactivo' },
                     { where: { email: { [Op.iLike]: cliente.email } }, transaction }
                 );
             }
-
             await transaction.commit();
 
-            res.status(200).json({
+            res.json({
                 success: true,
-                data: {
-                    id: cliente.id,
-                    nombreCompleto: cliente.nombreCompleto,
-                    isActive: cliente.isActive,
-                    estadoTexto: cliente.isActive ? 'Activo' : 'Inactivo'
-                },
-                message: `Cliente ${cliente.isActive ? 'activado' : 'desactivado'} exitosamente. Acceso ${cliente.isActive ? 'permitido' : 'bloqueado'}.`
+                data: { id: cliente.id, nombreCompleto: cliente.nombreCompleto, isActive: cliente.isActive },
+                message: `Cliente ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`
             });
-
         } catch (error) {
             await transaction.rollback();
-            console.error('❌ Error en toggleClienteStatus:', error);
+            console.error('Error toggleStatus:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Obtener clientes activos (para selects)
-     * @route GET /api/clientes/activos
-     */
-    getClientesActivos: async (req, res) => {
+    // ✅ MODIFICADO: Aprobar desactivación → SÍ envía correo
+    approveDeactivation: async (req, res) => {
+        const transaction = await sequelize.transaction();
         try {
-            const clientes = await Cliente.findAll({
-                where: { isActive: true },
-                attributes: ['id', 'nombreCompleto', 'tipoDocumento', 'numeroDocumento', 'email'],
-                order: [['nombreCompleto', 'ASC']]
-            });
+            const { requestId } = req.body;
+            const request = deactivationRequests.get(requestId);
 
-            const clientesFormateados = clientes.map(c => ({
-                id: c.id,
-                nombre: c.nombreCompleto,
-                identificacion: c.formatearDocumento(),
-                email: c.email
-            }));
+            if (!request) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, message: 'Solicitud no encontrada' });
+            }
 
-            res.status(200).json({ success: true, data: clientesFormateados });
-
-        } catch (error) {
-            console.error('❌ Error en getClientesActivos:', error);
-            res.status(500).json({ success: false, message: error.message });
-        }
-    },
-
-    /**
-     * Buscar cliente por documento
-     * @route GET /api/clientes/documento/:tipo/:numero
-     */
-    getClienteByDocumento: async (req, res) => {
-        try {
-            const { tipo, numero } = req.params;
-
-            const cliente = await Cliente.findOne({
-                where: { TipoDocumento: tipo, Documento: numero }
-            });
-
+            const cliente = await Cliente.findByPk(request.clienteId);
             if (!cliente) {
+                deactivationRequests.delete(requestId);
+                await transaction.rollback();
                 return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
             }
 
-            res.status(200).json({
+            // Desactivar cliente y usuario
+            await cliente.update({ isActive: false }, { transaction });
+            if (cliente.email) {
+                await Usuario.update(
+                    { estado: 'inactivo' },
+                    { where: { email: { [Op.iLike]: cliente.email } }, transaction }
+                );
+            }
+
+            // ✅ ENVIAR CORREO al cliente
+            const emailSent = await sendDeactivationApprovalEmail(cliente.email, cliente.nombreCompleto);
+
+            // ✅ Registrar en trazabilidad
+            emailHistory.push({
+                id: `hist-${Date.now()}`,
+                tipo: 'desactivacion',
+                clienteNombre: cliente.nombreCompleto,
+                clienteEmail: cliente.email,
+                adminEmail: request.adminEmail,
+                fecha: new Date().toISOString(),
+                ventasActivas: request.ventasActivas,
+                emailEnviado: emailSent,
+                estado: emailSent ? 'enviado' : 'fallido'
+            });
+
+            deactivationRequests.delete(requestId);
+            await transaction.commit();
+
+            res.json({
                 success: true,
-                data: {
-                    ...cliente.toJSON(),
-                    TipoDocumentoTexto: cliente.getTipoDocumentoTexto()
-                }
+                message: `Cliente ${cliente.nombreCompleto} desactivado y correo enviado`,
+                emailSent
             });
-
         } catch (error) {
-            console.error('❌ Error en getClienteByDocumento:', error);
+            await transaction.rollback();
+            console.error('Error approveDeactivation:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Obtener clientes por ciudad
-     * @route GET /api/clientes/ciudad/:ciudad
-     */
-    getClientesByCiudad: async (req, res) => {
+    // ✅ MODIFICADO: Aprobar eliminación → SÍ envía correo
+    approveDeletion: async (req, res) => {
+        const transaction = await sequelize.transaction();
         try {
-            const { ciudad } = req.params;
+            const { requestId } = req.body;
+            const request = deletionRequests.get(requestId);
 
-            const clientes = await Cliente.findAll({
-                where: { 
-                    ciudad: { [Op.iLike]: `%${ciudad}%` },
-                    isActive: true
-                },
-                attributes: ['id', 'nombreCompleto', 'telefono', 'email', 'direccion'],
-                limit: 20
+            if (!request) {
+                await transaction.rollback();
+                return res.status(404).json({ success: false, message: 'Solicitud no encontrada' });
+            }
+
+            const cliente = await Cliente.findByPk(request.clienteId);
+            if (!cliente) {
+                deletionRequests.delete(requestId);
+                await transaction.rollback();
+                return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
+            }
+
+            // Desvincular ventas y eliminar cliente
+            await Venta.update({ idCliente: null }, { where: { idCliente: request.clienteId }, transaction });
+            await cliente.destroy({ transaction });
+
+            // ✅ ENVIAR CORREO al cliente
+            const emailSent = await sendDeletionApprovalEmail(cliente.email, cliente.nombreCompleto);
+
+            // ✅ Registrar en trazabilidad
+            emailHistory.push({
+                id: `hist-${Date.now()}`,
+                tipo: 'eliminacion',
+                clienteNombre: cliente.nombreCompleto,
+                clienteEmail: cliente.email,
+                adminEmail: request.adminEmail,
+                fecha: new Date().toISOString(),
+                ventasActivas: request.ventasActivas,
+                emailEnviado: emailSent,
+                estado: emailSent ? 'enviado' : 'fallido'
             });
 
-            res.status(200).json({ success: true, data: clientes });
+            deletionRequests.delete(requestId);
+            await transaction.commit();
 
+            res.json({
+                success: true,
+                message: `Cliente ${cliente.nombreCompleto} eliminado y correo enviado`,
+                emailSent
+            });
         } catch (error) {
-            console.error('❌ Error en getClientesByCiudad:', error);
+            await transaction.rollback();
+            console.error('Error approveDeletion:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Obtener estadísticas de clientes
-     * @route GET /api/clientes/estadisticas
-     */
+    // ✅ NUEVO: Rechazar desactivación
+    rejectDeactivation: async (req, res) => {
+        try {
+            const { requestId } = req.body;
+            const request = deactivationRequests.get(requestId);
+
+            if (!request) {
+                return res.status(404).json({ success: false, message: 'Solicitud no encontrada' });
+            }
+
+            deactivationRequests.delete(requestId);
+            res.json({ success: true, message: 'Solicitud de desactivación rechazada' });
+        } catch (error) {
+            console.error('Error rejectDeactivation:', error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+
+    // ✅ NUEVO: Rechazar eliminación
+    rejectDeletion: async (req, res) => {
+        try {
+            const { requestId } = req.body;
+            const request = deletionRequests.get(requestId);
+
+            if (!request) {
+                return res.status(404).json({ success: false, message: 'Solicitud no encontrada' });
+            }
+
+            deletionRequests.delete(requestId);
+            res.json({ success: true, message: 'Solicitud de eliminación rechazada' });
+        } catch (error) {
+            console.error('Error rejectDeletion:', error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+
+    // ✅ NUEVO: Obtener solicitudes pendientes
+    getSolicitudesPendientes: async (req, res) => {
+        try {
+            const solicitudes = [
+                ...Array.from(deactivationRequests.values()),
+                ...Array.from(deletionRequests.values())
+            ];
+            res.json({ success: true, data: solicitudes, total: solicitudes.length });
+        } catch (error) {
+            console.error('Error getSolicitudesPendientes:', error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+
+    // ✅ NUEVO: Obtener historial de correos enviados (trazabilidad)
+    getHistorialCorreos: async (req, res) => {
+        try {
+            res.json({
+                success: true,
+                data: emailHistory,
+                total: emailHistory.length
+            });
+        } catch (error) {
+            console.error('Error getHistorialCorreos:', error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+
+    getClientesActivos: async (req, res) => {
+        try {
+            const clientes = await Cliente.findAll({ where: { isActive: true }, attributes: ['id', 'nombreCompleto', 'tipoDocumento', 'numeroDocumento', 'email'], order: [['nombreCompleto', 'ASC']] });
+            res.json({ success: true, data: clientes.map(c => ({ id: c.id, nombre: c.nombreCompleto, identificacion: c.formatearDocumento(), email: c.email })) });
+        } catch (error) {
+            console.error('Error getActivos:', error);
+            res.status(500).json({ success: false, message: error.message });
+        }
+    },
+
     getEstadisticas: async (req, res) => {
         try {
-            const totalClientes = await Cliente.count();
-            const activos = await Cliente.count({ where: { isActive: true } });
-            const inactivos = await Cliente.count({ where: { isActive: false } });
-            
-            res.status(200).json({
+            res.json({
                 success: true,
-                data: { total: totalClientes, activos, inactivos }
+                data: {
+                    total: await Cliente.count(),
+                    activos: await Cliente.count({ where: { isActive: true } }),
+                    inactivos: await Cliente.count({ where: { isActive: false } })
+                }
             });
-
         } catch (error) {
-            console.error('❌ Error en getEstadisticas:', error);
+            console.error('Error estadisticas:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Actualizar saldo a favor del cliente
-     * @route PATCH /api/clientes/:id/saldo
-     */
     updateSaldo: async (req, res) => {
         const transaction = await sequelize.transaction();
-        
         try {
             const { id } = req.params;
             const { monto, operacion = 'sumar' } = req.body;
-
-            if (isNaN(id)) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, message: 'ID de cliente inválido' });
-            }
+            if (isNaN(id)) { await transaction.rollback(); return res.status(400).json({ success: false, message: 'ID inválido' }); }
 
             const cliente = await Cliente.findByPk(id);
-            if (!cliente) {
-                await transaction.rollback();
-                return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
-            }
+            if (!cliente) { await transaction.rollback(); return res.status(404).json({ success: false, message: 'No encontrado' }); }
 
-            let saldoActual = parseFloat(cliente.SaldoaFavor) || 0;
-            let nuevoSaldo;
+            const saldoActual = parseFloat(cliente.SaldoaFavor) || 0;
+            const nuevoSaldo = operacion === 'sumar' ? saldoActual + parseFloat(monto) : saldoActual - parseFloat(monto);
 
-            if (operacion === 'sumar') {
-                nuevoSaldo = saldoActual + parseFloat(monto);
-            } else if (operacion === 'restar') {
-                nuevoSaldo = saldoActual - parseFloat(monto);
-                if (nuevoSaldo < 0) {
-                    await transaction.rollback();
-                    return res.status(400).json({ success: false, message: 'Saldo insuficiente' });
-                }
-            }
+            if (nuevoSaldo < 0) { await transaction.rollback(); return res.status(400).json({ success: false, message: 'Saldo insuficiente' }); }
 
             await cliente.update({ SaldoaFavor: nuevoSaldo.toString() }, { transaction });
             await transaction.commit();
 
-            res.status(200).json({
-                success: true,
-                data: {
-                    IdCliente: cliente.IdCliente,
-                    SaldoAnterior: saldoActual,
-                    SaldoActual: nuevoSaldo
-                },
-                message: 'Saldo actualizado exitosamente'
-            });
-
+            res.json({ success: true, data: { IdCliente: cliente.IdCliente, SaldoAnterior: saldoActual, SaldoActual: nuevoSaldo }, message: 'Saldo actualizado' });
         } catch (error) {
             await transaction.rollback();
-            console.error('❌ Error en updateSaldo:', error);
+            console.error('Error updateSaldo:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Obtener perfil del cliente (para el propio cliente)
-     * @route GET /api/clientes/mi/perfil
-     */
     getMiPerfil: async (req, res) => {
         try {
-            // Buscar al cliente vinculado sincronizando el email del Token JWT con el email del Cliente
-            const cliente = await Cliente.findOne({
-                where: { email: req.usuario.email }
-            });
+            const cliente = await Cliente.findOne({ where: { email: req.usuario.email } });
+            if (!cliente) return res.status(404).json({ success: false, message: 'Perfil no encontrado' });
 
-            if (!cliente) {
-                return res.status(404).json({ success: false, message: 'Perfil no encontrado' });
-            }
-
-            const compras = await Venta.findAll({
-                where: { idCliente: cliente.id },
-                order: [['fecha', 'DESC']],
-                limit: 10
-            });
-
-            res.status(200).json({
-                success: true,
-                data: {
-                    ...cliente.toJSON(),
-                    TipoDocumentoTexto: cliente.getTipoDocumentoTexto(),
-                    UltimasCompras: compras
-                }
-            });
+            const compras = await Venta.findAll({ where: { idCliente: cliente.id }, order: [['fecha', 'DESC']], limit: 10 });
+            res.json({ success: true, data: { ...cliente.toJSON(), TipoDocumentoTexto: cliente.getTipoDocumentoTexto(), UltimasCompras: compras } });
         } catch (error) {
-            console.error('❌ Error en getMiPerfil:', error);
+            console.error('Error getMiPerfil:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Actualizar perfil del cliente (para el propio cliente)
-     * @route PUT /api/clientes/mi/perfil
-     */
     updateMiPerfil: async (req, res) => {
         const transaction = await sequelize.transaction();
         try {
-            const cliente = await Cliente.findOne({
-                where: { email: req.usuario.email }
-            });
+            const cliente = await Cliente.findOne({ where: { email: req.usuario.email } });
+            if (!cliente) { await transaction.rollback(); return res.status(404).json({ success: false, message: 'Perfil no encontrado' }); }
 
-            if (!cliente) {
-                await transaction.rollback();
-                return res.status(404).json({ success: false, message: 'Perfil no encontrado' });
-            }
-
-            const { 
-                Name, name, nombreCompleto,
-                phone, Telefono, telefono,
-                address, Direccion, direccion,
-                city, Ciudad, ciudad,
-                email, Email, Correo,
-                documentType, tipoDocumento, TipoDocumento,
-                documentNumber, numeroDocumento, Documento, NumeroDocumento,
-                avatarUrl, Avatar
-            } = req.body;
-
-            // 🟢 TRADUCTOR DE CAMPOS (Soportamos camelCase, PascalCase y modelos)
-            const resolvedName = name !== undefined ? name : (Name !== undefined ? Name : (nombreCompleto !== undefined ? nombreCompleto : cliente.nombreCompleto));
-            const resolvedDocNum = (documentNumber !== undefined || numeroDocumento !== undefined || NumeroDocumento !== undefined || Documento !== undefined)
-                ? (documentNumber || numeroDocumento || NumeroDocumento || Documento || '').toString().replace(/\D/g, '')
-                : cliente.numeroDocumento;
-            const resolvedEmail = (email || Email || Correo || cliente.email || '').toString().trim().toLowerCase();
-            const resolvedCity = city !== undefined ? city : (Ciudad !== undefined ? Ciudad : (ciudad !== undefined ? ciudad : cliente.ciudad));
-            const resolvedAddress = address !== undefined ? address : (Direccion !== undefined ? Direccion : (direccion !== undefined ? direccion : cliente.direccion));
-            const resolvedPhone = (phone !== undefined || Telefono !== undefined || telefono !== undefined)
-                ? (phone || Telefono || telefono || '').toString().replace(/\D/g, '')
-                : (cliente.telefono || '').toString().replace(/\D/g, '');
-
-            if (!resolvedName || !resolvedName.trim() || !resolvedDocNum || !resolvedEmail) {
-                await transaction.rollback();
-                return res.status(400).json({ success: false, message: 'Todos los campos marcados como obligatorios deben ser diligenciados' });
-            }
-
+            const { nombreCompleto, telefono, direccion, ciudad, tipoDocumento, numeroDocumento, email } = req.body;
             const updateData = {
-                nombreCompleto: resolvedName.trim(),
-                telefono: resolvedPhone || null,
-                direccion: resolvedAddress?.trim() || cliente.direccion,
-                ciudad: resolvedCity?.trim() || cliente.ciudad,
-                tipoDocumento: documentType || tipoDocumento || TipoDocumento || cliente.tipoDocumento,
-                numeroDocumento: resolvedDocNum,
-                avatarUrl: avatarUrl !== undefined ? avatarUrl : (Avatar !== undefined ? Avatar : cliente.avatarUrl),
-                email: resolvedEmail
+                nombreCompleto: nombreCompleto || cliente.nombreCompleto,
+                telefono: telefono || cliente.telefono,
+                direccion: direccion || cliente.direccion,
+                ciudad: ciudad || cliente.ciudad,
+                tipoDocumento: tipoDocumento || cliente.tipoDocumento,
+                numeroDocumento: numeroDocumento || cliente.numeroDocumento,
+                email: (email || cliente.email).toLowerCase().trim()
             };
 
-            // 1. Actualizar el cliente
             await cliente.update(updateData, { transaction });
-
-            // 2. Sincronizar con la tabla de Usuarios (si existe el usuario con el mismo correo)
-            // Usamos req.usuario.email que es el correo actual del token para encontrarlo
-            const { Usuario } = await import('../models/index.js');
-            const usuarioVinculado = await Usuario.findOne({ 
-                where: { email: req.usuario.email } 
-            });
-
-            if (usuarioVinculado) {
-                await usuarioVinculado.update({
+            const usuario = await Usuario.findOne({ where: { email: req.usuario.email } });
+            if (usuario) {
+                await usuario.update({
                     nombre: updateData.nombreCompleto,
                     telefono: updateData.telefono,
-                    email: updateData.email,
-                    tipoDocumento: updateData.tipoDocumento,
-                    numeroDocumento: updateData.numeroDocumento
+                    email: updateData.email
                 }, { transaction });
             }
-
             await transaction.commit();
-
-            res.status(200).json({
-                success: true,
-                data: cliente,
-                message: 'Perfil y cuenta actualizados exitosamente'
-            });
+            res.json({ success: true, data: cliente, message: 'Perfil actualizado' });
         } catch (error) {
             await transaction.rollback();
-            console.error('❌ Error en updateMiPerfil:', error);
+            console.error('Error updateMiPerfil:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Enviar código OTP para verificar un nuevo correo electrónico
-     * Si el nuevo email NO existe en la BD: envía el código al teléfono registrado (SMS simulado via email al admin)
-     * Si el nuevo email SÍ existe en la BD como OTRO cliente: responde con error
-     * Si el nuevo email existe y es el mismo cliente: notifica que ya es su correo
-     * Si el nuevo email no existe en ningún cliente: envía el código a ese nuevo email para verificarlo
-     * @route POST /api/clientes/mi/verificar-email
-     */
     sendEmailVerification: async (req, res) => {
         try {
             const { nuevoEmail } = req.body;
-            if (!nuevoEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nuevoEmail)) {
-                return res.status(400).json({ success: false, message: 'Correo inválido' });
-            }
+            if (!nuevoEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nuevoEmail)) return res.status(400).json({ success: false, message: 'Correo inválido' });
 
-            // Buscar el cliente actual
             const clienteActual = await Cliente.findOne({ where: { email: req.usuario.email } });
             if (!clienteActual) return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
 
             const emailLower = nuevoEmail.toLowerCase().trim();
-
-            // ¿El nuevo email YA pertenece a OTRO cliente?
             const emailEnUso = await Cliente.findOne({ where: { email: emailLower, id: { [Op.ne]: clienteActual.id } } });
-            if (emailEnUso) {
-                return res.status(409).json({
-                    success: false,
-                    code: 'EMAIL_TAKEN',
-                    message: 'Este correo ya está registrado con otra cuenta. Usa el correo asociado a tu número de teléfono.'
-                });
-            }
+            if (emailEnUso) return res.status(409).json({ success: false, code: 'EMAIL_TAKEN', message: 'Correo ya registrado' });
+            if (emailLower === clienteActual.email.toLowerCase()) return res.json({ success: true, code: 'SAME_EMAIL', message: 'Ya es tu correo' });
 
-            // ¿Es el mismo correo actual?
-            if (emailLower === clienteActual.email.toLowerCase()) {
-                return res.status(200).json({ success: true, code: 'SAME_EMAIL', message: 'Este ya es tu correo actual' });
-            }
-
-            // Generar OTP
             const otp = generateOTP();
-            const expires = Date.now() + 10 * 60 * 1000; // 10 min
-            otpStore.set(req.usuario.email, { code: otp, expires, nuevoEmail: emailLower });
+            otpStore.set(req.usuario.email, { code: otp, expires: Date.now() + 600000, nuevoEmail: emailLower });
 
-            // Enviar código al nuevo email
-            const sent = await sendOtpBrevo(emailLower, clienteActual.nombreCompleto, otp);
+            const sent = await sendOtp(emailLower, clienteActual.nombreCompleto, otp);
 
-            if (sent) {
-                return res.status(200).json({
-                    success: true,
-                    code: 'OTP_SENT_EMAIL',
-                    message: `Enviamos un código de verificación a ${emailLower}. Ingrésalo para confirmar el cambio.`
-                });
-            } else {
-                // Fallback: notificar al teléfono (simplemente avisa al cliente)
-                return res.status(200).json({
-                    success: true,
-                    code: 'OTP_SENT_PHONE',
-                    message: `No pudimos enviar al nuevo correo. Enviamos el código a tu teléfono registrado (${clienteActual.telefono?.slice(-4)?.padStart(10, '•')}).`
-                });
+            if (!sent) {
+                return res.status(500).json({ success: false, message: 'No se pudo enviar el código. Intente más tarde.' });
             }
+
+            res.json({ success: true, code: 'OTP_SENT', message: `Código enviado a ${emailLower}` });
         } catch (error) {
-            console.error('❌ Error en sendEmailVerification:', error);
+            console.error('Error sendVerification:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     },
 
-    /**
-     * Verificar el código OTP para cambio de email
-     * @route POST /api/clientes/mi/verificar-email/confirmar
-     */
     confirmEmailVerification: async (req, res) => {
         try {
             const { codigo } = req.body;
             const entry = otpStore.get(req.usuario.email);
 
-            if (!entry) return res.status(400).json({ success: false, message: 'No hay un código pendiente. Solicita uno nuevo.' });
-            if (Date.now() > entry.expires) {
-                otpStore.delete(req.usuario.email);
-                return res.status(400).json({ success: false, message: 'El código expiró. Solicita uno nuevo.' });
-            }
-            if (String(entry.code) !== String(codigo)) {
-                return res.status(400).json({ success: false, message: 'Código incorrecto. Verifica e intenta de nuevo.' });
-            }
+            if (!entry) return res.status(400).json({ success: false, message: 'Sin código pendiente' });
+            if (Date.now() > entry.expires) { otpStore.delete(req.usuario.email); return res.status(400).json({ success: false, message: 'Código expirado' }); }
+            if (String(entry.code) !== String(codigo)) return res.status(400).json({ success: false, message: 'Código incorrecto' });
 
-            // Código correcto: limpiar y confirmar
-            const nuevoEmail = entry.nuevoEmail;
             otpStore.delete(req.usuario.email);
-
-            return res.status(200).json({
-                success: true,
-                code: 'EMAIL_VERIFIED',
-                nuevoEmail,
-                message: 'Correo verificado correctamente.'
-            });
+            res.json({ success: true, code: 'EMAIL_VERIFIED', nuevoEmail: entry.nuevoEmail, message: 'Correo verificado' });
         } catch (error) {
-            console.error('❌ Error en confirmEmailVerification:', error);
+            console.error('Error confirmVerification:', error);
             res.status(500).json({ success: false, message: error.message });
         }
     }

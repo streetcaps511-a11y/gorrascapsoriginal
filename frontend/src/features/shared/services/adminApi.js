@@ -35,6 +35,7 @@ export const deleteProveedor = (id) => api.delete(`/api/proveedores/${id}`);
 export const deleteProvider = deleteProveedor;
 
 // ── Clientes ──
+// ── Clientes ─
 export const getClientes = () => api.get("/api/clientes");
 export const getClients = getClientes;
 export const createCliente = (data) => api.post("/api/clientes", data);
@@ -43,6 +44,9 @@ export const updateCliente = (id, data) => api.put(`/api/clientes/${id}`, data);
 export const updateClient = updateCliente;
 export const deleteCliente = (id) => api.delete(`/api/clientes/${id}`);
 export const deleteClient = deleteCliente;
+
+// ✅ NUEVO: Obtener solicitudes pendientes de desactivación/eliminación
+export const getSolicitudesPendientes = () => api.get("/api/clientes/solicitudes-pendientes");
 
 // ── Ventas ──
 export const getVentas = () => api.get("/api/ventas");

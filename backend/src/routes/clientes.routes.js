@@ -1,14 +1,9 @@
-/* === RUTAS DE BACKEND === 
-   Define las URLs expuestas de la API para este módulo. 
-   Aplica los middlewares de protección (como la validación de tokens JWT) antes de ceder el control al Controlador. */
-
-// routes/clientes.routes.js
 import express from 'express';
 const router = express.Router();
 import clienteController from '../controllers/clientes.controller.js';
 import { verifyToken, checkPermission } from '../middlewares/auth.middleware.js';
 
-// Rutas públicas (sin autenticación)
+// Rutas públicas
 router.get('/publicos', clienteController.getClientesActivos);
 
 // Rutas protegidas
@@ -20,14 +15,22 @@ router.put('/mi/perfil', clienteController.updateMiPerfil);
 router.post('/mi/verificar-email', clienteController.sendEmailVerification);
 router.post('/mi/verificar-email/confirmar', clienteController.confirmEmailVerification);
 
-// Rutas de consulta (Accesibles por ventas o devoluciones también debido a dependencias)
+// Rutas de consulta
 const readPerms = ['ver_clientes', 'ver_ventas', 'ver_devoluciones'];
 router.get('/', checkPermission(readPerms), clienteController.getAllClientes);
 router.get('/activos', checkPermission(readPerms), clienteController.getClientesActivos);
 router.get('/estadisticas', checkPermission('ver_clientes'), clienteController.getEstadisticas);
-router.get('/ciudad/:ciudad', checkPermission(readPerms), clienteController.getClientesByCiudad);
-router.get('/documento/:tipo/:numero', checkPermission(readPerms), clienteController.getClienteByDocumento);
 router.get('/:id', checkPermission(readPerms), clienteController.getClienteById);
+
+// ✅ NUEVAS: Rutas de solicitudes y trazabilidad
+router.get('/solicitudes-pendientes', checkPermission('ver_clientes'), clienteController.getSolicitudesPendientes);
+router.get('/historial-correos', checkPermission('ver_clientes'), clienteController.getHistorialCorreos);
+
+// ✅ NUEVAS: Rutas de aprobación/rechazo
+router.post('/desactivaciones/aprobar', checkPermission('activar_clientes'), clienteController.approveDeactivation);
+router.post('/desactivaciones/rechazar', checkPermission('activar_clientes'), clienteController.rejectDeactivation);
+router.post('/eliminaciones/aprobar', checkPermission('eliminar_clientes'), clienteController.approveDeletion);
+router.post('/eliminaciones/rechazar', checkPermission('eliminar_clientes'), clienteController.rejectDeletion);
 
 // Rutas de administración
 router.post('/', checkPermission('crear_clientes'), clienteController.createCliente);

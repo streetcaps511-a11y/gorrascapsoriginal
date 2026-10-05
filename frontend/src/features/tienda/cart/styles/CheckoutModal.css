@@ -46,7 +46,7 @@
 .gm-checkout-product-thumb-img { width: 100%; height: 100%; object-fit: cover; }
 .gm-checkout-thumb-qty-badge { position: absolute; bottom: 3px; right: 3px; background: rgba(0,0,0,0.88); color: #F5C81B; font-size: 10px; font-weight: 800; padding: 1px 5px; border-radius: 6px; border: 1px solid rgba(245,200,27,0.4); }
 
-/* === TARJETA PRODUCTO EN MODAL - LAYOUT VERTICAL === */
+/* === TARJETA PRODUCTO EN MODAL === */
 .gm-checkout-product-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.08); border-radius: 0; transition: background 0.2s; }
 .gm-checkout-product-card:last-child { border-bottom: none; }
 .gm-checkout-product-card:hover { background: rgba(255,255,255,0.02); }

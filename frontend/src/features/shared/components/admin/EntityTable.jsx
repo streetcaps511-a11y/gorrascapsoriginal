@@ -73,7 +73,7 @@ const EntityTable = ({
   };
 
   // 🔍 TAMAÑO DE ICONOS (aumentado de 18 a 22)
-  const ICON_SIZE = 22;
+  const ICON_SIZE = 24;
 
   return (
     <div className="entity-table-container">

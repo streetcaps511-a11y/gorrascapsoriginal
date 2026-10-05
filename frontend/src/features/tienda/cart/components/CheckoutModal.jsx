@@ -160,7 +160,7 @@ const CheckoutModal = ({
                 <input type="text" value={addrForm.departamento} onChange={e => { setAddrForm(p => ({ ...p, departamento: e.target.value })); setAddressErrors(p => ({ ...p, departamento: '' })); }} placeholder="Ej: Antioquia" className={`gm-full-input ${addressErrors.departamento ? 'has-error' : ''}`} />
                 {addrForm.departamento && <button type="button" onClick={() => setAddrForm(p => ({ ...p, departamento: '' }))} className="gm-full-clear-btn"> <FaTimes size={12} /> </button>}
               </div>
-              {addressErrors.departamento && <p className="gm-full-error">️ {addressErrors.departamento}</p>}
+              {addressErrors.departamento && <p className="gm-full-error">⚠️ {addressErrors.departamento}</p>}
             </div>
             <div className="gm-full-field">
               <label className="gm-full-label"> <FaCity size={12} /> Municipio / Ciudad <span className="gm-required">*</span> </label>
@@ -185,7 +185,7 @@ const CheckoutModal = ({
               <input type="text" value={addrForm.fachada} onChange={e => { setAddrForm(p => ({ ...p, fachada: e.target.value })); setAddressErrors(p => ({ ...p, fachada: '' })); }} placeholder="Ej: Casa blanca de dos pisos..." className={`gm-full-input ${addressErrors.fachada ? 'has-error' : ''}`} />
               {addrForm.fachada && <button type="button" onClick={() => setAddrForm(p => ({ ...p, fachada: '' }))} className="gm-full-clear-btn"> <FaTimes size={12} /> </button>}
             </div>
-            {addressErrors.fachada ? <p className="gm-full-error">️ {addressErrors.fachada}</p> : <span className="gm-full-hint">Información clave para que el domiciliario ubique tu casa.</span>}
+            {addressErrors.fachada ? <p className="gm-full-error">⚠️ {addressErrors.fachada}</p> : <span className="gm-full-hint">Información clave para que el domiciliario ubique tu casa.</span>}
           </div>
           <div className="gm-full-inline-actions">
             <button type="button" onClick={handleResetAddressForm} className="gm-full-undo-btn"> <FaUndo size={14} /> <span>Restablecer</span> </button>
@@ -408,8 +408,6 @@ const CheckoutModal = ({
                 <span>Precio al por menor:</span>
                 <span style={{ color: '#fff', fontWeight: '700' }}>${Math.floor(financials.retailSubtotal).toLocaleString('es-CO')}</span>
               </div>
-
-              {/* ✅ Venta normal - sin descuento */}
               {isVentaNormal && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94a3b8' }}>
                   <span style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
@@ -418,16 +416,12 @@ const CheckoutModal = ({
                   </span>
                 </div>
               )}
-
-              {/* ✅ Promociones */}
               {financials.hasOffer && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f87171', fontWeight: '700' }}>
                   <span>Promociones</span>
                   <span>-${Math.floor(financials.offerDiscount).toLocaleString('es-CO')}</span>
                 </div>
               )}
-
-              {/* ✅ Descuento por mayor - CON BADGE +6 o +60 */}
               {financials.hasWholesale && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: '#f87171', fontWeight: '700' }}>
                   <div>
@@ -440,7 +434,6 @@ const CheckoutModal = ({
                   <span>-${Math.floor(financials.wholesaleDiscount).toLocaleString('es-CO')}</span>
                 </div>
               )}
-
               <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)', paddingTop: '14px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <strong style={{ fontSize: '15px', color: '#fff' }}>Total del pedido:</strong>
                 <strong style={{ fontSize: '22px', color: '#F5C81B', fontWeight: '900' }}>${Math.floor(total).toLocaleString('es-CO')}</strong>
@@ -507,7 +500,7 @@ const CheckoutModal = ({
           <div className="gm-modal-dialog-responsive" onClick={e => e.stopPropagation()} style={{ border: '1.5px solid rgba(245, 200, 27, 0.3)' }}>
             <div className="gm-modal-header">
               <div className="gm-modal-title">
-                
+                <FaShoppingBag color="#FFC107" size={15} />
                 <span style={{ textTransform: 'capitalize', whiteSpace: 'nowrap' }}>Productos del pedido ({cartItems.length})</span>
               </div>
               <button onClick={() => setShowProductsDetailModal(false)} className="gm-modal-close-btn"><FaTimes /></button>
@@ -570,13 +563,12 @@ const CheckoutModal = ({
           <div className="gm-modal-dialog-responsive gm-address-modal-dialog" onClick={e => e.stopPropagation()} style={{ maxHeight: 'none', overflow: 'visible' }}>
             <div className="gm-modal-header">
               <div className="gm-modal-title">
-                
+                <FaMapMarkerAlt color="#F5C81B" size={20} />
                 <span style={{ textTransform: 'capitalize', whiteSpace: 'nowrap' }}>Dirección de envío y contacto</span>
               </div>
               <button onClick={() => { setShowAddressModal(false); setAddressErrors({}); }} className="gm-modal-close-btn"><FaTimes /></button>
             </div>
             <div className="gm-form-content">
-              {/* Fila 1: Correo, Nombre, Teléfono */}
               <div className="gm-form-grid gm-form-grid-3">
                 <div>
                   <label className="gm-form-label">Correo electrónico</label>
@@ -584,7 +576,7 @@ const CheckoutModal = ({
                     <input type="email" value={addrForm.email} onChange={e => { setAddrForm(p => ({ ...p, email: e.target.value })); setAddressErrors(p => ({ ...p, email: '' })); }} placeholder="cliente@correo.com" className={`gm-form-input ${addressErrors.email ? 'has-error' : ''}`} />
                     {addrForm.email && <button type="button" onClick={() => setAddrForm(p => ({ ...p, email: '' }))} className="gm-form-clear-btn"><FaTimes size={10} /></button>}
                   </div>
-                  {addressErrors.email && <p className="gm-form-error">⚠️ {addressErrors.email}</p>}
+                  {addressErrors.email && <p className="gm-form-error">️ {addressErrors.email}</p>}
                 </div>
                 <div>
                   <label className="gm-form-label">Nombre del destinatario*</label>
@@ -600,10 +592,9 @@ const CheckoutModal = ({
                     <input type="tel" value={addrForm.telefono} onChange={e => { setAddrForm(p => ({ ...p, telefono: e.target.value.replace(/\D/g, '') })); setAddressErrors(p => ({ ...p, telefono: '' })); }} placeholder="Ej: 3228977086" className={`gm-form-input ${addressErrors.telefono ? 'has-error' : ''}`} />
                     {addrForm.telefono && <button type="button" onClick={() => setAddrForm(p => ({ ...p, telefono: '' }))} className="gm-form-clear-btn"><FaTimes size={10} /></button>}
                   </div>
-                  {addressErrors.telefono && <p className="gm-form-error">⚠️ {addressErrors.telefono}</p>}
+                  {addressErrors.telefono && <p className="gm-form-error">️ {addressErrors.telefono}</p>}
                 </div>
               </div>
-              {/* Fila 2: Departamento, Ciudad, Ubicación */}
               <div className="gm-form-grid gm-form-grid-location">
                 <div>
                   <label className="gm-form-label">Departamento</label>
@@ -623,10 +614,9 @@ const CheckoutModal = ({
                 </div>
                 <div>
                   <label className="gm-form-label">Ubicación*</label>
-                  <div className="gm-location-badge">Colombia 🇨🇴</div>
+                  <div className="gm-location-badge">Colombia 🇨</div>
                 </div>
               </div>
-              {/* Fila 3: Dirección (completa) */}
               <div>
                 <label className="gm-form-label">Dirección de entrega</label>
                 <div className="gm-form-input-wrapper">
@@ -635,7 +625,6 @@ const CheckoutModal = ({
                 </div>
                 {addressErrors.direccion && <p className="gm-form-error">⚠️ {addressErrors.direccion}</p>}
               </div>
-              {/* Fila 4: Fachada y Teléfono (paralelos en 2 columnas) */}
               <div className="gm-form-grid gm-form-grid-2">
                 <div>
                   <label className="gm-form-label">Detalles de la fachada</label>

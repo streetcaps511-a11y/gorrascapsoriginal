@@ -86,9 +86,14 @@ const Cliente = sequelize.define('Cliente', {
         field: 'Avatar',
         comment: 'URL o Base64 de la foto de perfil'
     }
+    // ✅ NOTA: Se eliminó SaldoaFavor de aquí ya que no se usa en frontend ni BD
 }, {
     tableName: 'Clientes',
     timestamps: false,
+    // ✅ SOLUCIÓN CLAVE: Excluir SaldoaFavor de todas las consultas automáticas
+    defaultScope: {
+        attributes: { exclude: ['SaldoaFavor'] }
+    },
     hooks: {
         beforeCreate: (cliente) => {
             if (cliente.email) {
@@ -104,27 +109,22 @@ const Cliente = sequelize.define('Cliente', {
 });
 
 // Métodos personalizados
-Cliente.prototype.getTipoDocumentoTexto = function() {
+Cliente.prototype.getTipoDocumentoTexto = function () {
     const tipos = {
         'CC': 'Cédula de Ciudadanía',
-        'CE': 'Cédula de Extranjería', 
+        'CE': 'Cédula de Extranjería',
         'NIT': 'NIT',
         'Pasaporte': 'Pasaporte'
     };
     return tipos[this.tipoDocumento] || this.tipoDocumento || 'Desconocido';
 };
 
-Cliente.prototype.estaActivo = function() {
+Cliente.prototype.estaActivo = function () {
     return this.isActive;
 };
 
-Cliente.prototype.formatearDocumento = function() {
+Cliente.prototype.formatearDocumento = function () {
     return `${this.tipoDocumento} ${this.numeroDocumento}`;
-};
-
-// 🟢 NUEVO: Obtener usuario asociado
-Cliente.prototype.tieneUsuario = function() {
-    return this.idUsuario !== null;
 };
 
 export default Cliente;
