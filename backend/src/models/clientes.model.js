@@ -40,10 +40,12 @@ const Cliente = sequelize.define('Cliente', {
         },
         field: 'Nombre'
     },
+    // ✅ CAMBIO: Teléfono ahora es obligatorio
     telefono: {
         type: DataTypes.STRING(20),
-        allowNull: true,
+        allowNull: false, // ← Cambiado de true a false
         validate: {
+            notEmpty: { msg: 'El teléfono es obligatorio' }, // ← Nueva validación
             len: { args: [7, 15], msg: 'El teléfono debe tener entre 7 y 15 dígitos' },
             isNumeric: { msg: 'El teléfono debe contener solo números' }
         },
@@ -86,14 +88,9 @@ const Cliente = sequelize.define('Cliente', {
         field: 'Avatar',
         comment: 'URL o Base64 de la foto de perfil'
     }
-    // ✅ NOTA: Se eliminó SaldoaFavor de aquí ya que no se usa en frontend ni BD
 }, {
     tableName: 'Clientes',
     timestamps: false,
-    // ✅ SOLUCIÓN CLAVE: Excluir SaldoaFavor de todas las consultas automáticas
-    defaultScope: {
-        attributes: { exclude: ['SaldoaFavor'] }
-    },
     hooks: {
         beforeCreate: (cliente) => {
             if (cliente.email) {

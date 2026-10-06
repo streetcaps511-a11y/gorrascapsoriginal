@@ -10,18 +10,28 @@ import * as Brevo from '@getbrevo/brevo';
 const otpStore = new Map();
 const deletionRequests = new Map();
 const deactivationRequests = new Map();
-const emailHistory = []; // ✅ NUEVO: Trazabilidad de correos enviados
+const emailHistory = []; // ✅ Trazabilidad de correos/SMS enviados
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-// === FUNCIONES DE EMAIL ===
+// Validar si un email tiene formato correcto
+const isValidEmail = (email) => {
+    if (!email || typeof email !== 'string') return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+};
+
+// === FUNCIÓN DE EMAIL ===
 const sendEmail = async (to, subject, html) => {
     try {
+        if (!isValidEmail(to)) {
+            console.warn('⚠️ Email inválido o vacío, no se envía correo:', to);
+            return false;
+        }
         const api = new Brevo.TransactionalEmailsApi();
         api.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
         const mail = new Brevo.SendSmtpEmail();
         mail.subject = subject;
         mail.sender = { name: 'Gorras Medellín', email: process.env.BREVO_SENDER_EMAIL || 'streetcaps511@gmail.com' };
-        mail.to = [{ email: to }];
+        mail.to = [{ email: to.trim().toLowerCase() }];
         mail.htmlContent = html;
         await api.sendTransacEmail(mail);
         return true;
@@ -31,64 +41,104 @@ const sendEmail = async (to, subject, html) => {
     }
 };
 
-// ✅ NUEVO: Correo de confirmación de DESACTIVACIÓN (solo cuando el cliente aprueba)
+// === FUNCIÓN DE SMS (Brevo SMS) ===
+const sendSMS = async (toPhone, message) => {
+    try {
+        if (!toPhone) {
+            console.warn('⚠️ Teléfono no registrado, no se puede enviar SMS');
+            return false;
+        }
+        // Formatear número: si empieza con 3, agregar +57 (Colombia)
+        let phone = toPhone.toString().replace(/\D/g, '');
+        if (phone.startsWith('3') && phone.length === 10) {
+            phone = `+57${phone}`;
+        } else if (!phone.startsWith('+')) {
+            phone = `+57${phone}`;
+        }
+
+        const api = new Brevo.TransactionalSMSApi();
+        api.setApiKey(Brevo.TransactionalSMSApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+
+        const smsData = new Brevo.SendTransacSms();
+        smsData.sender = 'GorrasCol';
+        smsData.recipient = phone;
+        smsData.content = message;
+        smsData.type = 'transactional';
+
+        await api.sendTransacSms(smsData);
+        console.log('✅ SMS enviado a:', phone);
+        return true;
+    } catch (err) {
+        console.error('❌ Error enviando SMS:', err.message);
+        return false;
+    }
+};
+
+// === CORREO: Confirmación de DESACTIVACIÓN ===
 const sendDeactivationApprovalEmail = async (toEmail, toName) => {
-    return sendEmail(toEmail, '✅ Tu cuenta ha sido desactivada - Gorras Medellín',
-        `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#0b0f1a;border-radius:14px;padding:36px;">
-      <div style="text-align:center;margin-bottom:24px;">
-        <h1 style="color:#FFC107;margin:0;font-size:32px;">GM</h1>
-        <p style="color:#94a3b8;margin:4px 0 0 0;font-size:14px;">Gorras Medellín</p>
+    return sendEmail(toEmail, 'Tu cuenta ha sido desactivada - Gorras Medellín',
+        `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f0f4ff;border-radius:12px;overflow:hidden;">
+      <div style="background:#1e3a8a;padding:24px;text-align:center;">
+        <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Gorras Medellín</h1>
+        <p style="color:#93c5fd;margin:4px 0 0 0;font-size:13px;">Notificación de cuenta</p>
       </div>
-      <h2 style="color:#fff;text-align:center;margin:0 0 20px 0;">Cuenta Desactivada</h2>
-      <div style="background:#1e293b;border-radius:12px;padding:24px;margin-bottom:20px;">
-        <p style="color:#e2e8f0;font-size:15px;margin:0 0 12px;">Hola <strong style="color:#FFC107">${toName}</strong>,</p>
-        <p style="color:#e2e8f0;font-size:14px;line-height:1.6;margin:0 0 16px;">
-          Tu cuenta ha sido <strong style="color:#ff6b6b">desactivada exitosamente</strong> según tu solicitud.
+      <div style="padding:28px;">
+        <h2 style="color:#1e3a8a;margin:0 0 16px 0;font-size:18px;">Cuenta Desactivada</h2>
+        <p style="color:#374151;font-size:14px;margin:0 0 12px;">Hola <strong>${toName}</strong>,</p>
+        <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 16px;">
+          Tu cuenta ha sido <strong>desactivada exitosamente</strong> según solicitud del administrador.
         </p>
-        <div style="background:rgba(255,107,107,0.1);border-left:4px solid #ff6b6b;padding:12px;border-radius:6px;margin:16px 0;">
-          <p style="color:#ff6b6b;font-size:13px;margin:0;"><strong>⚠️ Importante:</strong></p>
-          <ul style="color:#cbd5e1;font-size:13px;margin:8px 0 0 0;padding-left:20px;">
+        <div style="background:#dbeafe;border-left:4px solid #2563eb;padding:12px 16px;border-radius:6px;margin:16px 0;">
+          <p style="color:#1e40af;font-size:13px;margin:0 0 8px;"><strong>Información importante:</strong></p>
+          <ul style="color:#1e3a8a;font-size:13px;margin:0;padding-left:18px;">
             <li>No podrás iniciar sesión hasta contactar a soporte</li>
-            <li>Tu historial de compras permanece en nuestro sistema</li>
-            <li>Para reactivar: escribe a <strong style="color:#FFC107">soporte@gorrascaps.com</strong></li>
+            <li>Tu historial de compras permanece guardado</li>
+            <li>Para reactivar escribe a: <strong>soporte@gorrascaps.com</strong></li>
           </ul>
         </div>
       </div>
-      <p style="color:#64748b;font-size:12px;text-align:center;margin:20px 0 0;">
-        Si no solicitaste esta desactivación, contacta inmediatamente a soporte.
-      </p>
+      <div style="background:#e0e7ff;padding:14px 28px;text-align:center;">
+        <p style="color:#4338ca;font-size:11px;margin:0;">Si no reconoces esta acción, contacta a soporte inmediatamente.</p>
+      </div>
     </div>`
     );
 };
 
-// ✅ NUEVO: Correo de confirmación de ELIMINACIÓN (solo cuando el cliente aprueba)
+// === CORREO: Confirmación de ELIMINACIÓN ===
 const sendDeletionApprovalEmail = async (toEmail, toName) => {
-    return sendEmail(toEmail, '✅ Tu cuenta ha sido eliminada - Gorras Medellín',
-        `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;background:#0b0f1a;border-radius:14px;padding:36px;">
-      <div style="text-align:center;margin-bottom:24px;">
-        <h1 style="color:#FFC107;margin:0;font-size:32px;">GM</h1>
-        <p style="color:#94a3b8;margin:4px 0 0 0;font-size:14px;">Gorras Medellín</p>
+    return sendEmail(toEmail, 'Tu cuenta ha sido eliminada - Gorras Medellín',
+        `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;background:#f0f4ff;border-radius:12px;overflow:hidden;">
+      <div style="background:#1e3a8a;padding:24px;text-align:center;">
+        <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Gorras Medellín</h1>
+        <p style="color:#93c5fd;margin:4px 0 0 0;font-size:13px;">Notificación de cuenta</p>
       </div>
-      <h2 style="color:#fff;text-align:center;margin:0 0 20px 0;">Cuenta Eliminada</h2>
-      <div style="background:#1e293b;border-radius:12px;padding:24px;margin-bottom:20px;">
-        <p style="color:#e2e8f0;font-size:15px;margin:0 0 12px;">Hola <strong style="color:#FFC107">${toName}</strong>,</p>
-        <p style="color:#e2e8f0;font-size:14px;line-height:1.6;margin:0 0 16px;">
-          Tu cuenta ha sido <strong style="color:#ff6b6b">eliminada permanentemente</strong> de nuestro sistema.
+      <div style="padding:28px;">
+        <h2 style="color:#1e3a8a;margin:0 0 16px 0;font-size:18px;">Cuenta Eliminada</h2>
+        <p style="color:#374151;font-size:14px;margin:0 0 12px;">Hola <strong>${toName}</strong>,</p>
+        <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 16px;">
+          Tu cuenta ha sido <strong>eliminada permanentemente</strong> de nuestro sistema.
         </p>
-        <div style="background:rgba(255,107,107,0.1);border-left:4px solid #ff6b6b;padding:12px;border-radius:6px;margin:16px 0;">
-          <p style="color:#ff6b6b;font-size:13px;margin:0;"><strong>⚠️ Información importante:</strong></p>
-          <ul style="color:#cbd5e1;font-size:13px;margin:8px 0 0 0;padding-left:20px;">
-            <li>Tu historial de compras ha sido conservado por motivos legales</li>
+        <div style="background:#dbeafe;border-left:4px solid #2563eb;padding:12px 16px;border-radius:6px;margin:16px 0;">
+          <p style="color:#1e40af;font-size:13px;margin:0 0 8px;"><strong>Información importante:</strong></p>
+          <ul style="color:#1e3a8a;font-size:13px;margin:0;padding-left:18px;">
+            <li>Tu historial de compras fue conservado por motivos legales</li>
             <li>Tus datos personales han sido eliminados</li>
-            <li>Si deseas volver a comprar, deberás registrarte nuevamente</li>
+            <li>Para volver a comprar deberás registrarte nuevamente</li>
           </ul>
         </div>
       </div>
-      <p style="color:#64748b;font-size:12px;text-align:center;margin:20px 0 0;">
-        Gracias por haber sido parte de Gorras Medellín.
-      </p>
+      <div style="background:#e0e7ff;padding:14px 28px;text-align:center;">
+        <p style="color:#4338ca;font-size:11px;margin:0;">Gracias por haber sido parte de Gorras Medellín.</p>
+      </div>
     </div>`
     );
+};
+
+// === SMS: Notificar al cliente cuando el correo no es válido ===
+const sendNotificationSMS = async (toPhone, clienteNombre, tipo) => {
+    const accion = tipo === 'desactivacion' ? 'desactivada' : 'eliminada';
+    const mensaje = `Gorras Medellin: Hola ${clienteNombre}, tu cuenta ha sido ${accion}. El correo que tienes registrado no es valido. Comunicate a soporte@gorrascaps.com o registra un correo valido para recibir notificaciones.`;
+    return sendSMS(toPhone, mensaje);
 };
 
 // === CONTROLADOR ===
@@ -337,29 +387,53 @@ const clienteController = {
                 );
             }
 
-            // ✅ ENVIAR CORREO al cliente
-            const emailSent = await sendDeactivationApprovalEmail(cliente.email, cliente.nombreCompleto);
+            // Intentar enviar correo si el email es válido
+            let emailSent = false;
+            let smsSent = false;
+            let notifMethod = 'ninguno';
 
-            // ✅ Registrar en trazabilidad
+            if (isValidEmail(cliente.email)) {
+                emailSent = await sendDeactivationApprovalEmail(cliente.email, cliente.nombreCompleto);
+                notifMethod = emailSent ? 'correo' : 'fallido';
+            }
+
+            // Si el correo no existe, no es válido o falló → enviar SMS al celular
+            if (!emailSent && cliente.telefono) {
+                smsSent = await sendNotificationSMS(cliente.telefono, cliente.nombreCompleto, 'desactivacion');
+                notifMethod = smsSent ? 'sms' : 'fallido';
+            }
+
+            // Registrar en trazabilidad
             emailHistory.push({
                 id: `hist-${Date.now()}`,
                 tipo: 'desactivacion',
                 clienteNombre: cliente.nombreCompleto,
-                clienteEmail: cliente.email,
+                clienteEmail: cliente.email || '(sin correo)',
+                clienteTelefono: cliente.telefono || '(sin teléfono)',
                 adminEmail: request.adminEmail,
                 fecha: new Date().toISOString(),
                 ventasActivas: request.ventasActivas,
                 emailEnviado: emailSent,
-                estado: emailSent ? 'enviado' : 'fallido'
+                smsSent: smsSent,
+                notifMethod,
+                estado: (emailSent || smsSent) ? 'enviado' : 'fallido'
             });
 
             deactivationRequests.delete(requestId);
             await transaction.commit();
 
+            const msgNotif = emailSent
+                ? `Correo enviado a ${cliente.email}`
+                : smsSent
+                    ? `SMS enviado al celular ${cliente.telefono} (correo inválido o no registrado)`
+                    : 'No se pudo notificar (sin correo ni teléfono válidos)';
+
             res.json({
                 success: true,
-                message: `Cliente ${cliente.nombreCompleto} desactivado y correo enviado`,
-                emailSent
+                message: `Cliente ${cliente.nombreCompleto} desactivado. ${msgNotif}`,
+                emailSent,
+                smsSent,
+                notifMethod
             });
         } catch (error) {
             await transaction.rollback();
@@ -391,29 +465,58 @@ const clienteController = {
             await Venta.update({ idCliente: null }, { where: { idCliente: request.clienteId }, transaction });
             await cliente.destroy({ transaction });
 
-            // ✅ ENVIAR CORREO al cliente
-            const emailSent = await sendDeletionApprovalEmail(cliente.email, cliente.nombreCompleto);
+            // Guardar teléfono antes de eliminar
+            const telefonoCliente = cliente.telefono;
+            const emailCliente = cliente.email;
+            const nombreCliente = cliente.nombreCompleto;
 
-            // ✅ Registrar en trazabilidad
+            // Intentar enviar correo si el email es válido
+            let emailSent = false;
+            let smsSent = false;
+            let notifMethod = 'ninguno';
+
+            if (isValidEmail(emailCliente)) {
+                emailSent = await sendDeletionApprovalEmail(emailCliente, nombreCliente);
+                notifMethod = emailSent ? 'correo' : 'fallido';
+            }
+
+            // Si el correo no existe, no es válido o falló → enviar SMS al celular
+            if (!emailSent && telefonoCliente) {
+                smsSent = await sendNotificationSMS(telefonoCliente, nombreCliente, 'eliminacion');
+                notifMethod = smsSent ? 'sms' : 'fallido';
+            }
+
+            // Registrar en trazabilidad
             emailHistory.push({
                 id: `hist-${Date.now()}`,
                 tipo: 'eliminacion',
-                clienteNombre: cliente.nombreCompleto,
-                clienteEmail: cliente.email,
+                clienteNombre: nombreCliente,
+                clienteEmail: emailCliente || '(sin correo)',
+                clienteTelefono: telefonoCliente || '(sin teléfono)',
                 adminEmail: request.adminEmail,
                 fecha: new Date().toISOString(),
                 ventasActivas: request.ventasActivas,
                 emailEnviado: emailSent,
-                estado: emailSent ? 'enviado' : 'fallido'
+                smsSent: smsSent,
+                notifMethod,
+                estado: (emailSent || smsSent) ? 'enviado' : 'fallido'
             });
 
             deletionRequests.delete(requestId);
             await transaction.commit();
 
+            const msgNotif = emailSent
+                ? `Correo enviado a ${emailCliente}`
+                : smsSent
+                    ? `SMS enviado al celular ${telefonoCliente} (correo inválido o no registrado)`
+                    : 'No se pudo notificar (sin correo ni teléfono válidos)';
+
             res.json({
                 success: true,
-                message: `Cliente ${cliente.nombreCompleto} eliminado y correo enviado`,
-                emailSent
+                message: `Cliente ${nombreCliente} eliminado. ${msgNotif}`,
+                emailSent,
+                smsSent,
+                notifMethod
             });
         } catch (error) {
             await transaction.rollback();

@@ -17,6 +17,7 @@
     "user-search": "node src/scripts/buscarUsuario.js",
     "seed:prod": "NODE_ENV=production node src/scripts/seed.js",
     "migrar-devoluciones": "node src/scripts/migrar-devoluciones-cloudinary.js",
+    "limpiar-datos": "node src/scripts/limpiarDatos.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

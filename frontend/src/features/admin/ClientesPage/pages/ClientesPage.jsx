@@ -311,12 +311,12 @@ const ClientesPage = () => {
         </div>
       </div>
 
-      {/* ✅ MODAL DE SOLICITUDES PENDIENTES (LIMPIO) */}
+      {/* MODAL DE SOLICITUDES PENDIENTES - Tema azul modesto */}
       {showSolicitudesModal && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.7)',
+          background: 'rgba(15,23,42,0.6)',
           zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
@@ -325,108 +325,89 @@ const ClientesPage = () => {
         }} onClick={() => setShowSolicitudesModal(false)}>
           <div style={{
             background: '#fff',
-            borderRadius: '12px',
-            maxWidth: '700px',
+            borderRadius: '10px',
+            maxWidth: '640px',
             width: '100%',
             maxHeight: '80vh',
             overflow: 'hidden',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+            boxShadow: '0 8px 32px rgba(30,58,138,0.18)',
+            border: '1px solid #bfdbfe'
           }} onClick={e => e.stopPropagation()}>
-            {/* Header con logo */}
+            {/* Header azul */}
             <div style={{
-              padding: '24px',
-              borderBottom: '1px solid #e5e7eb',
+              background: '#1e3a8a',
+              padding: '18px 22px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  background: '#FFC107',
-                  color: '#000',
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '900',
-                  fontSize: '18px'
-                }}>
-                  GM
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <FaBell size={16} color="#93c5fd" />
                 <div>
-                  <h3 style={{ margin: 0, color: '#111827', fontSize: '18px', fontWeight: '700' }}>
+                  <h3 style={{ margin: 0, color: '#fff', fontSize: '16px', fontWeight: '600' }}>
                     Solicitudes Pendientes
                   </h3>
-                  <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '13px' }}>
+                  <p style={{ margin: '2px 0 0 0', color: '#93c5fd', fontSize: '12px' }}>
                     {solicitudesPendientes.length} solicitud(es) esperando aprobación
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowSolicitudesModal(false)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  borderRadius: '6px',
-                  color: '#6b7280'
-                }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#93c5fd', padding: '4px' }}
               >
-                <FaTimes size={20} />
+                <FaTimes size={16} />
               </button>
             </div>
 
             {/* Body */}
-            <div style={{ padding: '24px', overflowY: 'auto', maxHeight: 'calc(80vh - 140px)' }}>
+            <div style={{ padding: '18px', overflowY: 'auto', maxHeight: 'calc(80vh - 130px)' }}>
               {solicitudesPendientes.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280' }}>
-                  <FaCheck size={48} style={{ color: '#10B981', marginBottom: '16px' }} />
-                  <p style={{ margin: 0, fontSize: '15px' }}>No hay solicitudes pendientes</p>
+                <div style={{ textAlign: 'center', padding: '32px 20px', color: '#6b7280' }}>
+                  <FaCheck size={36} style={{ color: '#2563eb', marginBottom: '12px' }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>No hay solicitudes pendientes</p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {solicitudesPendientes.map((sol) => (
                     <div key={sol.id} style={{
-                      border: '1px solid #e5e7eb',
+                      border: '1px solid #bfdbfe',
                       borderRadius: '8px',
-                      padding: '16px',
-                      background: '#f9fafb'
+                      padding: '14px',
+                      background: '#f0f7ff'
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
                         {sol.tipo === 'eliminacion' ? (
-                          <FaTrash size={18} color="#ef4444" />
+                          <FaTrash size={14} color="#dc2626" />
                         ) : (
-                          <FaPowerOff size={18} color="#f59e0b" />
+                          <FaPowerOff size={14} color="#2563eb" />
                         )}
                         <div style={{ flex: 1 }}>
-                          <h4 style={{ margin: 0, color: '#111827', fontSize: '15px', fontWeight: '600' }}>
+                          <h4 style={{ margin: 0, color: '#1e3a8a', fontSize: '14px', fontWeight: '600' }}>
                             {sol.tipo === 'eliminacion' ? 'Eliminación de Cuenta' : 'Desactivación de Cuenta'}
                           </h4>
-                          <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '13px' }}>
+                          <p style={{ margin: '2px 0 0 0', color: '#6b7280', fontSize: '12px' }}>
                             Solicitado por: {sol.adminEmail}
                           </p>
                         </div>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
                         <div>
-                          <p style={{ margin: '0 0 4px 0', color: '#6b7280', fontSize: '12px', fontWeight: '600' }}>CLIENTE</p>
-                          <p style={{ margin: 0, color: '#111827', fontSize: '14px', fontWeight: '600' }}>{sol.clienteNombre}</p>
+                          <p style={{ margin: '0 0 2px 0', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>CLIENTE</p>
+                          <p style={{ margin: 0, color: '#1e3a8a', fontSize: '13px', fontWeight: '600' }}>{sol.clienteNombre}</p>
                         </div>
                         <div>
-                          <p style={{ margin: '0 0 4px 0', color: '#6b7280', fontSize: '12px', fontWeight: '600' }}>EMAIL</p>
-                          <p style={{ margin: 0, color: '#111827', fontSize: '13px' }}>{sol.clienteEmail}</p>
+                          <p style={{ margin: '0 0 2px 0', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>EMAIL</p>
+                          <p style={{ margin: 0, color: '#374151', fontSize: '12px' }}>{sol.clienteEmail}</p>
                         </div>
                         <div>
-                          <p style={{ margin: '0 0 4px 0', color: '#6b7280', fontSize: '12px', fontWeight: '600' }}>COMPRAS ACTIVAS</p>
-                          <p style={{ margin: 0, color: '#f59e0b', fontSize: '14px', fontWeight: '700' }}>{sol.ventasActivas}</p>
+                          <p style={{ margin: '0 0 2px 0', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>COMPRAS ACTIVAS</p>
+                          <p style={{ margin: 0, color: '#dc2626', fontSize: '13px', fontWeight: '700' }}>{sol.ventasActivas}</p>
                         </div>
                         <div>
-                          <p style={{ margin: '0 0 4px 0', color: '#6b7280', fontSize: '12px', fontWeight: '600' }}>FECHA SOLICITUD</p>
-                          <p style={{ margin: 0, color: '#111827', fontSize: '13px' }}>
+                          <p style={{ margin: '0 0 2px 0', color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>FECHA SOLICITUD</p>
+                          <p style={{ margin: 0, color: '#374151', fontSize: '12px' }}>
                             {new Date(sol.fecha).toLocaleString('es-CO')}
                           </p>
                         </div>
@@ -438,41 +419,41 @@ const ClientesPage = () => {
                           disabled={processingRequest === sol.id}
                           style={{
                             background: '#fff',
-                            border: '1px solid #d1d5db',
+                            border: '1px solid #bfdbfe',
                             color: '#374151',
-                            padding: '8px 16px',
+                            padding: '6px 14px',
                             borderRadius: '6px',
                             cursor: 'pointer',
-                            fontSize: '13px',
+                            fontSize: '12px',
                             fontWeight: '600',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px'
+                            gap: '5px'
                           }}
                         >
-                          <FaTimes size={12} />
+                          <FaTimes size={11} />
                           Rechazar
                         </button>
                         <button
                           onClick={() => sol.tipo === 'eliminacion' ? handleApproveDeletion(sol.id) : handleApproveDeactivation(sol.id)}
                           disabled={processingRequest === sol.id}
                           style={{
-                            background: sol.tipo === 'eliminacion' ? '#ef4444' : '#f59e0b',
+                            background: sol.tipo === 'eliminacion' ? '#dc2626' : '#1d4ed8',
                             border: 'none',
                             color: '#fff',
-                            padding: '8px 16px',
+                            padding: '6px 14px',
                             borderRadius: '6px',
                             cursor: processingRequest === sol.id ? 'not-allowed' : 'pointer',
-                            fontSize: '13px',
+                            fontSize: '12px',
                             fontWeight: '600',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px',
+                            gap: '5px',
                             opacity: processingRequest === sol.id ? 0.6 : 1
                           }}
                         >
-                          <FaCheck size={12} />
-                          {processingRequest === sol.id ? 'Procesando...' : 'Aprobar y Enviar Correo'}
+                          <FaCheck size={11} />
+                          {processingRequest === sol.id ? 'Procesando...' : 'Aprobar y Notificar'}
                         </button>
                       </div>
                     </div>
@@ -483,26 +464,26 @@ const ClientesPage = () => {
 
             {/* Footer */}
             <div style={{
-              padding: '16px 24px',
-              borderTop: '1px solid #e5e7eb',
-              background: '#f9fafb',
+              padding: '12px 18px',
+              borderTop: '1px solid #bfdbfe',
+              background: '#eff6ff',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center'
             }}>
-              <p style={{ margin: 0, color: '#6b7280', fontSize: '12px' }}>
-                ℹ️ El correo se envía solo cuando apruebas la solicitud
+              <p style={{ margin: 0, color: '#3b82f6', fontSize: '11px' }}>
+                ℹ️ Se enviará correo o SMS según los datos del cliente
               </p>
               <button
                 onClick={() => setShowSolicitudesModal(false)}
                 style={{
-                  background: '#111827',
+                  background: '#1e3a8a',
                   border: 'none',
                   color: '#fff',
-                  padding: '8px 16px',
+                  padding: '7px 16px',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: '600'
                 }}
               >
@@ -513,12 +494,12 @@ const ClientesPage = () => {
         </div>
       )}
 
-      {/* ✅ MODAL DE HISTORIAL DE CORREOS (TRAZABILIDAD) */}
+      {/* MODAL DE HISTORIAL DE CORREOS - Tema azul modesto */}
       {showHistorialModal && (
         <div style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.7)',
+          background: 'rgba(15,23,42,0.6)',
           zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
@@ -527,115 +508,121 @@ const ClientesPage = () => {
         }} onClick={() => setShowHistorialModal(false)}>
           <div style={{
             background: '#fff',
-            borderRadius: '12px',
-            maxWidth: '900px',
+            borderRadius: '10px',
+            maxWidth: '820px',
             width: '100%',
             maxHeight: '85vh',
             overflow: 'hidden',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+            boxShadow: '0 8px 32px rgba(30,58,138,0.18)',
+            border: '1px solid #bfdbfe'
           }} onClick={e => e.stopPropagation()}>
-            {/* Header */}
+            {/* Header azul */}
             <div style={{
-              padding: '24px',
-              borderBottom: '1px solid #e5e7eb',
+              background: '#1e3a8a',
+              padding: '18px 22px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  background: '#10B981',
-                  color: '#fff',
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <FaHistory size={20} />
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <FaHistory size={16} color="#93c5fd" />
                 <div>
-                  <h3 style={{ margin: 0, color: '#111827', fontSize: '18px', fontWeight: '700' }}>
+                  <h3 style={{ margin: 0, color: '#fff', fontSize: '16px', fontWeight: '600' }}>
                     Historial de Correos Enviados
                   </h3>
-                  <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '13px' }}>
+                  <p style={{ margin: '2px 0 0 0', color: '#93c5fd', fontSize: '12px' }}>
                     Trazabilidad de desactivaciones y eliminaciones
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowHistorialModal(false)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  borderRadius: '6px',
-                  color: '#6b7280'
-                }}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#93c5fd', padding: '4px' }}
               >
-                <FaTimes size={20} />
+                <FaTimes size={16} />
               </button>
             </div>
 
             {/* Body - Tabla */}
-            <div style={{ padding: '24px', overflowY: 'auto', maxHeight: 'calc(85vh - 140px)' }}>
+            <div style={{ padding: '18px', overflowY: 'auto', maxHeight: 'calc(85vh - 120px)' }}>
               {historialCorreos.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: '#6b7280' }}>
-                  <FaEnvelope size={48} style={{ color: '#9ca3af', marginBottom: '16px' }} />
-                  <p style={{ margin: 0, fontSize: '15px' }}>No hay correos enviados aún</p>
+                  <FaEnvelope size={40} style={{ color: '#93c5fd', marginBottom: '12px' }} />
+                  <p style={{ margin: 0, fontSize: '14px' }}>No hay correos enviados aún</p>
                 </div>
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
-                      <th style={{ padding: '12px', textAlign: 'left', color: '#6b7280', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase' }}>Tipo</th>
-                      <th style={{ padding: '12px', textAlign: 'left', color: '#6b7280', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase' }}>Cliente</th>
-                      <th style={{ padding: '12px', textAlign: 'left', color: '#6b7280', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase' }}>Email</th>
-                      <th style={{ padding: '12px', textAlign: 'left', color: '#6b7280', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase' }}>Admin</th>
-                      <th style={{ padding: '12px', textAlign: 'left', color: '#6b7280', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase' }}>Fecha</th>
-                      <th style={{ padding: '12px', textAlign: 'center', color: '#6b7280', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase' }}>Estado</th>
+                    <tr style={{ background: '#eff6ff', borderBottom: '2px solid #bfdbfe' }}>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', color: '#1e40af', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>Tipo</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', color: '#1e40af', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>Cliente</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', color: '#1e40af', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>Contacto</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', color: '#1e40af', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>Notificado por</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', color: '#1e40af', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>Fecha</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', color: '#1e40af', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {historialCorreos.map((hist) => (
-                      <tr key={hist.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
-                        <td style={{ padding: '12px' }}>
+                      <tr key={hist.id} style={{ borderBottom: '1px solid #dbeafe' }}>
+                        <td style={{ padding: '10px 12px' }}>
                           <span style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '6px',
-                            padding: '4px 10px',
-                            borderRadius: '12px',
-                            fontSize: '12px',
+                            gap: '5px',
+                            padding: '3px 8px',
+                            borderRadius: '10px',
+                            fontSize: '11px',
                             fontWeight: '600',
-                            background: hist.tipo === 'eliminacion' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
-                            color: hist.tipo === 'eliminacion' ? '#ef4444' : '#f59e0b'
+                            background: hist.tipo === 'eliminacion' ? '#fee2e2' : '#dbeafe',
+                            color: hist.tipo === 'eliminacion' ? '#dc2626' : '#1d4ed8'
                           }}>
-                            {hist.tipo === 'eliminacion' ? <FaTrash size={10} /> : <FaPowerOff size={10} />}
+                            {hist.tipo === 'eliminacion' ? <FaTrash size={9} /> : <FaPowerOff size={9} />}
                             {hist.tipo === 'eliminacion' ? 'Eliminación' : 'Desactivación'}
                           </span>
                         </td>
-                        <td style={{ padding: '12px', color: '#111827', fontSize: '14px', fontWeight: '600' }}>{hist.clienteNombre}</td>
-                        <td style={{ padding: '12px', color: '#6b7280', fontSize: '13px' }}>{hist.clienteEmail}</td>
-                        <td style={{ padding: '12px', color: '#6b7280', fontSize: '13px' }}>{hist.adminEmail}</td>
-                        <td style={{ padding: '12px', color: '#6b7280', fontSize: '13px' }}>
-                          {new Date(hist.fecha).toLocaleString('es-CO')}
+                        <td style={{ padding: '10px 12px', color: '#1e3a8a', fontSize: '13px', fontWeight: '600' }}>{hist.clienteNombre}</td>
+                        <td style={{ padding: '10px 12px' }}>
+                          <div style={{ color: '#374151', fontSize: '12px' }}>{hist.clienteEmail || '—'}</div>
+                          {hist.clienteTelefono && hist.clienteTelefono !== '(sin teléfono)' && (
+                            <div style={{ color: '#6b7280', fontSize: '11px', marginTop: '2px' }}>📱 {hist.clienteTelefono}</div>
+                          )}
                         </td>
-                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <td style={{ padding: '10px 12px' }}>
                           <span style={{
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '4px',
-                            padding: '4px 10px',
-                            borderRadius: '12px',
+                            padding: '3px 8px',
+                            borderRadius: '10px',
                             fontSize: '11px',
                             fontWeight: '600',
-                            background: hist.estado === 'enviado' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-                            color: hist.estado === 'enviado' ? '#10B981' : '#ef4444'
+                            background: hist.notifMethod === 'correo' ? '#dbeafe'
+                              : hist.notifMethod === 'sms' ? '#d1fae5'
+                              : '#fee2e2',
+                            color: hist.notifMethod === 'correo' ? '#1d4ed8'
+                              : hist.notifMethod === 'sms' ? '#065f46'
+                              : '#dc2626'
                           }}>
-                            {hist.estado === 'enviado' ? <FaCheck size={10} /> : <FaTimes size={10} />}
+                            {hist.notifMethod === 'correo' ? '✉️ Correo' : hist.notifMethod === 'sms' ? '📱 SMS' : '✗ Ninguno'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 12px', color: '#6b7280', fontSize: '12px' }}>
+                          {new Date(hist.fecha).toLocaleString('es-CO')}
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '3px 8px',
+                            borderRadius: '10px',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            background: hist.estado === 'enviado' ? '#d1fae5' : '#fee2e2',
+                            color: hist.estado === 'enviado' ? '#065f46' : '#dc2626'
+                          }}>
+                            {hist.estado === 'enviado' ? <FaCheck size={9} /> : <FaTimes size={9} />}
                             {hist.estado === 'enviado' ? 'Enviado' : 'Fallido'}
                           </span>
                         </td>
@@ -648,22 +635,22 @@ const ClientesPage = () => {
 
             {/* Footer */}
             <div style={{
-              padding: '16px 24px',
-              borderTop: '1px solid #e5e7eb',
-              background: '#f9fafb',
+              padding: '12px 18px',
+              borderTop: '1px solid #bfdbfe',
+              background: '#eff6ff',
               display: 'flex',
               justifyContent: 'flex-end'
             }}>
               <button
                 onClick={() => setShowHistorialModal(false)}
                 style={{
-                  background: '#111827',
+                  background: '#1e3a8a',
                   border: 'none',
                   color: '#fff',
-                  padding: '8px 16px',
+                  padding: '7px 16px',
                   borderRadius: '6px',
                   cursor: 'pointer',
-                  fontSize: '13px',
+                  fontSize: '12px',
                   fontWeight: '600'
                 }}
               >
