@@ -103,6 +103,15 @@ const rolesController = {
                 throw new Error("El nombre del rol es requerido");
             }
 
+            const cleanName = roleData.nombre.trim();
+            const existingRole = await Rol.findOne({
+                where: { nombre: { [Op.iLike]: cleanName } },
+                transaction
+            });
+            if (existingRole) {
+                throw new Error(`Ya existe un rol con el nombre "${existingRole.nombre}".`);
+            }
+
             const data = await Rol.create(roleData, { transaction });
             
             if (Array.isArray(permissionList)) {
@@ -151,6 +160,20 @@ const rolesController = {
             }
             if (permissionList !== undefined) {
                 updateData.permisos = permissionList;
+            }
+
+            if (updateData.nombre) {
+                const cleanName = updateData.nombre.trim();
+                const existingRole = await Rol.findOne({
+                    where: { 
+                        nombre: { [Op.iLike]: cleanName },
+                        id: { [Op.ne]: req.params.id }
+                    },
+                    transaction
+                });
+                if (existingRole) {
+                    throw new Error(`Ya existe un rol con el nombre "${existingRole.nombre}".`);
+                }
             }
 
             await Rol.update(updateData, { 

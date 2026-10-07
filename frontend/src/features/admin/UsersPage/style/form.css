@@ -8,7 +8,7 @@
 .form-label .required { color: #ef4444; }
 .form-input { background-color: #1E293B !important; border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; color: #f1f5f9; font-size: 13px; height: 30px; width: 100%; outline: none; box-sizing: border-box; }
 .form-input.has-error { background-color: #451a1a; border-color: #ef4444; }
-.form-select { background-color: #1E293B !important; border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; color: #f1f5f9; font-size: 13px; height: 30px; width: 100%; outline: none; box-sizing: border-box; }
+.form-select { background-color: #1E293B !important; border: 1px solid #334155; border-radius: 6px; padding: 4px 28px 4px 8px !important; color: #f1f5f9; font-size: 13px; height: 30px; width: 100%; outline: none; box-sizing: border-box; appearance: none !important; -webkit-appearance: none !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23FFC107'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: calc(100% - 8px) center !important; background-size: 12px 12px !important; cursor: pointer !important; }
 .form-select.has-error { border-color: #ef4444; }
 .field-error { color: #f87171; font-size: 11px; font-weight: 500; margin-top: 3px; min-height: 14px; display: flex; align-items: flex-start; line-height: 1.2; gap: 4px; }
 /* Los estilos de detalles se han movido a detail.css */

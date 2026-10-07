@@ -33,6 +33,16 @@ const useAuthStyles = () => useMemo(() => ({
   formSubtitle: { fontSize: "14px", color: "#888", marginBottom: "15px" },
   label: { display: "block", fontSize: "12px", color: "#aaa", marginBottom: "4px", letterSpacing: "0.5px" },
   input: { width: "100%", padding: "8px 12px", borderRadius: "8px", backgroundColor: "#171a21", border: "1px solid rgba(255,193,7,0.15)", color: "#fff", fontSize: "14px", outline: "none", marginBottom: "4px", boxSizing: "border-box", transition: "border-color 0.2s" },
+  select: {
+    width: "100%", padding: "8px 30px 8px 12px", borderRadius: "8px",
+    backgroundColor: "#171a21", border: "1px solid rgba(255,193,7,0.15)",
+    color: "#fff", fontSize: "14px", outline: "none", marginBottom: "4px",
+    boxSizing: "border-box", transition: "border-color 0.2s",
+    appearance: "none", WebkitAppearance: "none", MozAppearance: "none",
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23FFC107'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center", backgroundSize: "13px 13px",
+    cursor: "pointer"
+  },
   fieldError: { color: "#ff4d4d", fontSize: "12px", fontWeight: "600", marginTop: "4px", display: "block", textAlign: "left", animation: "fadeIn 0.3s ease" },
   inputWrap: { position: "relative", width: "100%", marginBottom: "10px" },
   eyeBtn: { position: "absolute", right: "14px", top: "44%", transform: "translateY(-50%)", border: "none", background: "none", cursor: "pointer", color: "#666" },
@@ -128,6 +138,145 @@ const Login = () => {
   };
 
   // ═══════════════════════════════════════════════════════
+  // 📢 MODAL CORREO YA REGISTRADO (Cliente / Proveedor / Usuario)
+  // ═══════════════════════════════════════════════════════
+  const showEmailExistsModal = ({ email, registeredAs, context = 'register' }) => {
+    if (registeredAs === 'proveedor') {
+      return Swal.fire({
+        title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>🚚</span> <span>Correo registrado como Proveedor</span>
+        </div>`,
+        html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
+          El correo <b>${email}</b> ya se encuentra registrado como <b>Proveedor</b> en el sistema.<br/><br/>
+          ${context === 'login' ? 'Los proveedores no tienen acceso de inicio de sesión de clientes.' : 'No puedes crear una cuenta de cliente con un correo registrado para proveedores.'}
+        </div>`,
+        icon: 'warning',
+        iconColor: '#FFC107',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#FFC107',
+        background: '#111418',
+        color: '#fff',
+        customClass: {
+          popup: 'gm-swal-popup',
+          confirmButton: 'gm-swal-btn confirm'
+        }
+      });
+    }
+
+    if (registeredAs === 'cliente') {
+      if (context === 'login') {
+        return Swal.fire({
+          title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span>🛍️</span> <span>Correo registrado como Cliente</span>
+          </div>`,
+          html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
+            El correo <b>${email}</b> está registrado en el sistema como <b>Cliente</b>, pero aún no tiene contraseña de acceso.<br/><br/>¿Deseas ir a la pestaña de <b>Registro</b> para crear tu cuenta?
+          </div>`,
+          icon: 'info',
+          iconColor: '#FFC107',
+          showCancelButton: true,
+          confirmButtonText: 'Ir a Registro',
+          cancelButtonText: 'Cerrar',
+          confirmButtonColor: '#FFC107',
+          cancelButtonColor: '#444',
+          background: '#111418',
+          color: '#fff',
+          customClass: {
+            popup: 'gm-swal-popup',
+            confirmButton: 'gm-swal-btn confirm',
+            cancelButton: 'gm-swal-btn cancel'
+          }
+        }).then((res) => {
+          if (res.isConfirmed) {
+            setActiveTab("register");
+            setRegisterData(prev => ({ ...prev, correo: email }));
+          }
+        });
+      } else {
+        return Swal.fire({
+          title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span>🛍️</span> <span>Correo ya registrado como Cliente</span>
+          </div>`,
+          html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
+            El correo <b>${email}</b> ya se encuentra registrado como <b>Cliente</b> en la tienda.<br/><br/>Si ya tienes cuenta activa, puedes iniciar sesión directamente o recuperar tu clave.
+          </div>`,
+          icon: 'info',
+          iconColor: '#FFC107',
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#FFC107',
+          background: '#111418',
+          color: '#fff',
+          customClass: {
+            popup: 'gm-swal-popup',
+            confirmButton: 'gm-swal-btn confirm'
+          }
+        });
+      }
+    }
+
+    if (registeredAs === 'usuario') {
+      return Swal.fire({
+        title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>👤</span> <span>Correo ya registrado</span>
+        </div>`,
+        html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
+          El correo <b>${email}</b> ya tiene una cuenta activa de usuario en la plataforma.<br/><br/>Por favor inicia sesión con tu contraseña o haz clic en <i>¿Olvidaste tu contraseña?</i>.
+        </div>`,
+        icon: 'warning',
+        iconColor: '#FFC107',
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#FFC107',
+        background: '#111418',
+        color: '#fff',
+        customClass: {
+          popup: 'gm-swal-popup',
+          confirmButton: 'gm-swal-btn confirm'
+        }
+      });
+    }
+
+    return Swal.fire({
+      title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span>⚠️</span> <span>Correo ya registrado</span>
+      </div>`,
+      html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
+        El correo <b>${email}</b> ya se encuentra registrado en el sistema.
+      </div>`,
+      icon: 'warning',
+      iconColor: '#FFC107',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#FFC107',
+      background: '#111418',
+      color: '#fff',
+      customClass: {
+        popup: 'gm-swal-popup',
+        confirmButton: 'gm-swal-btn confirm'
+      }
+    });
+  };
+
+  const handleLoginEmailBlur = async () => {
+    const email = (loginEmailRef.current?.value || loginData.correo || "").trim().toLowerCase();
+    if (!email || validateEmail(email)) return;
+
+    try {
+      const response = await api.get("/api/auth/check-exists", { params: { email } });
+      if (response.data.success && response.data.emailExists) {
+        const regAs = response.data.registeredAs;
+        if (regAs === 'proveedor') {
+          setFieldErrors(prev => ({ ...prev, correo: "Este correo ya está registrado como Proveedor" }));
+          showEmailExistsModal({ email, registeredAs: 'proveedor', context: 'login' });
+        } else if (regAs === 'cliente') {
+          setFieldErrors(prev => ({ ...prev, correo: "Registrado como Cliente (sin clave). Ve a Registro." }));
+          showEmailExistsModal({ email, registeredAs: 'cliente', context: 'login' });
+        }
+      }
+    } catch (err) {
+      console.warn("Error en blur de correo login:", err);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════
   // 🔐 LOGIN
   // ═══════════════════════════════════════════════════════
   const handleLogin = async (e, isForced = false) => {
@@ -192,7 +341,11 @@ const Login = () => {
         setError("La petición tardó demasiado. Verifica tu conexión.");
       } else if (err.response) {
         const msg = err.response?.data?.message || "";
-        if (msg.toLowerCase().includes("correo") || msg.toLowerCase().includes("email") || msg.toLowerCase().includes("credenciales")) {
+        const regAs = err.response?.data?.registeredAs;
+        if (regAs === 'proveedor' || regAs === 'cliente') {
+          setFieldErrors({ correo: msg });
+          showEmailExistsModal({ email: currentCorreo, registeredAs: regAs, context: 'login' });
+        } else if (msg.toLowerCase().includes("correo") || msg.toLowerCase().includes("email") || msg.toLowerCase().includes("credenciales")) {
           setFieldErrors({ correo: msg || "Credenciales incorrectas" });
         } else if (msg.toLowerCase().includes("clave") || msg.toLowerCase().includes("contrase")) {
           setFieldErrors({ clave: msg });
@@ -213,12 +366,15 @@ const Login = () => {
     if (!value || !value.trim()) return;
     try {
       const params = {};
-      if (field === "correo") params.email = value.trim();
+      if (field === "correo") params.email = value.trim().toLowerCase();
       if (field === "documentNumber") params.documento = value.trim();
       const response = await api.get("/api/auth/check-exists", { params });
       if (response.data.success) {
         if (field === "correo" && response.data.emailExists) {
-          setFieldErrors(prev => ({ ...prev, correo: "El correo electrónico ya está registrado" }));
+          const regAs = response.data.registeredAs || 'usuario';
+          const label = regAs === 'proveedor' ? 'Proveedor' : regAs === 'cliente' ? 'Cliente' : 'otro usuario';
+          setFieldErrors(prev => ({ ...prev, correo: `El correo electrónico ya está registrado como ${label}` }));
+          showEmailExistsModal({ email: value.trim().toLowerCase(), registeredAs: regAs, context: 'register' });
         } else if (field === "documentNumber" && response.data.documentoExists) {
           setFieldErrors(prev => ({ ...prev, documentNumber: "El número de documento ya está registrado" }));
         }
@@ -285,7 +441,12 @@ const Login = () => {
       });
       if (checkResponse.data.success) {
         const newFe = {};
-        if (checkResponse.data.emailExists) newFe.correo = "El correo electrónico ya está registrado por otro usuario";
+        if (checkResponse.data.emailExists) {
+          const regAs = checkResponse.data.registeredAs || 'usuario';
+          const label = regAs === 'proveedor' ? 'Proveedor' : regAs === 'cliente' ? 'Cliente' : 'otro usuario';
+          newFe.correo = `El correo electrónico ya está registrado como ${label}`;
+          showEmailExistsModal({ email: registerData.correo.trim().toLowerCase(), registeredAs: regAs, context: 'register' });
+        }
         if (checkResponse.data.documentoExists) newFe.documentNumber = "El número de documento ya está registrado";
         if (Object.keys(newFe).length > 0) { setFieldErrors(newFe); return; }
       }
@@ -331,8 +492,11 @@ const Login = () => {
         setFieldErrors({ phone: result.message });
       } else {
         const msg = result.message || "";
-        // ✅ Si el correo falló, ofrecer fallback al teléfono
-        if (msg.toLowerCase().includes("correo") || msg.toLowerCase().includes("email") || result.sentTo === 'sms') {
+        const regAs = result.registeredAs;
+        if (regAs) {
+          showEmailExistsModal({ email, registeredAs: regAs, context: 'register' });
+          setFieldErrors({ correo: msg });
+        } else if (msg.toLowerCase().includes("correo") || msg.toLowerCase().includes("email") || result.sentTo === 'sms') {
           setInfoMsg(`⚠️ ${msg}`);
           setPinVerification(true);
         } else {
@@ -439,7 +603,33 @@ const Login = () => {
       }
     } catch (err) {
       console.error("🔴 Error en recuperación:", err.message);
-      setError(err.response?.data?.message || "No se pudo enviar el correo. Intenta más tarde.");
+      const msg = err.response?.data?.message || "No se pudo enviar el correo. Intenta más tarde.";
+      setError(msg);
+      Swal.fire({
+        title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>⚠️</span> <span>Correo no registrado</span>
+        </div>`,
+        html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
+          ${msg}<br/><br/>¿Deseas crear una cuenta ahora con este correo?
+        </div>`,
+        icon: 'warning',
+        iconColor: '#FFC107',
+        showCancelButton: true,
+        confirmButtonText: 'Ir a Registro',
+        cancelButtonText: 'Entendido',
+        confirmButtonColor: '#FFC107',
+        cancelButtonColor: '#444',
+        background: '#111418',
+        color: '#fff',
+        customClass: { popup: 'gm-swal-popup', confirmButton: 'gm-swal-btn confirm', cancelButton: 'gm-swal-btn cancel' }
+      }).then((modalRes) => {
+        if (modalRes.isConfirmed) {
+          setView("auth");
+          setActiveTab("register");
+          setRegisterData(prev => ({ ...prev, correo: recoverEmail.trim().toLowerCase() }));
+          resetMessages();
+        }
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -502,7 +692,7 @@ const Login = () => {
                 <form onSubmit={handleLogin} onChange={resetMessages} autoComplete="off">
                   <label style={styles.label}>Correo electrónico</label>
                   <div style={styles.inputWrap}>
-                    <input ref={loginEmailRef} style={{ ...styles.input, borderColor: fieldErrors.correo ? '#ff4d4d' : styles.input.border.split(' ')[2], marginBottom: 0 }} type="email" name="correo_login_unique" autoComplete="off" placeholder="Ingresa tu correo..." value={loginData.correo} onChange={(e) => setLoginData({ ...loginData, correo: e.target.value })} />
+                    <input ref={loginEmailRef} style={{ ...styles.input, borderColor: fieldErrors.correo ? '#ff4d4d' : styles.input.border.split(' ')[2], marginBottom: 0 }} type="email" name="correo_login_unique" autoComplete="off" placeholder="Ingresa tu correo..." value={loginData.correo} onBlur={handleLoginEmailBlur} onChange={(e) => setLoginData({ ...loginData, correo: e.target.value })} />
                     {fieldErrors.correo && <span style={styles.fieldError}>{fieldErrors.correo}</span>}
                   </div>
                   <label style={styles.label}>Contraseña</label>
@@ -539,7 +729,7 @@ const Login = () => {
                     <div style={{ flex: 0.5, minWidth: 0 }}>
                       <label style={styles.label}>Tipo</label>
                       <div style={styles.inputWrap}>
-                        <select style={styles.input} value={registerData.documentType} onChange={(e) => {
+                        <select style={styles.select} value={registerData.documentType} onChange={(e) => {
                           const nextType = e.target.value;
                           const maxLen = nextType === "Cédula de Ciudadanía" ? 10 : nextType === "Pasaporte" ? 20 : 15;
                           let nextNumber = registerData.documentNumber;

@@ -1,9 +1,9 @@
 // controllers/auth.controller.js
-import { Usuario, Rol, Cliente, DetallePermiso, Permiso, sequelize } from '../models/index.js';
+import { Usuario, Rol, Cliente, Proveedor, DetallePermiso, Permiso, sequelize } from '../models/index.js';
 import { Op } from 'sequelize';
 import { generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 import authService from '../services/auth.service.js';
-import { sendPinEmail } from '../services/mail.service.js';
+import { sendPinEmail, sendRegistrationCredentialsEmail } from '../services/mail.service.js';
 import crypto from 'crypto';
 import * as Brevo from '@getbrevo/brevo';
 
@@ -77,9 +77,14 @@ const authController = {
         });
       }
 
-      const exists = await Usuario.findOne({ where: { email: searchEmail } }) ||
-        await Cliente.findOne({ where: { email: searchEmail } });
-      if (exists) return res.status(400).json({ success: false, message: 'El correo ya está registrado.' });
+      const existsProveedor = await Proveedor.findOne({ where: { email: searchEmail } });
+      if (existsProveedor) return res.status(400).json({ success: false, registeredAs: 'proveedor', message: 'Este correo ya está registrado como proveedor en el sistema.' });
+
+      const existsUser = await Usuario.findOne({ where: { email: searchEmail } });
+      if (existsUser) return res.status(400).json({ success: false, registeredAs: 'usuario', message: 'Este correo ya está registrado como usuario.' });
+
+      const existsCliente = await Cliente.findOne({ where: { email: searchEmail } });
+      if (existsCliente) return res.status(400).json({ success: false, registeredAs: 'cliente', message: 'Este correo ya está registrado como cliente.' });
 
       const pin = crypto.randomInt(100000, 1000000).toString();
       verificationStore.set(searchEmail, {
@@ -170,6 +175,9 @@ const authController = {
       const { nombre, correo, clave, esCliente, datosCliente, telefono } = req.body;
       const searchEmail = correo.trim().toLowerCase();
 
+      const existsProveedor = await Proveedor.findOne({ where: { email: searchEmail }, transaction: t });
+      if (existsProveedor) { await t.rollback(); return res.status(400).json({ success: false, registeredAs: 'proveedor', message: 'El correo ya está registrado como proveedor.' }); }
+
       const exists = await Usuario.findOne({ where: { email: searchEmail }, transaction: t }) ||
         await Cliente.findOne({ where: { email: searchEmail }, transaction: t });
       if (exists) { await t.rollback(); return res.status(400).json({ success: false, message: 'El correo ya está registrado.' }); }
@@ -208,6 +216,12 @@ const authController = {
       }
 
       await t.commit();
+
+      // 📧 Enviar credenciales de acceso al correo registrado
+      sendRegistrationCredentialsEmail(searchEmail, nombre, clave).catch(err => {
+        console.error('⚠️ [REGISTRO] Error enviando correo de credenciales:', err.message);
+      });
+
       res.status(201).json({
         success: true,
         message: 'Registro exitoso. Ya puedes iniciar sesión.',
@@ -240,10 +254,22 @@ const authController = {
       });
 
       if (!user) {
+        const proveedorExistente = await Proveedor.findOne({ where: { email: searchEmail } });
+        if (proveedorExistente) {
+          return res.status(401).json({
+            success: false,
+            registeredAs: 'proveedor',
+            tipo: 'Proveedor',
+            message: 'Este correo ya se encuentra registrado como proveedor en el sistema.'
+          });
+        }
+
         const clienteExistente = await Cliente.findOne({ where: { email: searchEmail } });
         if (clienteExistente) {
           return res.status(401).json({
             success: false,
+            registeredAs: 'cliente',
+            tipo: 'Cliente',
             message: 'Este correo está registrado como cliente pero no tiene cuenta de acceso. Por favor, regístrate para crear tu cuenta.'
           });
         }
@@ -456,7 +482,7 @@ const authController = {
   checkExistence: async (req, res) => {
     try {
       const { email, documento, excludeUserId, excludeClienteId } = req.query;
-      const result = { emailExists: false, documentoExists: false };
+      const result = { emailExists: false, documentoExists: false, registeredAs: null, tipo: null };
       let targetExcludeUserId = excludeUserId;
       let targetExcludeClienteId = excludeClienteId;
 
@@ -475,16 +501,46 @@ const authController = {
 
       if (email) {
         const searchEmail = email.trim().toLowerCase();
-        const userExists = await Usuario.findOne({ where: { email: searchEmail, id: { [Op.ne]: targetExcludeUserId } } });
-        const clienteExists = await Cliente.findOne({ where: { email: searchEmail, id: { [Op.ne]: targetExcludeClienteId } } });
-        if (userExists || clienteExists) result.emailExists = true;
+        const userExists = await Usuario.findOne({ where: { email: searchEmail, ...(targetExcludeUserId ? { id: { [Op.ne]: targetExcludeUserId } } : {}) } });
+        const clienteExists = await Cliente.findOne({ where: { email: searchEmail, ...(targetExcludeClienteId ? { id: { [Op.ne]: targetExcludeClienteId } } : {}) } });
+        const proveedorExists = await Proveedor.findOne({ where: { email: searchEmail } });
+
+        if (userExists || clienteExists || proveedorExists) {
+          result.emailExists = true;
+          if (proveedorExists) {
+            result.registeredAs = 'proveedor';
+            result.tipo = 'Proveedor';
+          } else if (clienteExists && !userExists) {
+            result.registeredAs = 'cliente';
+            result.tipo = 'Cliente';
+          } else if (userExists) {
+            result.registeredAs = 'usuario';
+            result.tipo = 'Usuario';
+          }
+        }
       }
 
       if (documento) {
         const searchDoc = documento.trim();
-        const userExists = await Usuario.findOne({ where: { numeroDocumento: searchDoc, id: { [Op.ne]: targetExcludeUserId } } });
-        const clienteExists = await Cliente.findOne({ where: { numeroDocumento: searchDoc, id: { [Op.ne]: targetExcludeClienteId } } });
-        if (userExists || clienteExists) result.documentoExists = true;
+        const userExists = await Usuario.findOne({ where: { numeroDocumento: searchDoc, ...(targetExcludeUserId ? { id: { [Op.ne]: targetExcludeUserId } } : {}) } });
+        const clienteExists = await Cliente.findOne({ where: { numeroDocumento: searchDoc, ...(targetExcludeClienteId ? { id: { [Op.ne]: targetExcludeClienteId } } : {}) } });
+        const proveedorExists = await Proveedor.findOne({ where: { documentNumber: searchDoc } });
+
+        if (userExists || clienteExists || proveedorExists) {
+          result.documentoExists = true;
+          if (!result.registeredAs) {
+            if (proveedorExists) {
+              result.registeredAs = 'proveedor';
+              result.tipo = 'Proveedor';
+            } else if (clienteExists && !userExists) {
+              result.registeredAs = 'cliente';
+              result.tipo = 'Cliente';
+            } else if (userExists) {
+              result.registeredAs = 'usuario';
+              result.tipo = 'Usuario';
+            }
+          }
+        }
       }
 
       res.json({ success: true, ...result });

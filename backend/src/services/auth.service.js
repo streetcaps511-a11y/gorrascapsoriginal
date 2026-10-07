@@ -114,39 +114,15 @@ const authService = {
             const searchEmail = email.toLowerCase().trim();
             console.log(`🔍 [FORGOT PASSWORD] Buscando usuario con email: ${searchEmail}`);
             
-            let usuario = await Usuario.findOne({ where: { email: searchEmail } });
+            const usuario = await Usuario.findOne({ where: { email: searchEmail } });
             
-            // 🛠️ AUTO-REPARACIÓN: Si no existe en Usuarios, buscamos si existe en la tabla de Clientes
             if (!usuario) {
-                console.log(`ℹ️ [FORGOT PASSWORD] Usuario no encontrado en Usuarios, buscando en Clientes...`);
-                const { Cliente, Rol } = await import('../models/index.js');
-                const cliente = await Cliente.findOne({ where: { email: searchEmail } });
-                
-                if (cliente) {
-                    console.log(`✅ [FORGOT PASSWORD] Cliente encontrado: ${cliente.nombreCompleto}, creando usuario...`);
-                    // Si existe como cliente, le creamos su acceso automáticamente
-                    let rolCliente = await Rol.findOne({ where: { nombre: 'Cliente' } });
-                    if (!rolCliente) {
-                        throw new Error('Rol Cliente no encontrado en la base de datos');
-                    }
-                    
-                    const tempPassword = crypto.randomBytes(8).toString('hex');
-                    usuario = await Usuario.create({
-                        nombre: cliente.nombreCompleto,
-                        email: searchEmail,
-                        clave: tempPassword, // Clave temporal aleatoria
-                        estado: 'activo',
-                        idRol: rolCliente.id,
-                        mustChangePassword: true
-                    });
-                    console.log(`✅ [FORGOT PASSWORD] Usuario creado automáticamente: ${usuario.id}`);
-                } else {
-                    console.log(`❌ [FORGOT PASSWORD] No existe en Usuarios ni en Clientes`);
-                }
+                console.log(`❌ [FORGOT PASSWORD] El correo ${searchEmail} no está registrado en el sistema`);
+                throw new Error('El correo electrónico no se encuentra registrado en el sistema. Por favor, regístrate primero.');
             }
 
-            if (!usuario) {
-                throw new Error('No existe una cuenta registrada con este correo electrónico. Por favor, regístrate primero.');
+            if (usuario.estado === 'inactivo' || usuario.estado === 'bloqueado') {
+                throw new Error('Tu cuenta se encuentra inactiva. Por favor contacta al administrador.');
             }
 
             // Generar token único de 20 caracteres

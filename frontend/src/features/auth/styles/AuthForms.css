@@ -13,8 +13,9 @@
 .input-field-group label { color: #aaa; font-size: 11px; /* Reducido de 13px */ font-weight: 500; margin-left: 2px; }
 .input-decorated { position: relative; }
 .input-field-group input,
-.input-field-group select,
 .input-decorated input { width: 100%; box-sizing: border-box; background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; /* Reducido de 10px */ padding: 10px 12px; /* Reducido de 12px 14px */ color: #ffffff; font-size: 13px; /* Reducido de 14px */ outline: none; transition: border-color 0.2s ease; }
+.input-field-group select { width: 100%; box-sizing: border-box; background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 10px 32px 10px 12px !important; color: #ffffff; font-size: 13px; outline: none; transition: border-color 0.2s ease; appearance: none !important; -webkit-appearance: none !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23FFC107'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: calc(100% - 10px) center !important; background-size: 13px 13px !important; cursor: pointer !important; }
+.input-field-group select option { background-color: #161b22; color: #ffffff; }
 .input-field-group input.has-error { border-color: #ff4d4d !important; }
 .field-error-text { color: #ff4d4d; font-size: 10px; font-weight: 600; position: absolute; bottom: -14px; left: 4px; white-space: nowrap; }
 .button-main-auth { width: 100%; background-color: #F5C81B; color: #000; border: none; border-radius: 8px; padding: 12px; /* Reducido de 14px */ font-size: 14px; /* Reducido de 15px */ font-weight: 700; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease; margin-top: 10px; }

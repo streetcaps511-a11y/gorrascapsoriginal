@@ -203,6 +203,102 @@ export const sendPinEmail = async (email, pin) => {
 };
 
 /**
+ * Enviar credenciales de acceso al registrar un usuario
+ * @param {string} email - Destinatario
+ * @param {string} nombre - Nombre del usuario
+ * @param {string} clave - Contraseña de acceso
+ */
+export const sendRegistrationCredentialsEmail = async (email, nombre, clave) => {
+  const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+  const htmlContent = `
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: auto; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.06);">
+      <div style="background-color: #0b0f19; padding: 28px; text-align: center; border-bottom: 2px solid #FFC107;">
+        <h1 style="color: #FFC107; margin: 0; font-size: 26px; letter-spacing: 2px; font-weight: 800;">GORRAS MEDELLÍN</h1>
+        <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px;">Tu tienda de gorras y estilo urbano</p>
+      </div>
+      <div style="padding: 35px 30px; background-color: #ffffff;">
+        <h2 style="color: #111827; font-size: 22px; margin-top: 0; margin-bottom: 12px;">¡Bienvenido, ${nombre || 'Usuario'}! 👋🧢</h2>
+        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
+          Tu cuenta ha sido creada exitosamente en <strong>Gorras Medellín</strong>. A continuación, encontrarás tus credenciales de inicio de sesión para acceder a la plataforma:
+        </p>
+
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #FFC107; border-radius: 8px; padding: 18px 20px; margin-bottom: 25px;">
+          <div style="margin-bottom: 12px;">
+            <span style="display: block; font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">Correo electrónico</span>
+            <span style="font-size: 16px; color: #0f172a; font-weight: 600;">${email}</span>
+          </div>
+          <div>
+            <span style="display: block; font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">Contraseña</span>
+            <span style="font-size: 16px; color: #0f172a; font-weight: 700; font-family: monospace; background: #e2e8f0; padding: 2px 8px; border-radius: 4px;">${clave}</span>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${loginUrl}" style="background-color: #FFC107; color: #000000; padding: 14px 30px; text-decoration: none; border-radius: 8px; font-weight: 800; font-size: 15px; display: inline-block; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(255, 193, 7, 0.3);">
+            INICIAR SESIÓN AHORA
+          </a>
+        </div>
+
+        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 12px 16px; margin-top: 25px;">
+          <p style="color: #92400e; font-size: 13px; margin: 0; line-height: 1.5;">
+            🔒 <strong>Recomendación de seguridad:</strong> Guarda estas credenciales en un lugar seguro. Si deseas cambiar tu contraseña, puedes hacerlo desde tu perfil una vez inicies sesión.
+          </p>
+        </div>
+      </div>
+      <div style="background-color: #0b0f19; padding: 20px; text-align: center;">
+        <p style="color: #64748b; font-size: 12px; margin: 0;">
+          &copy; ${new Date().getFullYear()} Gorras Medellín Caps. Todos los derechos reservados.
+        </p>
+      </div>
+    </div>
+  `;
+
+  // 🚀 Intentar primero con Brevo
+  if (process.env.BREVO_API_KEY) {
+    try {
+      const brevoInstance = new Brevo.TransactionalEmailsApi();
+      brevoInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+      const sendSmtpEmail = new Brevo.SendSmtpEmail();
+      sendSmtpEmail.subject = '¡Bienvenido a Gorras Medellín! Tus credenciales de acceso 🧢';
+      sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
+      sendSmtpEmail.to = [{ email, name: nombre }];
+      sendSmtpEmail.htmlContent = htmlContent;
+      const data = await brevoInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('✅ Correo de credenciales enviado con éxito via Brevo a:', email, data.messageId || 'OK');
+      return true;
+    } catch (brevoError) {
+      console.error('⚠️ Error con Brevo para credenciales, usando SMTP fallback:', brevoError.message);
+    }
+  }
+
+  // 🔄 FALLBACK: Nodemailer SMTP
+  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        tls: { rejectUnauthorized: false }
+      });
+
+      await transporter.sendMail({
+        from: `"${SENDER_NAME}" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: '¡Bienvenido a Gorras Medellín! Tus credenciales de acceso 🧢',
+        html: htmlContent,
+      });
+      console.log('✅ Correo de credenciales enviado con éxito via SMTP a:', email);
+      return true;
+    } catch (smtpError) {
+      console.error('❌ Error enviando correo de credenciales vía Nodemailer:', smtpError);
+    }
+  }
+
+  return false;
+};
+
+/**
  * Enviar correo de estado de devolución (Aprobada o Rechazada)
  * @param {string} email - Destinatario
  * @param {string} nombre - Nombre del cliente

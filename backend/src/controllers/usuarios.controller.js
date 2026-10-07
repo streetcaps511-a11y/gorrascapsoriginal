@@ -6,6 +6,7 @@
 // controllers/usuarios.controller.js
 import { Op } from 'sequelize';
 import { Usuario, Rol, Cliente, Venta, sequelize } from '../models/index.js';
+import { sendRegistrationCredentialsEmail } from '../services/mail.service.js';
 
 const usuarioController = {
   getMiPerfil: async (req, res) => {
@@ -187,6 +188,13 @@ const usuarioController = {
                   isActive: true
               }
           });
+      }
+
+      // 📧 Enviar credenciales por correo electrónico
+      if (createData.clave && newUser.email) {
+        sendRegistrationCredentialsEmail(newUser.email, newUser.nombre, createData.clave).catch(err => {
+          console.error('⚠️ [USUARIOS] Error enviando credenciales por correo:', err.message);
+        });
       }
 
       // Recuperar usuario con su info de Rol para que el Front lo vea completo

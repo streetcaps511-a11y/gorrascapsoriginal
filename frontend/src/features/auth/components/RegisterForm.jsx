@@ -1,6 +1,8 @@
 /* === COMPONENTE REUTILIZABLE === */
 import React, { useState } from 'react';
 import { FaEye, FaEyeSlash, FaCheck, FaTimes, FaPhone } from "react-icons/fa";
+import Swal from 'sweetalert2';
+import api from '../../shared/services/api';
 import '../styles/AuthForms.css';
 
 const passwordRules = [
@@ -41,6 +43,71 @@ const PasswordChecklist = ({ password, visible }) => {
   );
 };
 
+const showEmailExistsModal = ({ email, registeredAs }) => {
+  if (registeredAs === 'proveedor') {
+    return Swal.fire({
+      title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span>🚚</span> <span>Correo registrado como Proveedor</span>
+      </div>`,
+      html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
+        El correo <b>${email}</b> ya se encuentra registrado como <b>Proveedor</b> en el sistema.<br/><br/>
+        No puedes crear una cuenta de cliente con un correo asignado a un proveedor.
+      </div>`,
+      icon: 'warning',
+      iconColor: '#FFC107',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#FFC107',
+      background: '#111418',
+      color: '#fff',
+      customClass: {
+        popup: 'gm-swal-popup',
+        confirmButton: 'gm-swal-btn confirm'
+      }
+    });
+  }
+
+  if (registeredAs === 'cliente') {
+    return Swal.fire({
+      title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <span>🛍️</span> <span>Correo ya registrado como Cliente</span>
+      </div>`,
+      html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
+        El correo <b>${email}</b> ya se encuentra registrado como <b>Cliente</b> en la tienda.<br/><br/>
+        Si ya tienes cuenta activa, puedes iniciar sesión o recuperar tu contraseña.
+      </div>`,
+      icon: 'info',
+      iconColor: '#FFC107',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#FFC107',
+      background: '#111418',
+      color: '#fff',
+      customClass: {
+        popup: 'gm-swal-popup',
+        confirmButton: 'gm-swal-btn confirm'
+      }
+    });
+  }
+
+  return Swal.fire({
+    title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <span>👤</span> <span>Correo ya registrado</span>
+    </div>`,
+    html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
+      El correo <b>${email}</b> ya tiene una cuenta de usuario registrada en la plataforma.
+    </div>`,
+    icon: 'warning',
+    iconColor: '#FFC107',
+    confirmButtonText: 'Entendido',
+    confirmButtonColor: '#FFC107',
+    background: '#111418',
+    color: '#fff',
+    customClass: {
+      popup: 'gm-swal-popup',
+      confirmButton: 'gm-swal-btn confirm'
+    }
+  });
+};
+
 const RegisterForm = ({
   registerData,
   setRegisterData,
@@ -56,8 +123,22 @@ const RegisterForm = ({
   const confirmMismatch = registerData.confirmPassword && registerData.password !== registerData.confirmPassword;
   const confirmMatch = registerData.confirmPassword && registerData.password && registerData.password === registerData.confirmPassword;
 
+  const handleEmailBlur = async () => {
+    const email = (registerData.email || registerData.correo || '').trim().toLowerCase();
+    if (!email || !email.includes('@')) return;
+    try {
+      const response = await api.get("/api/auth/check-exists", { params: { email } });
+      if (response.data.success && response.data.emailExists) {
+        const regAs = response.data.registeredAs || 'usuario';
+        showEmailExistsModal({ email, registeredAs: regAs });
+      }
+    } catch (err) {
+      console.warn("Error en blur de correo en RegisterForm:", err);
+    }
+  };
+
   // ✅ Validar antes de mostrar el modal de confirmación
-  const handlePreSubmit = (e) => {
+  const handlePreSubmit = async (e) => {
     e.preventDefault();
 
     // Validar teléfono obligatorio
@@ -66,6 +147,21 @@ const RegisterForm = ({
       const fakeEvent = { preventDefault: () => { } };
       handleRegister(fakeEvent); // Esto activará las validaciones existentes
       return;
+    }
+
+    // Verificar si el correo ya existe antes de continuar
+    const email = (registerData.email || registerData.correo || '').trim().toLowerCase();
+    if (email) {
+      try {
+        const response = await api.get("/api/auth/check-exists", { params: { email } });
+        if (response.data.success && response.data.emailExists) {
+          const regAs = response.data.registeredAs || 'usuario';
+          showEmailExistsModal({ email, registeredAs: regAs });
+          return;
+        }
+      } catch (err) {
+        console.warn("Error verificando email antes de confirmación:", err);
+      }
     }
 
     // Mostrar modal de confirmación
@@ -155,6 +251,7 @@ const RegisterForm = ({
             placeholder="nombre@correo.com"
             required
             value={registerData.email}
+            onBlur={handleEmailBlur}
             onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
           />
           {fieldErrors.email && <span className="field-error-text">{fieldErrors.email}</span>}

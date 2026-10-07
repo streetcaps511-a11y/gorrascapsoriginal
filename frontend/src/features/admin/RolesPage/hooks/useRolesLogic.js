@@ -221,9 +221,12 @@ export const useRolesLogic = () => {
       const channel = new BroadcastChannel('app_sync');
       channel.postMessage('user_permissions_updated');
       channel.close();
-      closeModal();
     } catch (error) {
-      showAlert("Error al guardar: " + error.message, "error");
+      const errorMsg = error.response?.data?.message || error.message || "Error al guardar el rol";
+      showAlert(errorMsg, "error");
+      if (errorMsg.toLowerCase().includes("ya existe") || errorMsg.toLowerCase().includes("nombre")) {
+        setFieldErrors(prev => ({ ...prev, name: errorMsg }));
+      }
     } finally {
       setLoading(false);
     }
