@@ -20,7 +20,9 @@ export const mapBackendToFrontend = (p) => ({
   enOfertaVenta: p.EnOfertaVenta || p.enOfertaVenta || p.hasDiscount || false,
   descripcion: p.Descripcion || p.descripcion || "",
   tallas: p.Tallas || p.tallas || [],
-  tallasStock: p.TallasStock || p.tallasStock || [],
+  tallasStock: typeof (p.TallasStock || p.tallasStock) === 'string'
+    ? (() => { try { return JSON.parse(p.TallasStock || p.tallasStock); } catch(e) { return []; } })()
+    : (p.TallasStock || p.tallasStock || []),
   colores: p.Colores || p.colores || ["Negro"],
   imagenes: p.Imagenes || p.imagenes || [],
   destacado: p.Destacado || p.destacado || p.isFeatured || false,

@@ -25,7 +25,7 @@ const Compra = sequelize.define('Compra', {
         field: 'Fecha'
     },
     total: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(14, 2),
         allowNull: false,
         defaultValue: 0,
         field: 'Total'

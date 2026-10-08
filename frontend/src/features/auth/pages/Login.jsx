@@ -138,121 +138,12 @@ const Login = () => {
   };
 
   // ═══════════════════════════════════════════════════════
-  // 📢 MODAL CORREO YA REGISTRADO (Cliente / Proveedor / Usuario)
+  // 📢 NOTIFICACIÓN CORREO EXISTENTE (Alerta directa al campo, sin modal gigante)
   // ═══════════════════════════════════════════════════════
   const showEmailExistsModal = ({ email, registeredAs, context = 'register' }) => {
-    if (registeredAs === 'proveedor') {
-      return Swal.fire({
-        title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <span>🚚</span> <span>Correo registrado como Proveedor</span>
-        </div>`,
-        html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
-          El correo <b>${email}</b> ya se encuentra registrado como <b>Proveedor</b> en el sistema.<br/><br/>
-          ${context === 'login' ? 'Los proveedores no tienen acceso de inicio de sesión de clientes.' : 'No puedes crear una cuenta de cliente con un correo registrado para proveedores.'}
-        </div>`,
-        icon: 'warning',
-        iconColor: '#FFC107',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#FFC107',
-        background: '#111418',
-        color: '#fff',
-        customClass: {
-          popup: 'gm-swal-popup',
-          confirmButton: 'gm-swal-btn confirm'
-        }
-      });
-    }
-
-    if (registeredAs === 'cliente') {
-      if (context === 'login') {
-        return Swal.fire({
-          title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span>🛍️</span> <span>Correo registrado como Cliente</span>
-          </div>`,
-          html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
-            El correo <b>${email}</b> está registrado en el sistema como <b>Cliente</b>, pero aún no tiene contraseña de acceso.<br/><br/>¿Deseas ir a la pestaña de <b>Registro</b> para crear tu cuenta?
-          </div>`,
-          icon: 'info',
-          iconColor: '#FFC107',
-          showCancelButton: true,
-          confirmButtonText: 'Ir a Registro',
-          cancelButtonText: 'Cerrar',
-          confirmButtonColor: '#FFC107',
-          cancelButtonColor: '#444',
-          background: '#111418',
-          color: '#fff',
-          customClass: {
-            popup: 'gm-swal-popup',
-            confirmButton: 'gm-swal-btn confirm',
-            cancelButton: 'gm-swal-btn cancel'
-          }
-        }).then((res) => {
-          if (res.isConfirmed) {
-            setActiveTab("register");
-            setRegisterData(prev => ({ ...prev, correo: email }));
-          }
-        });
-      } else {
-        return Swal.fire({
-          title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <span>🛍️</span> <span>Correo ya registrado como Cliente</span>
-          </div>`,
-          html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
-            El correo <b>${email}</b> ya se encuentra registrado como <b>Cliente</b> en la tienda.<br/><br/>Si ya tienes cuenta activa, puedes iniciar sesión directamente o recuperar tu clave.
-          </div>`,
-          icon: 'info',
-          iconColor: '#FFC107',
-          confirmButtonText: 'Entendido',
-          confirmButtonColor: '#FFC107',
-          background: '#111418',
-          color: '#fff',
-          customClass: {
-            popup: 'gm-swal-popup',
-            confirmButton: 'gm-swal-btn confirm'
-          }
-        });
-      }
-    }
-
-    if (registeredAs === 'usuario') {
-      return Swal.fire({
-        title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <span>👤</span> <span>Correo ya registrado</span>
-        </div>`,
-        html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
-          El correo <b>${email}</b> ya tiene una cuenta activa de usuario en la plataforma.<br/><br/>Por favor inicia sesión con tu contraseña o haz clic en <i>¿Olvidaste tu contraseña?</i>.
-        </div>`,
-        icon: 'warning',
-        iconColor: '#FFC107',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#FFC107',
-        background: '#111418',
-        color: '#fff',
-        customClass: {
-          popup: 'gm-swal-popup',
-          confirmButton: 'gm-swal-btn confirm'
-        }
-      });
-    }
-
-    return Swal.fire({
-      title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
-        <span>⚠️</span> <span>Correo ya registrado</span>
-      </div>`,
-      html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
-        El correo <b>${email}</b> ya se encuentra registrado en el sistema.
-      </div>`,
-      icon: 'warning',
-      iconColor: '#FFC107',
-      confirmButtonText: 'Entendido',
-      confirmButtonColor: '#FFC107',
-      background: '#111418',
-      color: '#fff',
-      customClass: {
-        popup: 'gm-swal-popup',
-        confirmButton: 'gm-swal-btn confirm'
-      }
-    });
+    const label = registeredAs === 'proveedor' ? 'Proveedor' : registeredAs === 'cliente' ? 'Cliente' : 'otro usuario';
+    setFieldErrors(prev => ({ ...prev, correo: `Este correo ya está registrado como ${label}` }));
+    return Promise.resolve();
   };
 
   const handleLoginEmailBlur = async () => {
@@ -265,10 +156,8 @@ const Login = () => {
         const regAs = response.data.registeredAs;
         if (regAs === 'proveedor') {
           setFieldErrors(prev => ({ ...prev, correo: "Este correo ya está registrado como Proveedor" }));
-          showEmailExistsModal({ email, registeredAs: 'proveedor', context: 'login' });
         } else if (regAs === 'cliente') {
           setFieldErrors(prev => ({ ...prev, correo: "Registrado como Cliente (sin clave). Ve a Registro." }));
-          showEmailExistsModal({ email, registeredAs: 'cliente', context: 'login' });
         }
       }
     } catch (err) {
@@ -342,13 +231,12 @@ const Login = () => {
       } else if (err.response) {
         const msg = err.response?.data?.message || "";
         const regAs = err.response?.data?.registeredAs;
-        if (regAs === 'proveedor' || regAs === 'cliente') {
-          setFieldErrors({ correo: msg });
-          showEmailExistsModal({ email: currentCorreo, registeredAs: regAs, context: 'login' });
-        } else if (msg.toLowerCase().includes("correo") || msg.toLowerCase().includes("email") || msg.toLowerCase().includes("credenciales")) {
-          setFieldErrors({ correo: msg || "Credenciales incorrectas" });
-        } else if (msg.toLowerCase().includes("clave") || msg.toLowerCase().includes("contrase")) {
-          setFieldErrors({ clave: msg });
+        const errField = err.response?.data?.field;
+
+        if (errField === 'clave' || msg.toLowerCase().includes("contrase") || msg.toLowerCase().includes("clave") || msg.toLowerCase().includes("password")) {
+          setFieldErrors({ clave: msg || "Contraseña incorrecta" });
+        } else if (errField === 'correo' || regAs === 'proveedor' || regAs === 'cliente' || msg.toLowerCase().includes("correo") || msg.toLowerCase().includes("email")) {
+          setFieldErrors({ correo: msg || "Este correo no está registrado" });
         } else {
           setError(msg || "Error al iniciar sesión. Intenta de nuevo.");
         }
@@ -374,7 +262,6 @@ const Login = () => {
           const regAs = response.data.registeredAs || 'usuario';
           const label = regAs === 'proveedor' ? 'Proveedor' : regAs === 'cliente' ? 'Cliente' : 'otro usuario';
           setFieldErrors(prev => ({ ...prev, correo: `El correo electrónico ya está registrado como ${label}` }));
-          showEmailExistsModal({ email: value.trim().toLowerCase(), registeredAs: regAs, context: 'register' });
         } else if (field === "documentNumber" && response.data.documentoExists) {
           setFieldErrors(prev => ({ ...prev, documentNumber: "El número de documento ya está registrado" }));
         }
@@ -445,7 +332,6 @@ const Login = () => {
           const regAs = checkResponse.data.registeredAs || 'usuario';
           const label = regAs === 'proveedor' ? 'Proveedor' : regAs === 'cliente' ? 'Cliente' : 'otro usuario';
           newFe.correo = `El correo electrónico ya está registrado como ${label}`;
-          showEmailExistsModal({ email: registerData.correo.trim().toLowerCase(), registeredAs: regAs, context: 'register' });
         }
         if (checkResponse.data.documentoExists) newFe.documentNumber = "El número de documento ya está registrado";
         if (Object.keys(newFe).length > 0) { setFieldErrors(newFe); return; }
@@ -494,8 +380,8 @@ const Login = () => {
         const msg = result.message || "";
         const regAs = result.registeredAs;
         if (regAs) {
-          showEmailExistsModal({ email, registeredAs: regAs, context: 'register' });
-          setFieldErrors({ correo: msg });
+          const label = regAs === 'proveedor' ? 'Proveedor' : regAs === 'cliente' ? 'Cliente' : 'otro usuario';
+          setFieldErrors({ correo: msg || `El correo ya está registrado como ${label}` });
         } else if (msg.toLowerCase().includes("correo") || msg.toLowerCase().includes("email") || result.sentTo === 'sms') {
           setInfoMsg(`⚠️ ${msg}`);
           setPinVerification(true);

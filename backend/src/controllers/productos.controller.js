@@ -108,10 +108,15 @@ const productoController = {
         const pPlain = p.get({ plain: true });
 
         let currentStock = 0;
-        if (Array.isArray(pPlain.tallasStock)) {
-          currentStock = pPlain.tallasStock.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
-        } else if (pPlain.stock) {
-          currentStock = Number(pPlain.stock);
+        let parsedTallasStock = pPlain.tallasStock;
+        if (typeof parsedTallasStock === 'string') {
+          try { parsedTallasStock = JSON.parse(parsedTallasStock); } catch (e) { parsedTallasStock = []; }
+        }
+        if (Array.isArray(parsedTallasStock) && parsedTallasStock.length > 0) {
+          const sumTallas = parsedTallasStock.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+          currentStock = sumTallas > 0 ? sumTallas : (Number(pPlain.stock) || 0);
+        } else {
+          currentStock = Number(pPlain.stock) || 0;
         }
 
         const isCompact = compact === 'true' || compact === true;
@@ -161,8 +166,9 @@ const productoController = {
         // VISTA FULL PARA EL ADMIN
         return {
           ...pPlain,
+          tallasStock: Array.isArray(parsedTallasStock) ? parsedTallasStock : [],
           id_producto: pPlain.id,
-          talla: pPlain.talla || (pPlain.tallasStock?.[0]?.talla || ''),
+          talla: pPlain.talla || (Array.isArray(parsedTallasStock) && parsedTallasStock[0]?.talla ? parsedTallasStock[0].talla : ''),
           precio: pPlain.precioVenta,
           precioVenta: pPlain.precioVenta,
           precioCompra: pPlain.precioCompra,

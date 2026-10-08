@@ -106,16 +106,32 @@ export const useComprasLogic = (location) => {
     setNuevaCompra(prev => ({ ...prev, [field]: value }));
     setErrors(prev => {
       const copy = { ...prev };
-      if (value) {
+      if (field === 'numeroFactura') {
+        const trimmed = String(value || '').trim().toLowerCase();
+        if (!trimmed) {
+          copy.numeroFactura = 'Este campo es obligatorio';
+        } else {
+          const yaExiste = compras.some(c => 
+            String(c.nfactura || '').trim().toLowerCase() === trimmed &&
+            c.id !== compraEditando?.id &&
+            c.numCompra !== compraEditando?.numCompra
+          );
+          if (yaExiste) {
+            copy.numeroFactura = 'Esta factura ya fue registrada';
+          } else {
+            delete copy.numeroFactura;
+          }
+        }
+      } else if (value) {
         delete copy[field];
       } else {
-        if (field === 'proveedor' || field === 'numeroFactura') {
+        if (field === 'proveedor') {
           copy[field] = 'Este campo es obligatorio';
         }
       }
       return copy;
     });
-  }, []);
+  }, [compras, compraEditando]);
 
   const handleDateChange = useCallback((field, value) => {
     setNuevaCompra(prev => ({ ...prev, [field]: value }));
@@ -411,21 +427,45 @@ export const useComprasLogic = (location) => {
     });
   }, [errors]);
 
-  const eliminarProducto = useCallback((index) => {
+  const eliminarProducto = useCallback(async (index) => {
+    const prod = nuevaCompra.productos[index];
+    const prodNombre = (prod?.nombre || '').trim();
+
+    const result = await Swal.fire({
+      title: '¿Desea eliminar?',
+      text: prodNombre ? `¿Desea eliminar "${prodNombre}"?` : '¿Desea eliminar este producto de la compra?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#334155',
+      background: '#0b1220',
+      color: '#ffffff',
+      width: '320px',
+      padding: '16px',
+      customClass: {
+        popup: 'small-delete-alert'
+      }
+    });
+
+    if (!result.isConfirmed) return;
+
     setNuevaCompra(p => {
-      if (index === 0) {
-        const newProducts = [...p.productos];
-        newProducts[0] = {
-          id: '',
-          nombre: '',
-          variantes: [{ talla: '', cantidad: 1, _tempKey: Math.random() }],
-          precioCompra: '',
-          precioVenta: '',
-          precioMayorista6: '',
-          precioMayorista80: '',
-          _tempKey: Math.random()
+      if (p.productos.length <= 1) {
+        return {
+          ...p,
+          productos: [{
+            id: '',
+            nombre: '',
+            variantes: [{ talla: '', cantidad: 1, _tempKey: Math.random() }],
+            precioCompra: '',
+            precioVenta: '',
+            precioMayorista6: '',
+            precioMayorista80: '',
+            _tempKey: Math.random()
+          }]
         };
-        return { ...p, productos: newProducts };
       } else {
         return {
           ...p,
@@ -433,7 +473,7 @@ export const useComprasLogic = (location) => {
         };
       }
     });
-  }, []);
+  }, [nuevaCompra.productos]);
 
   const calcularTotal = useCallback(() =>
     nuevaCompra.productos.reduce((t, p) => {
@@ -449,7 +489,20 @@ export const useComprasLogic = (location) => {
     
     const e_fields = {};
     if (!nuevaCompra.proveedor) e_fields.proveedor = 'El proveedor es obligatorio';
-    if (!nuevaCompra.numeroFactura) e_fields.numeroFactura = 'El N° Factura es obligatorio';
+    
+    if (!nuevaCompra.numeroFactura || !String(nuevaCompra.numeroFactura).trim()) {
+      e_fields.numeroFactura = 'El N° Factura es obligatorio';
+    } else {
+      const trimmed = String(nuevaCompra.numeroFactura).trim().toLowerCase();
+      const yaExiste = compras.some(c => 
+        String(c.nfactura || '').trim().toLowerCase() === trimmed &&
+        c.id !== compraEditando?.id &&
+        c.numCompra !== compraEditando?.numCompra
+      );
+      if (yaExiste) {
+        e_fields.numeroFactura = 'Esta factura ya fue registrada';
+      }
+    }
     
     // Validación de fecha: no puede ser futura
     if (nuevaCompra.fecha) {
@@ -479,7 +532,9 @@ export const useComprasLogic = (location) => {
 
     if (Object.keys(e_fields).length > 0) {
       setErrors(e_fields);
-      if (e_fields.fecha || e_fields.fechaRegistro) {
+      if (e_fields.numeroFactura === 'Esta factura ya fue registrada') {
+        showAlert('Esta factura ya fue registrada', 'error');
+      } else if (e_fields.fecha || e_fields.fechaRegistro) {
         showAlert(e_fields.fecha || e_fields.fechaRegistro, 'error');
       } else {
         showAlert('Completa los campos marcados en rojo', 'error');
@@ -522,6 +577,11 @@ export const useComprasLogic = (location) => {
         await createNewCompra(payload);
         clearDraft();
         showAlert('Compra registrada correctamente');
+        // Limpiar caché para que la vista de productos refleje de inmediato el nuevo stock
+        NitroCache.clear('admin_productos');
+        NitroCache.clear('tienda_productos');
+        NitroCache.clear('gm_catalog');
+        NitroCache.clear('home_products');
         // Notificar al resto de la app (sync) para que recarguen stock
         const channel = new BroadcastChannel('app_sync');
         channel.postMessage('productos_updated');
@@ -531,11 +591,16 @@ export const useComprasLogic = (location) => {
       setTimeout(() => mostrarLista(), 500);
     } catch (error) {
       console.error('Error post-submit:', error);
-      showAlert('Error al procesar la compra', 'error');
+      const backendMsg = error.response?.data?.message || error.message || 'Error al procesar la compra';
+      const backendField = error.response?.data?.field;
+      if (backendField) {
+        setErrors(prev => ({ ...prev, [backendField]: backendMsg }));
+      }
+      showAlert(backendMsg, 'error');
     } finally {
       setActionLoading(false);
     }
-  }, [nuevaCompra, compraEditando, proveedoresActivos, calcularTotal, fetchData, mostrarLista, showAlert]);
+  }, [nuevaCompra, compraEditando, compras, proveedoresActivos, calcularTotal, fetchData, mostrarLista, showAlert]);
 
   const filtered = useMemo(() => {
     return compras.filter(c => {

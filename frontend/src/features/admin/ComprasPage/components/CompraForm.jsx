@@ -68,6 +68,11 @@ const CompraForm = ({
                   onChange={(e) => handleInputChange('numeroFactura', e.target.value)}
                   className={`compras-form-input ${errors?.numeroFactura ? 'error' : ''}`}
                 />
+                {errors?.numeroFactura && (
+                  <span className="compras-error-message">
+                    {errors.numeroFactura}
+                  </span>
+                )}
               </div>
               <div>
                 <label className="compras-form-label">Método de pago:</label>

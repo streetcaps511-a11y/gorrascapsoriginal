@@ -5,7 +5,7 @@
 
 // controllers/usuarios.controller.js
 import { Op } from 'sequelize';
-import { Usuario, Rol, Cliente, Venta, sequelize } from '../models/index.js';
+import { Usuario, Rol, Cliente, Proveedor, Venta, sequelize } from '../models/index.js';
 import { sendRegistrationCredentialsEmail } from '../services/mail.service.js';
 
 const usuarioController = {
@@ -155,7 +155,26 @@ const usuarioController = {
         if (emailExists) {
           return res.status(400).json({ 
             success: false, 
+            field: 'email',
             message: `El correo electrónico ya está registrado por otro usuario (${emailExists.nombre}).`
+          });
+        }
+
+        const clienteExists = await Cliente.findOne({ where: { email: emailLower } });
+        if (clienteExists) {
+          return res.status(400).json({
+            success: false,
+            field: 'email',
+            message: 'Este correo ya está registrado en clientes. No se puede registrar como usuario.'
+          });
+        }
+
+        const proveedorExists = await Proveedor.findOne({ where: { email: emailLower } });
+        if (proveedorExists) {
+          return res.status(400).json({
+            success: false,
+            field: 'email',
+            message: 'Este correo ya está registrado en proveedores. No se puede registrar como usuario.'
           });
         }
       }
@@ -172,23 +191,6 @@ const usuarioController = {
       }
       
       const newUser = await Usuario.create(createData);
-      
-      // 🛡️ SINCRONIZACIÓN: Crear perfil de cliente si el rol es 'Cliente'
-      const rol = await Rol.findByPk(newUser.idRol);
-      if (rol && rol.nombre.toLowerCase() === 'cliente') {
-          console.log(`👤 [SYNC] Creando perfil de cliente para: ${newUser.email}`);
-          await Cliente.findOrCreate({
-              where: { email: newUser.email },
-              defaults: {
-                  nombreCompleto: newUser.nombre.trim(),
-                  email: newUser.email,
-                  tipoDocumento: newUser.tipoDocumento || 'Cédula de ciudadanía',
-                  numeroDocumento: (newUser.numeroDocumento || '').toString(),
-                  telefono: (newUser.telefono || '').toString(),
-                  isActive: true
-              }
-          });
-      }
 
       // 📧 Enviar credenciales por correo electrónico
       if (createData.clave && newUser.email) {
@@ -236,7 +238,31 @@ const usuarioController = {
         if (emailExists) {
           return res.status(400).json({ 
             success: false, 
+            field: 'email',
             message: `El correo electrónico ya está registrado por otro usuario (${emailExists.nombre}).`
+          });
+        }
+
+        const clienteExists = await Cliente.findOne({ 
+          where: { 
+            email: emailLower,
+            ...(req.params.id ? { idUsuario: { [Op.ne]: req.params.id } } : {})
+          } 
+        });
+        if (clienteExists) {
+          return res.status(400).json({
+            success: false,
+            field: 'email',
+            message: 'Este correo ya está registrado en clientes. No se puede registrar como usuario.'
+          });
+        }
+
+        const proveedorExists = await Proveedor.findOne({ where: { email: emailLower } });
+        if (proveedorExists) {
+          return res.status(400).json({
+            success: false,
+            field: 'email',
+            message: 'Este correo ya está registrado en proveedores. No se puede registrar como usuario.'
           });
         }
       }
@@ -257,10 +283,6 @@ const usuarioController = {
         }
       }
 
-      // Guardar el email anterior para la sincronización
-      const existingUser = await Usuario.findByPk(req.params.id);
-      const oldEmail = existingUser?.email;
-
       await Usuario.update(updateData, { 
           where: { id: req.params.id },
           individualHooks: true 
@@ -271,34 +293,16 @@ const usuarioController = {
         include: ['rolData', 'clienteData']
       });
 
-      // 🛡️ SINCRONIZACIÓN: Actualizar o crear perfil de cliente si el rol es 'Cliente'
-      if (user.rolData && user.rolData.nombre.toLowerCase() === 'cliente') {
-          console.log(`👤 [SYNC] Sincronizando perfil de cliente para: ${user.email}`);
-          
-          // Buscar por email (usando el antiguo si cambió para actualizarlo)
-          const targetEmail = oldEmail || user.email;
-          const [cliente, created] = await Cliente.findOrCreate({
-              where: { email: targetEmail },
-              defaults: {
-                  nombreCompleto: user.nombre.trim(),
-                  email: user.email,
-                  tipoDocumento: user.tipoDocumento || 'CC',
-                  numeroDocumento: String(user.numeroDocumento || '0'),
-                  telefono: String(user.telefono || ''),
-                  isActive: user.estado === 'activo'
-              }
+      // 🛡️ SINCRONIZACIÓN: Actualizar perfil de cliente si ya existe vinculado
+      if (user.clienteData) {
+          await user.clienteData.update({
+              nombreCompleto: user.nombre.trim(),
+              email: user.email,
+              tipoDocumento: user.tipoDocumento || user.clienteData.tipoDocumento,
+              numeroDocumento: (user.numeroDocumento || user.clienteData.numeroDocumento || '').toString(),
+              telefono: (user.telefono || user.clienteData.telefono || '').toString(),
+              isActive: user.estado === 'activo'
           });
-          
-          if (!created) {
-              await cliente.update({
-                  nombreCompleto: user.nombre.trim(),
-                  email: user.email, // Por si cambió el email
-                  tipoDocumento: user.tipoDocumento,
-                  numeroDocumento: (user.numeroDocumento || '').toString(),
-                  telefono: (user.telefono || '').toString(),
-                  isActive: user.estado === 'activo'
-              });
-          }
       }
       
       res.json({ success: true, message: 'Usuario actualizado correctamente', data: user });
@@ -334,13 +338,34 @@ const usuarioController = {
         if (emailExists) {
           return res.status(400).json({ 
             success: false, 
+            field: 'email',
             message: 'El correo electrónico ya está registrado por otro usuario.' 
           });
         }
-      }
 
-      const existingUser = await Usuario.findByPk(req.params.id);
-      const oldEmail = existingUser?.email;
+        const clienteExists = await Cliente.findOne({ 
+          where: { 
+            email: emailLower,
+            ...(req.params.id ? { idUsuario: { [Op.ne]: req.params.id } } : {})
+          } 
+        });
+        if (clienteExists) {
+          return res.status(400).json({
+            success: false,
+            field: 'email',
+            message: 'Este correo ya está registrado en clientes. No se puede registrar como usuario.'
+          });
+        }
+
+        const proveedorExists = await Proveedor.findOne({ where: { email: emailLower } });
+        if (proveedorExists) {
+          return res.status(400).json({
+            success: false,
+            field: 'email',
+            message: 'Este correo ya está registrado en proveedores. No se puede registrar como usuario.'
+          });
+        }
+      }
 
       await Usuario.update(updateData, { where: { id: req.params.id } });
       
@@ -349,33 +374,16 @@ const usuarioController = {
         include: ['rolData', 'clienteData']
       });
 
-      // 🛡️ SINCRONIZACIÓN: Actualizar o crear perfil de cliente si el rol es 'Cliente'
-      if (user.rolData && user.rolData.nombre.toLowerCase() === 'cliente') {
-          console.log(`👤 [SYNC] Sincronizando perfil de cliente para (patch): ${user.email}`);
-          
-          const targetEmail = oldEmail || user.email;
-          const [cliente, created] = await Cliente.findOrCreate({
-              where: { email: targetEmail },
-              defaults: {
-                  nombreCompleto: user.nombre,
-                  email: user.email,
-                  tipoDocumento: user.tipoDocumento || 'Cédula de ciudadanía',
-                  numeroDocumento: (user.numeroDocumento || '').toString(),
-                  telefono: (user.telefono || '').toString(),
-                  isActive: user.estado === 'activo'
-              }
+      // 🛡️ SINCRONIZACIÓN: Actualizar perfil de cliente si ya existe vinculado
+      if (user.clienteData) {
+          await user.clienteData.update({
+              nombreCompleto: user.nombre,
+              email: user.email,
+              tipoDocumento: user.tipoDocumento || user.clienteData.tipoDocumento,
+              numeroDocumento: (user.numeroDocumento || user.clienteData.numeroDocumento || '').toString(),
+              telefono: (user.telefono || user.clienteData.telefono || '').toString(),
+              isActive: user.estado === 'activo'
           });
-          
-          if (!created) {
-              await cliente.update({
-                  nombreCompleto: user.nombre,
-                  email: user.email,
-                  tipoDocumento: user.tipoDocumento || cliente.tipoDocumento,
-                  numeroDocumento: (user.numeroDocumento || cliente.numeroDocumento || '').toString(),
-                  telefono: (user.telefono || cliente.telefono || '').toString(),
-                  isActive: user.estado === 'activo'
-              });
-          }
       }
       
       res.json({ success: true, message: 'Usuario actualizado correctamente', data: user });

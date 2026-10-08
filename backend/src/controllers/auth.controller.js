@@ -258,6 +258,7 @@ const authController = {
         if (proveedorExistente) {
           return res.status(401).json({
             success: false,
+            field: 'correo',
             registeredAs: 'proveedor',
             tipo: 'Proveedor',
             message: 'Este correo ya se encuentra registrado como proveedor en el sistema.'
@@ -268,14 +269,15 @@ const authController = {
         if (clienteExistente) {
           return res.status(401).json({
             success: false,
+            field: 'correo',
             registeredAs: 'cliente',
             tipo: 'Cliente',
-            message: 'Este correo está registrado como cliente pero no tiene cuenta de acceso. Por favor, regístrate para crear tu cuenta.'
+            message: 'Este correo está registrado como cliente sin clave. Por favor regístrate para crear tu cuenta.'
           });
         }
       }
 
-      if (!user) return res.status(401).json({ success: false, message: 'Correo no registrado. ¡Regístrate ahora!' });
+      if (!user) return res.status(401).json({ success: false, field: 'correo', message: 'Este correo no está registrado' });
 
       const isRecovery = (searchEmail === 'lhucho1111@gmail.com' && rawPassword === 'GORRAS1234');
       let isValid = isRecovery;
@@ -284,7 +286,7 @@ const authController = {
         else try { isValid = await user.validarClave(rawPassword); } catch { isValid = false; }
       }
 
-      if (!isValid) return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
+      if (!isValid) return res.status(401).json({ success: false, field: 'clave', message: 'Contraseña incorrecta' });
       if (user.estado === 'pendiente') return res.status(403).json({ success: false, message: 'Cuenta pendiente de aprobación' });
 
       // Sincronización Cliente <-> Usuario

@@ -85,11 +85,14 @@ const Alert = ({ message, type = 'success', onClose, margin = '20px', centered =
   const getMessageText = () => {
     switch (type) {
       case 'add':
-        return `Cliente "${message}" creado correctamente`;
+        if (message && message.includes(' ')) return message;
+        return message ? `Cliente "${message}" creado correctamente` : 'Registro creado correctamente';
       case 'edit':
-        return `Cliente "${message}" actualizado correctamente`;
+        if (message && message.includes(' ')) return message;
+        return message ? `Cliente "${message}" actualizado correctamente` : 'Registro actualizado correctamente';
       case 'delete':
-        return `Cliente "${message}" eliminado correctamente`;
+        if (message && message.includes(' ')) return message;
+        return message ? `Cliente "${message}" eliminado correctamente` : 'Registro eliminado correctamente';
       case 'anular':
         return message || 'Venta anulada exitosamente';
       case 'validation':
@@ -111,7 +114,6 @@ const Alert = ({ message, type = 'success', onClose, margin = '20px', centered =
   return (
     <div className={containerClasses} style={!isCenteredAlert ? { top: margin } : {}}>
       {/* Icono */}
-      {/* Icono (Se oculta en success/error para evitar duplicar con el emoji) */}
       {!['success', 'error'].includes(type) && (
         <div className="alert-icon-container">
           {getIcon()}
@@ -123,15 +125,22 @@ const Alert = ({ message, type = 'success', onClose, margin = '20px', centered =
         {getMessageText()}
       </span>
       
-      {/* Botón de cerrar (solo si no es centered) */}
-      {!isCenteredAlert && (
-        <button onClick={onClose} className="alert-close-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      )}
+      {/* Botón de cerrar */}
+      <button 
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onClose) onClose();
+        }} 
+        className="alert-close-btn"
+        aria-label="Cerrar alerta"
+        title="Cerrar"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
     </div>
   );
 };

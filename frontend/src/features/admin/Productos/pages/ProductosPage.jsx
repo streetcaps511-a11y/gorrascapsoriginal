@@ -37,9 +37,10 @@ const columns = [
     width: '100px',
     render: (item) => {
       const hasTallasStock = Array.isArray(item.tallasStock) && item.tallasStock.length > 0;
-      const totalStock = hasTallasStock
+      const tallasSum = hasTallasStock
         ? item.tallasStock.reduce((acc, ts) => acc + (Number(ts.cantidad) || 0), 0)
-        : Number(item.stock || 0);
+        : 0;
+      const totalStock = tallasSum > 0 ? tallasSum : Number(item.stock || 0);
       return (
         <span style={{
           color: totalStock > 20 ? '#10B981' : (totalStock > 10 ? '#F5C81B' : '#EF4444'),

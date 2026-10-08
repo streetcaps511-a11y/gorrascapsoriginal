@@ -44,68 +44,8 @@ const PasswordChecklist = ({ password, visible }) => {
 };
 
 const showEmailExistsModal = ({ email, registeredAs }) => {
-  if (registeredAs === 'proveedor') {
-    return Swal.fire({
-      title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
-        <span>🚚</span> <span>Correo registrado como Proveedor</span>
-      </div>`,
-      html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
-        El correo <b>${email}</b> ya se encuentra registrado como <b>Proveedor</b> en el sistema.<br/><br/>
-        No puedes crear una cuenta de cliente con un correo asignado a un proveedor.
-      </div>`,
-      icon: 'warning',
-      iconColor: '#FFC107',
-      confirmButtonText: 'Entendido',
-      confirmButtonColor: '#FFC107',
-      background: '#111418',
-      color: '#fff',
-      customClass: {
-        popup: 'gm-swal-popup',
-        confirmButton: 'gm-swal-btn confirm'
-      }
-    });
-  }
-
-  if (registeredAs === 'cliente') {
-    return Swal.fire({
-      title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
-        <span>🛍️</span> <span>Correo ya registrado como Cliente</span>
-      </div>`,
-      html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
-        El correo <b>${email}</b> ya se encuentra registrado como <b>Cliente</b> en la tienda.<br/><br/>
-        Si ya tienes cuenta activa, puedes iniciar sesión o recuperar tu contraseña.
-      </div>`,
-      icon: 'info',
-      iconColor: '#FFC107',
-      confirmButtonText: 'Entendido',
-      confirmButtonColor: '#FFC107',
-      background: '#111418',
-      color: '#fff',
-      customClass: {
-        popup: 'gm-swal-popup',
-        confirmButton: 'gm-swal-btn confirm'
-      }
-    });
-  }
-
-  return Swal.fire({
-    title: `<div style="font-size: 18px; font-weight: 800; color: #FFC107; display: flex; align-items: center; justify-content: center; gap: 8px;">
-      <span>👤</span> <span>Correo ya registrado</span>
-    </div>`,
-    html: `<div style="font-size: 13.5px; color: #cbd5e1; line-height: 1.6; margin-top: 10px;">
-      El correo <b>${email}</b> ya tiene una cuenta de usuario registrada en la plataforma.
-    </div>`,
-    icon: 'warning',
-    iconColor: '#FFC107',
-    confirmButtonText: 'Entendido',
-    confirmButtonColor: '#FFC107',
-    background: '#111418',
-    color: '#fff',
-    customClass: {
-      popup: 'gm-swal-popup',
-      confirmButton: 'gm-swal-btn confirm'
-    }
-  });
+  // Modal de alerta grande desactivado por preferencia del usuario.
+  return Promise.resolve();
 };
 
 const RegisterForm = ({

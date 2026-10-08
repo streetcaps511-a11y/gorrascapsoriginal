@@ -11,17 +11,25 @@ const rolesController = {
     getAllRoles: async (req, res) => {
         try {
             const data = await Rol.findAll({
-                include: [{
-                    model: Permiso,
-                    as: 'listaPermisos',
-                    through: { attributes: [] }
-                }],
+                include: [
+                    {
+                        model: Permiso,
+                        as: 'listaPermisos',
+                        through: { attributes: [] }
+                    },
+                    {
+                        model: Usuario,
+                        as: 'usuarios',
+                        attributes: ['id', 'nombre', 'email']
+                    }
+                ],
                 order: [['nombre', 'ASC']]
             });
             
-            // Mapeamos para que el front reciba los nombres que espera (name/Nombre)
+            // Mapeamos para que el front reciba los nombres que espera (name/Nombre) y el conteo de usuarios
             const processed = data.map(r => {
                 const json = r.toJSON();
+                const userCount = Array.isArray(json.usuarios) ? json.usuarios.length : 0;
                 return {
                     ...json,
                     // Aseguramos que existan ambos formatos para el front
@@ -30,6 +38,9 @@ const rolesController = {
                     description: json.descripcion || json.Descripcion || "",
                     isActive: json.isActive !== undefined ? json.isActive : (json.Estado !== undefined ? json.Estado : true),
                     permissions: json.listaPermisos ? json.listaPermisos.map(p => p.id) : (json.permisos || []),
+                    userCount,
+                    usuariosCount: userCount,
+                    totalUsuarios: userCount,
                     // También mantenemos los originales por si acaso
                     Nombre: json.nombre || json.Nombre || "",
                     Descripcion: json.descripcion || json.Descripcion || "",
@@ -55,11 +66,18 @@ const rolesController = {
     getRolById: async (req, res) => {
         try {
             const data = await Rol.findByPk(req.params.id, { 
-                include: [{
-                    model: Permiso,
-                    as: 'listaPermisos',
-                    through: { attributes: [] }
-                }] 
+                include: [
+                    {
+                        model: Permiso,
+                        as: 'listaPermisos',
+                        through: { attributes: [] }
+                    },
+                    {
+                        model: Usuario,
+                        as: 'usuarios',
+                        attributes: ['id', 'nombre', 'email']
+                    }
+                ] 
             });
             
             if (!data) return res.status(404).json({ success: false, message: 'Rol no encontrado' });
@@ -68,6 +86,9 @@ const rolesController = {
             if (json.listaPermisos) {
                 json.Permisos = json.listaPermisos.map(p => p.id);
             }
+            json.userCount = Array.isArray(json.usuarios) ? json.usuarios.length : 0;
+            json.usuariosCount = json.userCount;
+            json.totalUsuarios = json.userCount;
             
             res.json({ success: true, data: json });
         } catch (error) {

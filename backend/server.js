@@ -63,6 +63,22 @@ const startServer = async () => {
             await sequelize.query('ALTER TABLE "Compras" DROP COLUMN IF EXISTS "ProveedorNombreHistorico"');
             await sequelize.query('ALTER TABLE "Compras" ADD COLUMN IF NOT EXISTS "FechaRegistro" DATE');
 
+            // 🚀 AUMENTAR PRECISIÓN NUMÉRICA EN COMPRAS (Soporte montos mayores a 99M)
+            try {
+                await sequelize.query('ALTER TABLE "Compras" ALTER COLUMN "Total" TYPE NUMERIC(14, 2)');
+                await sequelize.query('ALTER TABLE "CompraDetalles" ALTER COLUMN "Subtotal" TYPE NUMERIC(14, 2)');
+                await sequelize.query('ALTER TABLE "CompraDetalles" ALTER COLUMN "PrecioCompra" TYPE NUMERIC(14, 2)');
+                await sequelize.query('ALTER TABLE "CompraDetalles" ALTER COLUMN "PrecioVenta" TYPE NUMERIC(14, 2)');
+                await sequelize.query('ALTER TABLE "CompraDetalles" ALTER COLUMN "PrecioMayorista6" TYPE NUMERIC(14, 2)');
+                await sequelize.query('ALTER TABLE "CompraDetalles" ALTER COLUMN "PrecioMayorista80" TYPE NUMERIC(14, 2)');
+                await sequelize.query('ALTER TABLE "Productos" ALTER COLUMN "PrecioCompra" TYPE NUMERIC(14, 2)');
+                await sequelize.query('ALTER TABLE "Productos" ALTER COLUMN "PrecioVenta" TYPE NUMERIC(14, 2)');
+                await sequelize.query('ALTER TABLE "Productos" ALTER COLUMN "PrecioMayorista6" TYPE NUMERIC(14, 2)');
+                await sequelize.query('ALTER TABLE "Productos" ALTER COLUMN "PrecioMayorista80" TYPE NUMERIC(14, 2)');
+            } catch (errCol) {
+                console.warn('⚠️ Nota sobre precisión numérica en Compras/Productos:', errCol.message);
+            }
+
             // Eliminar columna Destacado de Productos
             await sequelize.query('ALTER TABLE "Productos" DROP COLUMN IF EXISTS "Destacado"');
 

@@ -58,6 +58,7 @@ VARIANTES (Tallas y cantidades)
 .producto-item-form__variant-select { width: 85px; height: 28px; font-size: 11px; padding: 0 2px; text-transform: capitalize; border: 1px solid #ffffff15; background-color: transparent; color: #ffffff; border-radius: 4px; outline: none; box-sizing: border-box; }
 .producto-item-form__variant-select--error { border-color: #ef4444; }
 .producto-item-form__variant-qty { display: flex; align-items: center; gap: 1px; background-color: #ffffff05; border-radius: 4px; padding: 0 2px; }
+.producto-item-form__variant-qty--error { border: 1px solid #ef4444 !important; background-color: rgba(239, 68, 68, 0.1); }
 .producto-item-form__variant-qty-input { width: 28px; height: 22px; font-size: 10px; text-align: center; padding: 0; background-color: transparent; border: none; color: #ffffff; outline: none; box-sizing: border-box; }
 /* ========================================
 SUBTOTAL

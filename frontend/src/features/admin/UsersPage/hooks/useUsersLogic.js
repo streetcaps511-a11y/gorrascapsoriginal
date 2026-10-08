@@ -217,6 +217,21 @@ export const useUsersLogic = () => {
             ...prev,
             email: `Email ya registrado (${duplicate.nombre || duplicate.nombreCompleto || duplicate.email})`
           }));
+        } else {
+          api.get("/api/auth/check-exists", {
+            params: { email: emailTrimmed, excludeUserId: editingUser?.id }
+          }).then(res => {
+            if (res.data?.success && res.data?.emailExists) {
+              const regAs = res.data.registeredAs;
+              if (regAs === 'cliente') {
+                setErrors(prev => ({ ...prev, email: 'Este correo ya está registrado en clientes' }));
+              } else if (regAs === 'proveedor') {
+                setErrors(prev => ({ ...prev, email: 'Este correo ya está registrado en proveedores' }));
+              } else if (regAs === 'usuario') {
+                setErrors(prev => ({ ...prev, email: 'Este correo ya está registrado por otro usuario' }));
+              }
+            }
+          }).catch(() => {});
         }
       }
     }
@@ -395,13 +410,13 @@ export const useUsersLogic = () => {
       closeModal();
     } catch (err) {
       const resp = err?.response?.data;
-      const msg = resp?.message || 'Error al guardar usuario';
+      const msg = resp?.message || err?.message || 'Error al guardar usuario';
       
       // 🎯 Mapear errores del backend a campos específicos del formulario
       const fieldErrors = {};
       if (msg.toLowerCase().includes('nombre') && msg.toLowerCase().includes('ya existe')) {
         fieldErrors.nombreCompleto = msg;
-      } else if (msg.toLowerCase().includes('email') || msg.toLowerCase().includes('correo')) {
+      } else if (msg.toLowerCase().includes('email') || msg.toLowerCase().includes('correo') || msg.toLowerCase().includes('cliente') || msg.toLowerCase().includes('proveedor')) {
         fieldErrors.email = msg;
       } else if (msg.toLowerCase().includes('documento')) {
         fieldErrors.numeroDocumento = msg;
@@ -414,7 +429,8 @@ export const useUsersLogic = () => {
       }
       
       showAlert(msg, 'error');
-      fetchData();
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -134,8 +134,24 @@ const ProductoItemForm = ({
                 type="text"
                 value={producto.nombre || ""}
                 onChange={(e) => {
-                  onChange(index, "id", "");
-                  onChange(index, "nombre", e.target.value);
+                  const val = e.target.value;
+                  const matched = availableProducts.find(
+                    p => (p.nombre || p.Nombre || "").trim().toLowerCase() === val.trim().toLowerCase()
+                  );
+                  if (matched) {
+                    onChange(index, "id", matched.id || matched.IdProducto);
+                    const pc = matched.precioCompra ?? matched.PrecioCompra ?? matched.precio_compra ?? "";
+                    const pv = matched.precioVenta ?? matched.PrecioVenta ?? matched.precio_venta ?? "";
+                    const pm6 = matched.precioMayorista6 ?? matched.PrecioMayorista6 ?? "";
+                    const pm80 = matched.precioMayorista80 ?? matched.PrecioMayorista80 ?? "";
+                    if (pc !== "" && !producto.precioCompra) onChange(index, "precioCompra", pc);
+                    if (pv !== "" && !producto.precioVenta) onChange(index, "precioVenta", pv);
+                    if (pm6 !== "" && !producto.precioMayorista6) onChange(index, "precioMayorista6", pm6);
+                    if (pm80 !== "" && !producto.precioMayorista80) onChange(index, "precioMayorista80", pm80);
+                  } else {
+                    onChange(index, "id", "");
+                  }
+                  onChange(index, "nombre", val);
                 }}
                 placeholder="Escribir producto..."
                 className={`producto-item-form__input ${
@@ -214,51 +230,62 @@ const ProductoItemForm = ({
                   </select>
 
                   {/* Control de Cantidad */}
-                  <div className="producto-item-form__variant-qty">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newVars = [...producto.variantes];
-                        const newQty = Math.max(
-                          1,
-                          (parseInt(newVars[vi].cantidad) || 0) - 1,
-                        );
-                        newVars[vi] = { ...newVars[vi], cantidad: newQty };
-                        onChange(index, "variantes", newVars);
-                      }}
-                      className="producto-item-form__btn--minus"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min="1"
-                      value={v.cantidad || ""}
-                      onChange={(e) => {
-                        const newVars = [...producto.variantes];
-                        newVars[vi] = {
-                          ...newVars[vi],
-                          cantidad: parseInt(e.target.value) || 0,
-                        };
-                        onChange(index, "variantes", newVars);
-                      }}
-                      className="producto-item-form__variant-qty-input"
-                      placeholder="0"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newVars = [...producto.variantes];
-                        const newQty =
-                          (parseInt(newVars[vi].cantidad) || 0) + 1;
-                        newVars[vi] = { ...newVars[vi], cantidad: newQty };
-                        onChange(index, "variantes", newVars);
-                      }}
-                      className="producto-item-form__btn--plus"
-                    >
-                      +
-                    </button>
-                  </div>
+                  {(() => {
+                    const hasQtyError = Boolean(
+                      errors[`qty_${index}_${vi}`] ||
+                      errors[`qty_${index}`] ||
+                      errors[`producto_cantidad_${index}`]
+                    );
+                    return (
+                      <div className={`producto-item-form__variant-qty ${hasQtyError ? 'producto-item-form__variant-qty--error' : ''}`}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newVars = [...producto.variantes];
+                            const newQty = Math.max(
+                              1,
+                              (parseInt(newVars[vi].cantidad) || 0) - 1,
+                            );
+                            newVars[vi] = { ...newVars[vi], cantidad: newQty };
+                            onChange(index, "variantes", newVars);
+                          }}
+                          className="producto-item-form__btn--minus"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          value={v.cantidad !== undefined && v.cantidad !== null ? v.cantidad : ""}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const newVars = [...producto.variantes];
+                            newVars[vi] = {
+                              ...newVars[vi],
+                              cantidad: raw === '' ? '' : (parseInt(raw, 10) || 0),
+                            };
+                            onChange(index, "variantes", newVars);
+                          }}
+                          className={`producto-item-form__variant-qty-input ${hasQtyError ? 'producto-item-form__input--error' : ''}`}
+                          placeholder="0"
+                          title={hasQtyError ? "Cantidad requerida mayor a 0" : ""}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newVars = [...producto.variantes];
+                            const newQty =
+                              (parseInt(newVars[vi].cantidad) || 0) + 1;
+                            newVars[vi] = { ...newVars[vi], cantidad: newQty };
+                            onChange(index, "variantes", newVars);
+                          }}
+                          className="producto-item-form__btn--plus"
+                        >
+                          +
+                        </button>
+                      </div>
+                    );
+                  })()}
 
                   {/* Eliminar Variante */}
                   {(producto.variantes || []).length > 1 && (
@@ -346,41 +373,23 @@ const ProductoItemForm = ({
 
                       onChange(index, "id", selId);
                       onChange(index, "nombre", selNombre);
+                      // Que no salga la cantidad por defecto porque va a comprar una diferente
                       onChange(index, "variantes", [
                         {
                           talla: selTalla,
-                          cantidad: 1,
+                          cantidad: "",
                           _tempKey: Date.now(),
                         },
                       ]);
-                      onChange(
-                        index,
-                        "precioCompra",
-                        (p.precioCompra || p.PrecioCompra) > 0
-                          ? p.precioCompra || p.PrecioCompra
-                          : "",
-                      );
-                      onChange(
-                        index,
-                        "precioVenta",
-                        (p.precioVenta || p.PrecioVenta) > 0
-                          ? p.precioVenta || p.PrecioVenta
-                          : "",
-                      );
-                      onChange(
-                        index,
-                        "precioMayorista6",
-                        (p.precioMayorista6 || p.PrecioMayorista6) > 0
-                          ? p.precioMayorista6 || p.PrecioMayorista6
-                          : "",
-                      );
-                      onChange(
-                        index,
-                        "precioMayorista80",
-                        (p.precioMayorista80 || p.PrecioMayorista80) > 0
-                          ? p.precioMayorista80 || p.PrecioMayorista80
-                          : "",
-                      );
+                      const pc = p.precioCompra ?? p.PrecioCompra ?? p.precio_compra ?? "";
+                      const pv = p.precioVenta ?? p.PrecioVenta ?? p.precio_venta ?? "";
+                      const pm6 = p.precioMayorista6 ?? p.PrecioMayorista6 ?? "";
+                      const pm80 = p.precioMayorista80 ?? p.PrecioMayorista80 ?? "";
+
+                      onChange(index, "precioCompra", pc !== "" && pc !== null && pc !== undefined ? pc : "");
+                      onChange(index, "precioVenta", pv !== "" && pv !== null && pv !== undefined ? pv : "");
+                      onChange(index, "precioMayorista6", pm6 !== "" && pm6 !== null && pm6 !== undefined ? pm6 : "");
+                      onChange(index, "precioMayorista80", pm80 !== "" && pm80 !== null && pm80 !== undefined ? pm80 : "");
 
                       setShowSelector(false);
                     }}

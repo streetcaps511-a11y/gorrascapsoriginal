@@ -43,28 +43,28 @@ const CompraDetalle = sequelize.define('CompraDetalle', {
         field: 'Cantidad'
     },
     precioCompra: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(14, 2),
         allowNull: false,
         defaultValue: 0,
         field: 'PrecioCompra'
     },
     precioVenta: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(14, 2),
         defaultValue: 0,
         field: 'PrecioVenta'
     },
     precioMayorista6: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(14, 2),
         defaultValue: 0,
         field: 'PrecioMayorista6'
     },
     precioMayorista80: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(14, 2),
         defaultValue: 0,
         field: 'PrecioMayorista80'
     },
     subtotal: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.DECIMAL(14, 2),
         defaultValue: 0,
         field: 'Subtotal',
         comment: 'Cantidad * PrecioCompra (calculado en backend)'

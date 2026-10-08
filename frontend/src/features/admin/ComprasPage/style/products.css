@@ -19,3 +19,32 @@
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 input[type=number]  -webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Alerta pequeña de confirmación de eliminación de ítem */
+.small-delete-alert {
+  border: 1px solid rgba(245, 200, 27, 0.4) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+}
+.small-delete-alert .swal2-title {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #F5C81B !important;
+  padding: 6px 0 2px !important;
+}
+.small-delete-alert .swal2-html-container {
+  font-size: 13px !important;
+  color: #cbd5e1 !important;
+  margin: 4px 0 10px !important;
+}
+.small-delete-alert .swal2-actions {
+  gap: 8px !important;
+  margin: 6px 0 2px !important;
+}
+.small-delete-alert button.swal2-confirm,
+.small-delete-alert button.swal2-cancel {
+  font-size: 12px !important;
+  padding: 6px 14px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}

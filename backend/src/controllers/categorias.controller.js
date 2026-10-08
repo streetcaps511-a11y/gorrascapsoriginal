@@ -259,10 +259,9 @@ const categoriaController = {
                 return errorResponse(res, 'Categoría no encontrada', 404);
             }
 
-            // Solo contamos productos activos (no los borrados lógicamente con soft delete)
+            // Verificar si hay productos activos
             const productosActivos = await Producto.count({
                 where: { idCategoria: id }
-                // paranoid: true por defecto → excluye los soft-deleted
             });
 
             if (productosActivos > 0) {
@@ -272,24 +271,31 @@ const categoriaController = {
                 );
             }
 
-            // Buscar cualquier otra categoría para reasignar los productos eliminados lógicamente (soft-deleted)
-            const otraCategoria = await Categoria.findOne({
-                where: {
-                    id: { [Op.ne]: id }
-                }
+            // Verificar si existen productos (incluso eliminados lógicamente) vinculados a esta categoría
+            const productosTotales = await Producto.count({
+                where: { idCategoria: id },
+                paranoid: false // Incluye los soft-deleted
             });
 
-            if (otraCategoria) {
-                await Producto.update(
-                    { idCategoria: otraCategoria.id },
-                    {
-                        where: { idCategoria: id },
-                        paranoid: false // Incluye los soft-deleted
+            if (productosTotales > 0) {
+                // Buscar cualquier otra categoría para reasignar los productos históricos
+                const otraCategoria = await Categoria.findOne({
+                    where: {
+                        id: { [Op.ne]: id }
                     }
-                );
-            } else {
-                // Si no hay otra categoría, lanzamos un error descriptivo ya que no se pueden dejar los productos con idCategoria null
-                return errorResponse(res, 'No se puede eliminar la última categoría del sistema ya que contiene productos registrados.', 400);
+                });
+
+                if (otraCategoria) {
+                    await Producto.update(
+                        { idCategoria: otraCategoria.id },
+                        {
+                            where: { idCategoria: id },
+                            paranoid: false
+                        }
+                    );
+                } else {
+                    return errorResponse(res, 'No se puede eliminar la categoría porque contiene registros históricos de productos.', 400);
+                }
             }
 
             await categoria.destroy();

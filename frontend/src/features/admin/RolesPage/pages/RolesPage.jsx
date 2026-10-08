@@ -14,12 +14,13 @@ import StatusFilter from '../components/StatusFilter';
 // ===== HOOKS & CONSTANTES =====
 import { useRolesLogic } from '../hooks/useRolesLogic';
 import { AVAILABLE_PERMISSIONS } from '../constants/permissions';
+import { FaUsers } from 'react-icons/fa';
 
 const roleColumns = [
   { 
     header: "Rol", 
     field: "name", 
-    width: "25%",
+    width: "22%",
     render: (item) => (
       <span className="role-name-text">
         {item.name || 'N/A'}
@@ -29,7 +30,7 @@ const roleColumns = [
   { 
     header: "Descripción", 
     field: "description", 
-    width: "50%",
+    width: "44%",
     render: (item) => (
       <span className="role-description-text">
         {item.description}
@@ -37,9 +38,34 @@ const roleColumns = [
     )
   },
   { 
+    header: "Usuarios", 
+    field: "userCount", 
+    width: "18%",
+    render: (item) => {
+      const count = Number(item.userCount ?? 0);
+      return (
+        <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          padding: '4px 10px',
+          borderRadius: '20px',
+          backgroundColor: count > 0 ? 'rgba(245, 200, 27, 0.12)' : 'rgba(148, 163, 184, 0.1)',
+          border: count > 0 ? '1px solid rgba(245, 200, 27, 0.35)' : '1px solid rgba(148, 163, 184, 0.2)',
+          color: count > 0 ? '#F5C81B' : '#94a3b8',
+          fontSize: '12px',
+          fontWeight: '600'
+        }}>
+          <FaUsers size={12} />
+          {count} {count === 1 ? 'usuario' : 'usuarios'}
+        </span>
+      );
+    }
+  },
+  { 
     header: "Estado", 
     field: "isActive",
-    width: "25%",
+    width: "16%",
     render: (r) => <StatusPill status={r.isActive} />
   }
 ];

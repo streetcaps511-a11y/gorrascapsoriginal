@@ -12,7 +12,9 @@ export const mapBackendToFrontend = (r) => ({
   name: r.Nombre || r.nombre || r.name || "",
   description: r.Descripcion || r.descripcion || r.description || "",
   permissions: r.Permisos || r.permisos || r.permissions || [],
-  isActive: r.Estado !== undefined ? r.Estado : (r.isActive !== undefined ? r.isActive : (r.isActive !== undefined ? r.isActive : true))
+  isActive: r.Estado !== undefined ? r.Estado : (r.isActive !== undefined ? r.isActive : true),
+  userCount: r.userCount ?? r.usuariosCount ?? (Array.isArray(r.usuarios) ? r.usuarios.length : 0),
+  usuarios: r.usuarios || []
 });
 
 /**

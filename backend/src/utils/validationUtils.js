@@ -322,11 +322,21 @@ export const validateUsuario = async (data, id = null) => {
     }
 
     if (email !== undefined) {
+        const emailLower = email.toLowerCase().trim();
         const existing = await Usuario.findOne({ where: { 
-            email: email.toLowerCase().trim(),
+            email: emailLower,
             ...(id && { id: { [Op.ne]: id } })
         }});
         if (existing) errors.push(`El email ya está en uso (${existing.nombre})`);
+
+        const clienteExists = await Cliente.findOne({ where: { 
+            email: emailLower,
+            ...(id ? { idUsuario: { [Op.ne]: id } } : {})
+        }});
+        if (clienteExists) errors.push('Este correo ya está registrado en clientes');
+
+        const provExists = await Proveedor.findOne({ where: { email: emailLower } });
+        if (provExists) errors.push('Este correo ya está registrado en proveedores');
     }
 
     if (idRol !== undefined && idRol) {

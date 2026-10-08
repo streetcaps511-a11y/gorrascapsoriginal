@@ -139,6 +139,14 @@ const RoleFormFields = ({
           )}
         </FormField>
 
+        {isView && (
+          <FormField 
+            label="Usuarios con este rol"
+            isViewMode={true}
+            viewValue={`${currentRole?.userCount ?? 0} ${currentRole?.userCount === 1 ? 'usuario registrado' : 'usuarios registrados'}`}
+          />
+        )}
+
         <div className="permissions-section">
           <label className={`form-label ${isView ? 'readonly-field' : ''}`}>
             Permisos: {!isView && <span className="required">*</span>}
