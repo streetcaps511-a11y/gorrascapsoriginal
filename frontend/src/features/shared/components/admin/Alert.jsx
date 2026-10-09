@@ -6,11 +6,11 @@ import '../../styles/Alert.css';
 // src/components/Alert.jsx
 import React, { useEffect } from 'react';
 
-const Alert = ({ message, type = 'success', onClose, margin = '20px', centered = false }) => {
+const Alert = ({ message, type = 'success', onClose, margin = '20px', centered = false, duration = 3500 }) => {
   useEffect(() => {
-    const timer = setTimeout(onClose, 2000);
+    const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);
-  }, [onClose]);
+  }, [onClose, duration]);
 
   const getIcon = () => {
     switch (type) {
@@ -71,6 +71,12 @@ const Alert = ({ message, type = 'success', onClose, margin = '20px', centered =
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
         );
+      case 'success':
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        );
       default:
         return (
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -114,7 +120,7 @@ const Alert = ({ message, type = 'success', onClose, margin = '20px', centered =
   return (
     <div className={containerClasses} style={!isCenteredAlert ? { top: margin } : {}}>
       {/* Icono */}
-      {!['success', 'error'].includes(type) && (
+      {!['error'].includes(type) && (
         <div className="alert-icon-container">
           {getIcon()}
         </div>

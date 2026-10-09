@@ -16,6 +16,7 @@ const AdminDashboard = lazy(() => import("../features/admin/dashboard/pages/Admi
 const ProductosPage = lazy(() => import("../features/admin/Productos/pages/ProductosPage"));
 const ClientesPage = lazy(() => import("../features/admin/ClientesPage/pages/ClientesPage"));
 const ComprasPage = lazy(() => import("../features/admin/ComprasPage/pages/ComprasPage"));
+const TallasPage = lazy(() => import("../features/admin/TallasPage/pages/TallasPage"));
 const DevolucionesPage = lazy(() => import("../features/admin/DevolucionesPage/pages/DevolucionesPage"));
 const ProveedoresPage = lazy(() => import("../features/admin/ProveedoresPage/pages/ProveedoresPage"));
 const RolesPage = lazy(() => import("../features/admin/RolesPage/pages/RolesPage"));
@@ -45,6 +46,7 @@ const AppRoutes = () => {
       { perm: 'dashboard',    path: '/admin/dashboard' },
       { perm: 'ventas',       path: '/admin/ventas' },
       { perm: 'compras',      path: '/admin/compras' },
+      { perm: 'tallas',       path: '/admin/tallas' },
       { perm: 'devoluciones', path: '/admin/devoluciones' },
       { perm: 'clientes',     path: '/admin/clientes' },
       { perm: 'productos',    path: '/admin/productos' },
@@ -122,6 +124,7 @@ const AppRoutes = () => {
           <Route path="productos" element={<ProductosPage />} />
           <Route path="clientes" element={<ClientesPage />} />
           <Route path="compras" element={<ComprasPage />} />
+          <Route path="tallas" element={<TallasPage />} />
           <Route path="devoluciones" element={<DevolucionesPage />} />
           <Route path="proveedores" element={<ProveedoresPage />} />
           <Route path="roles" element={<RolesPage />} />

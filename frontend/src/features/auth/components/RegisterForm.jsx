@@ -58,7 +58,6 @@ const RegisterForm = ({
   fieldErrors = {}
 }) => {
   const [isPassFocused, setIsPassFocused] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // ✅ Modal de confirmación
 
   const confirmMismatch = registerData.confirmPassword && registerData.password !== registerData.confirmPassword;
   const confirmMatch = registerData.confirmPassword && registerData.password && registerData.password === registerData.confirmPassword;
@@ -77,45 +76,14 @@ const RegisterForm = ({
     }
   };
 
-  // ✅ Validar antes de mostrar el modal de confirmación
-  const handlePreSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Validar teléfono obligatorio
-    if (!registerData.phone || registerData.phone.replace(/\D/g, '').length < 10) {
-      // Disparar error de teléfono
-      const fakeEvent = { preventDefault: () => { } };
-      handleRegister(fakeEvent); // Esto activará las validaciones existentes
-      return;
-    }
-
-    // Verificar si el correo ya existe antes de continuar
-    const email = (registerData.email || registerData.correo || '').trim().toLowerCase();
-    if (email) {
-      try {
-        const response = await api.get("/api/auth/check-exists", { params: { email } });
-        if (response.data.success && response.data.emailExists) {
-          const regAs = response.data.registeredAs || 'usuario';
-          showEmailExistsModal({ email, registeredAs: regAs });
-          return;
-        }
-      } catch (err) {
-        console.warn("Error verificando email antes de confirmación:", err);
-      }
-    }
-
-    // Mostrar modal de confirmación
-    setShowConfirmModal(true);
-  };
-
-  const handleConfirmRegister = () => {
-    setShowConfirmModal(false);
-    handleRegister({ preventDefault: () => { } });
+    handleRegister(e);
   };
 
   return (
     <>
-      <form onSubmit={handlePreSubmit} className="form-logic-gate" style={{ position: 'relative' }}>
+      <form onSubmit={handleSubmit} className="form-logic-gate" style={{ position: 'relative' }}>
         <div className="form-inline-row">
           <div className="input-field-group width-30">
             <label>Tipo</label>
@@ -249,103 +217,6 @@ const RegisterForm = ({
           {loading ? "Procesando..." : "Registrar"}
         </button>
       </form>
-
-      {/* ✅ MODAL DE CONFIRMACIÓN ANTES DE REGISTRAR */}
-      {showConfirmModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.7)',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
-        }} onClick={() => setShowConfirmModal(false)}>
-          <div style={{
-            background: '#0b1220',
-            border: '2px solid #FFC107',
-            borderRadius: '16px',
-            maxWidth: '420px',
-            width: '100%',
-            padding: '28px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.8)'
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '10px' }}>👤</div>
-              <h3 style={{ color: '#FFC107', fontSize: '20px', fontWeight: '800', margin: '0 0 8px 0' }}>
-                Confirmar Registro
-              </h3>
-              <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>
-                ¿Estás seguro de registrar a esta persona?
-              </p>
-            </div>
-
-            <div style={{
-              background: '#1e293b',
-              borderRadius: '10px',
-              padding: '16px',
-              marginBottom: '20px'
-            }}>
-              <div style={{ marginBottom: '10px' }}>
-                <p style={{ color: '#64748b', fontSize: '11px', margin: '0 0 4px 0', fontWeight: '600' }}>NOMBRE COMPLETO</p>
-                <p style={{ color: '#fff', fontSize: '15px', fontWeight: '700', margin: 0 }}>{registerData.name || 'Sin nombre'}</p>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <p style={{ color: '#64748b', fontSize: '11px', margin: '0 0 4px 0', fontWeight: '600' }}>DOCUMENTO</p>
-                  <p style={{ color: '#fff', fontSize: '13px', margin: 0 }}>{registerData.documentType} {registerData.documentNumber}</p>
-                </div>
-                <div>
-                  <p style={{ color: '#64748b', fontSize: '11px', margin: '0 0 4px 0', fontWeight: '600' }}>TELÉFONO</p>
-                  <p style={{ color: '#fff', fontSize: '13px', margin: 0 }}>{registerData.phone || '-'}</p>
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <p style={{ color: '#64748b', fontSize: '11px', margin: '0 0 4px 0', fontWeight: '600' }}>CORREO</p>
-                  <p style={{ color: '#fff', fontSize: '13px', margin: 0 }}>{registerData.email || '-'}</p>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: 'transparent',
-                  border: '1px solid #64748b',
-                  color: '#94a3b8',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '700',
-                  cursor: 'pointer'
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleConfirmRegister}
-                disabled={loading}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: '#FFC107',
-                  border: 'none',
-                  color: '#000',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: '800',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.6 : 1
-                }}
-              >
-                {loading ? 'Registrando...' : 'Sí, registrar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };

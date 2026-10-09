@@ -5,6 +5,7 @@ import { FaArrowLeft, FaEye, FaEyeSlash, FaCheck, FaTimes, FaPhone } from "react
 import Swal from "sweetalert2";
 import { useAuth } from "../../shared/contexts";
 import SessionConflictModal from "../../shared/components/SessionConflictModal";
+import Alert from "../../shared/components/admin/Alert";
 import api, { API_BASE_URL } from "../../shared/services/api";
 import { auth, createUserWithEmailAndPassword, confirmPasswordReset, verifyPasswordResetCode } from "../../shared/services/firebase";
 
@@ -26,11 +27,11 @@ const useAuthStyles = () => useMemo(() => ({
   bannerSubtitle: { fontSize: "17px", color: "#fff", maxWidth: "360px", marginTop: "15px", lineHeight: "1.4", textShadow: "0 2px 8px rgba(0,0,0,0.8)" },
   formWrapper: { display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", zIndex: 2, paddingRight: "40px", paddingTop: "20px", paddingBottom: "30px", position: "relative" },
   backLink: { position: "absolute", top: "30px", left: "40px", display: "flex", alignItems: "center", gap: "8px", color: "#FFC107", textDecoration: "none", fontSize: "15px", opacity: 0.9, transition: "0.2s", zIndex: 10 },
-  formCard: { width: "100%", maxWidth: "400px", backgroundColor: "rgba(15,17,21,0.96)", padding: "22px 28px", borderRadius: "14px", border: "1px solid rgba(255,193,7,0.15)", boxShadow: "0 20px 50px rgba(0,0,0,0.8)", animation: "slideInRight 0.8s ease" },
-  tabWrapper: { display: "flex", backgroundColor: "#1e222a", padding: "4px", borderRadius: "14px", marginBottom: "15px", gap: "4px" },
-  tabBtn: (active) => ({ flex: 1, padding: "8px", borderRadius: "10px", border: "none", fontSize: "13px", fontWeight: "700", cursor: "pointer", transition: "0.3s", backgroundColor: active ? "#FFC107" : "transparent", color: active ? "#000" : "#fff" }),
-  formTitle: { fontSize: "28px", fontWeight: "800", marginBottom: "5px" },
-  formSubtitle: { fontSize: "14px", color: "#888", marginBottom: "15px" },
+  formCard: { width: "100%", maxWidth: "420px", backgroundColor: "rgba(15,17,21,0.96)", padding: "24px 28px", borderRadius: "14px", border: "1px solid rgba(255,193,7,0.15)", boxShadow: "0 20px 50px rgba(0,0,0,0.8)", animation: "slideInRight 0.8s ease" },
+  tabWrapper: { display: "flex", backgroundColor: "rgba(255, 255, 255, 0.04)", padding: "3px", borderRadius: "10px", marginBottom: "16px", border: "1px solid rgba(255, 255, 255, 0.08)", gap: "4px" },
+  tabBtn: (active) => ({ flex: 1, padding: "6px 12px", borderRadius: "7px", border: active ? "1px solid rgba(255, 193, 7, 0.35)" : "1px solid transparent", fontSize: "12.5px", fontWeight: active ? "700" : "500", cursor: "pointer", transition: "all 0.25s ease", backgroundColor: active ? "rgba(255, 193, 7, 0.14)" : "transparent", color: active ? "#FFC107" : "#8b949e", letterSpacing: "0.3px" }),
+  formTitle: { fontSize: "24px", fontWeight: "800", marginBottom: "4px" },
+  formSubtitle: { fontSize: "13px", color: "#888", marginBottom: "14px" },
   label: { display: "block", fontSize: "12px", color: "#aaa", marginBottom: "4px", letterSpacing: "0.5px" },
   input: { width: "100%", padding: "8px 12px", borderRadius: "8px", backgroundColor: "#171a21", border: "1px solid rgba(255,193,7,0.15)", color: "#fff", fontSize: "14px", outline: "none", marginBottom: "4px", boxSizing: "border-box", transition: "border-color 0.2s" },
   select: {
@@ -70,7 +71,6 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [registerSuccessAlert, setRegisterSuccessAlert] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // ✅ Modal confirmación
 
   // ─── Datos ─────────────────────────────────────────────
   const [loginData, setLoginData] = useState({ correo: "", clave: "" });
@@ -341,13 +341,7 @@ const Login = () => {
       return;
     }
 
-    // 7. ✅ MODAL DE CONFIRMACIÓN antes de enviar PIN
-    setShowConfirmModal(true);
-  };
-
-  // ✅ Confirmar registro (después del modal)
-  const handleConfirmRegister = async () => {
-    setShowConfirmModal(false);
+    // 7. Directamente solicitar PIN / enviar registro (sin modal de confirmación)
     setIsSubmitting(true);
     resetMessages();
 
@@ -360,14 +354,13 @@ const Login = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           correo: email,
-          telefono: phone, // ✅ Enviar teléfono
+          telefono: phone,
           nombre: registerData.fullName.trim()
         })
       });
       const result = await response.json();
 
       if (result.success === true) {
-        // ✅ Manejar respuesta según por dónde se envió
         if (result.sentTo === 'sms') {
           setInfoMsg(`📱 ${result.message}`);
         } else {
@@ -570,8 +563,8 @@ const Login = () => {
               <h2 style={styles.formTitle}>{activeTab === "login" ? "¡Hola de nuevo!" : "Crear cuenta"}</h2>
               <p style={styles.formSubtitle}>{activeTab === "login" ? "Ingresa para continuar comprando" : "Empieza tu colección de nivel ahora"}</p>
               <div style={styles.tabWrapper}>
-                <button style={styles.tabBtn(activeTab === "login")} onClick={() => { setActiveTab("login"); resetMessages(); }}>Login</button>
-                <button style={styles.tabBtn(activeTab === "register")} onClick={() => { setActiveTab("register"); resetMessages(); }}>Registro</button>
+                <button type="button" className={`login-tab-pill ${activeTab === 'login' ? 'active' : ''}`} style={styles.tabBtn(activeTab === "login")} onClick={() => { setActiveTab("login"); resetMessages(); }}>Login</button>
+                <button type="button" className={`login-tab-pill ${activeTab === 'register' ? 'active' : ''}`} style={styles.tabBtn(activeTab === "register")} onClick={() => { setActiveTab("register"); resetMessages(); }}>Registro</button>
               </div>
 
               {activeTab === "login" ? (
@@ -792,66 +785,30 @@ const Login = () => {
         </div>
       </div>
 
-      {/* ✅ MODAL DE CONFIRMACIÓN ANTES DE REGISTRAR */}
-      {showConfirmModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={() => setShowConfirmModal(false)}>
-          <div style={{ background: '#0b1220', border: '2px solid #FFC107', borderRadius: '16px', maxWidth: '420px', width: '100%', padding: '28px', boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }} onClick={e => e.stopPropagation()}>
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <div style={{ fontSize: '48px', marginBottom: '10px' }}></div>
-              <h3 style={{ color: '#FFC107', fontSize: '20px', fontWeight: '800', margin: '0 0 8px 0' }}>Confirmar Registro</h3>
-              <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>¿Estás seguro de registrar a esta persona?</p>
-            </div>
-            <div style={{ background: '#1e293b', borderRadius: '10px', padding: '16px', marginBottom: '20px' }}>
-              <div style={{ marginBottom: '10px' }}>
-                <p style={{ color: '#64748b', fontSize: '11px', margin: '0 0 4px 0', fontWeight: '600' }}>NOMBRE COMPLETO</p>
-                <p style={{ color: '#fff', fontSize: '15px', fontWeight: '700', margin: 0 }}>{registerData.fullName || 'Sin nombre'}</p>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <p style={{ color: '#64748b', fontSize: '11px', margin: '0 0 4px 0', fontWeight: '600' }}>DOCUMENTO</p>
-                  <p style={{ color: '#fff', fontSize: '13px', margin: 0 }}>{registerData.documentType} {registerData.documentNumber}</p>
-                </div>
-                <div>
-                  <p style={{ color: '#64748b', fontSize: '11px', margin: '0 0 4px 0', fontWeight: '600' }}>TELÉFONO</p>
-                  <p style={{ color: '#fff', fontSize: '13px', margin: 0 }}>{registerData.phone || '-'}</p>
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <p style={{ color: '#64748b', fontSize: '11px', margin: '0 0 4px 0', fontWeight: '600' }}>CORREO</p>
-                  <p style={{ color: '#fff', fontSize: '13px', margin: 0 }}>{registerData.correo || '-'}</p>
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setShowConfirmModal(false)} style={{ flex: 1, padding: '12px', background: 'transparent', border: '1px solid #64748b', color: '#94a3b8', borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}>Cancelar</button>
-              <button onClick={handleConfirmRegister} disabled={isSubmitting} style={{ flex: 1, padding: '12px', background: '#FFC107', border: 'none', color: '#000', borderRadius: '8px', fontSize: '14px', fontWeight: '800', cursor: isSubmitting ? 'not-allowed' : 'pointer', opacity: isSubmitting ? 0.6 : 1 }}>{isSubmitting ? 'Registrando...' : 'Sí, registrar'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ✅ ALERTA REGISTRO EXITOSO */}
+      {/* ✅ ALERTA REGISTRO EXITOSO TIPO ADMIN (PEQUEÑA ARRIBA A LA DERECHA) */}
       {registerSuccessAlert && (
-        <>
-          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 9999, backgroundColor: '#0b1220', border: '2px solid #10B981', borderRadius: '16px', padding: '28px 32px', maxWidth: '420px', width: '90%', textAlign: 'center', boxShadow: '0 25px 60px rgba(0,0,0,0.8)', animation: 'fadeIn 0.3s ease-out' }}>
-            <div style={{ fontSize: '40px', marginBottom: '12px' }}>✅</div>
-            <h3 style={{ color: '#10B981', fontSize: '20px', fontWeight: '800', margin: '0 0 10px 0' }}>¡Cuenta creada exitosamente!</h3>
-            <p style={{ color: '#CBD5E1', fontSize: '14px', lineHeight: '1.6', margin: '0 0 20px 0' }}>Ya puedes iniciar sesión con tu correo y contraseña.</p>
-            <button onClick={() => setRegisterSuccessAlert(false)} style={{ padding: '10px 28px', backgroundColor: '#10B981', border: 'none', borderRadius: '10px', color: '#fff', fontWeight: '800', cursor: 'pointer', fontSize: '14px', transition: 'all 0.2s ease' }}>Entendido</button>
-          </div>
-          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9998, backdropFilter: 'blur(4px)' }} onClick={() => setRegisterSuccessAlert(false)} />
-        </>
+        <Alert
+          message="¡Registrado con éxito! Ya puedes iniciar sesión."
+          type="success"
+          onClose={() => setRegisterSuccessAlert(false)}
+        />
       )}
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideInRight { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .login-tab-pill { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+        .login-tab-pill:hover:not(.active) {
+          color: #fff !important;
+          background-color: rgba(255, 255, 255, 0.06) !important;
+        }
         .gm-swal-popup { border: 1px solid rgba(255, 193, 7, 0.4) !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important; padding: 8px !important; }
         .gm-swal-btn { padding: 4px 12px !important; font-size: 11px !important; font-weight: 700 !important; border-radius: 6px !important; margin: 5px !important; height: 28px !important; min-width: 70px !important; }
         .gm-swal-btn.confirm { color: #000 !important; }
         .login-container-root { display: flex; min-height: 100vh; width: 100%; background-size: cover; background-position: center; font-family: 'Inter', sans-serif; color: #fff; position: relative; overflow-x: hidden; gap: 32px; }
         .login-hero-section { flex: 0 0 45%; }
         .login-form-wrapper { flex: 0 0 55%; }
-        .login-form-card { width: 100%; max-width: 400px; position: relative; }
+        .login-form-card { width: 100%; max-width: 420px; position: relative; }
         .login-input-row { display: flex; gap: 12px; width: 100%; }
         .password-globito-balloon { position: absolute; right: calc(100% + 20px); top: 50%; transform: translateY(-50%); width: 250px; background: #0f172a; border: 1px solid rgba(245, 200, 27, 0.45); border-radius: 12px; padding: 12px 14px; box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 15px rgba(245, 200, 27, 0.15); z-index: 100; backdrop-filter: blur(8px); animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1); box-sizing: border-box; }
         .password-globito-balloon::after { content: ''; position: absolute; top: 50%; right: -8px; transform: translateY(-50%); border-width: 8px 0 8px 8px; border-style: solid; border-color: transparent transparent transparent #0f172a; }
