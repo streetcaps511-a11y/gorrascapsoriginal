@@ -87,5 +87,9 @@ export const deleteRole = (id) => api.delete(`/api/roles/${id}`);
 // ── Otros ──
 export const getEstados = () => api.get("/api/estados");
 export const getMetodosPago = () => api.get("/api/estados/tipo/metodo_pago");
-export const getTallas = () => api.get("/api/tallas");
+export const getTallas = (params) => api.get("/api/tallas", { params });
+export const createTalla = (data) => api.post("/api/tallas", data);
+export const updateTalla = (id, data) => api.put(`/api/tallas/${id}`, data);
+export const toggleTallaStatus = (id) => api.patch(`/api/tallas/${id}/estado`);
+export const deleteTalla = (id) => api.delete(`/api/tallas/${id}`);
 export const getColores = () => api.get("/api/colores");

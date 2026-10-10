@@ -25,10 +25,10 @@ const useAuthStyles = () => useMemo(() => ({
   logoImg: { width: "240px", height: "auto", marginBottom: "15px", filter: "drop-shadow(0 4px 15px rgba(0,0,0,0.6))" },
   bannerTitle: { fontSize: "26px", fontWeight: "800", color: "#FFC107", letterSpacing: "1px", margin: "0", textShadow: "0 2px 10px rgba(0,0,0,0.8)" },
   bannerSubtitle: { fontSize: "17px", color: "#fff", maxWidth: "360px", marginTop: "15px", lineHeight: "1.4", textShadow: "0 2px 8px rgba(0,0,0,0.8)" },
-  formWrapper: { display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", zIndex: 2, paddingRight: "40px", paddingTop: "20px", paddingBottom: "30px", position: "relative" },
+  formWrapper: { display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", zIndex: 2, padding: "0 40px", height: "100%", position: "relative" },
   backLink: { position: "absolute", top: "30px", left: "40px", display: "flex", alignItems: "center", gap: "8px", color: "#FFC107", textDecoration: "none", fontSize: "15px", opacity: 0.9, transition: "0.2s", zIndex: 10 },
-  formCard: { width: "100%", maxWidth: "420px", backgroundColor: "rgba(15,17,21,0.96)", padding: "24px 28px", borderRadius: "14px", border: "1px solid rgba(255,193,7,0.15)", boxShadow: "0 20px 50px rgba(0,0,0,0.8)", animation: "slideInRight 0.8s ease" },
-  tabWrapper: { display: "flex", backgroundColor: "rgba(255, 255, 255, 0.04)", padding: "3px", borderRadius: "10px", marginBottom: "16px", border: "1px solid rgba(255, 255, 255, 0.08)", gap: "4px" },
+  formCard: { width: "100%", maxWidth: "420px", backgroundColor: "rgba(15,17,21,0.96)", padding: "20px 26px", borderRadius: "14px", border: "1px solid rgba(255,193,7,0.15)", boxShadow: "0 20px 50px rgba(0,0,0,0.8)", animation: "slideInRight 0.8s ease" },
+  tabWrapper: { display: "flex", backgroundColor: "rgba(255, 255, 255, 0.04)", padding: "3px", borderRadius: "10px", marginBottom: "14px", border: "1px solid rgba(255, 255, 255, 0.08)", gap: "4px" },
   tabBtn: (active) => ({ flex: 1, padding: "6px 12px", borderRadius: "7px", border: active ? "1px solid rgba(255, 193, 7, 0.35)" : "1px solid transparent", fontSize: "12.5px", fontWeight: active ? "700" : "500", cursor: "pointer", transition: "all 0.25s ease", backgroundColor: active ? "rgba(255, 193, 7, 0.14)" : "transparent", color: active ? "#FFC107" : "#8b949e", letterSpacing: "0.3px" }),
   formTitle: { fontSize: "24px", fontWeight: "800", marginBottom: "4px" },
   formSubtitle: { fontSize: "13px", color: "#888", marginBottom: "14px" },
@@ -560,11 +560,15 @@ const Login = () => {
         <div style={styles.formCard} className="login-form-card">
           {view === "auth" && (
             <>
-              <h2 style={styles.formTitle}>{activeTab === "login" ? "¡Hola de nuevo!" : "Crear cuenta"}</h2>
-              <p style={styles.formSubtitle}>{activeTab === "login" ? "Ingresa para continuar comprando" : "Empieza tu colección de nivel ahora"}</p>
+              {activeTab === "login" && (
+                <>
+                  <h2 style={styles.formTitle}>¡Hola de nuevo!</h2>
+                  <p style={styles.formSubtitle}>Ingresa para continuar comprando</p>
+                </>
+              )}
               <div style={styles.tabWrapper}>
                 <button type="button" className={`login-tab-pill ${activeTab === 'login' ? 'active' : ''}`} style={styles.tabBtn(activeTab === "login")} onClick={() => { setActiveTab("login"); resetMessages(); }}>Login</button>
-                <button type="button" className={`login-tab-pill ${activeTab === 'register' ? 'active' : ''}`} style={styles.tabBtn(activeTab === "register")} onClick={() => { setActiveTab("register"); resetMessages(); }}>Registro</button>
+                <button type="button" className={`login-tab-pill ${activeTab === 'register' ? 'active' : ''}`} style={styles.tabBtn(activeTab === "register")} onClick={() => { setActiveTab("register"); resetMessages(); }}>Crear registro</button>
               </div>
 
               {activeTab === "login" ? (
