@@ -30,6 +30,22 @@ const Talla = sequelize.define('Talla', {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
         field: 'Estado'
+    },
+    idProducto: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'IdProducto'
+    },
+    campos: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: [],
+        field: 'Campos'
+    },
+    tipo: {
+        type: DataTypes.STRING(50),
+        defaultValue: 'general',
+        field: 'Tipo'
     }
 }, {
     tableName: 'Tallas',

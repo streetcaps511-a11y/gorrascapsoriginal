@@ -39,7 +39,7 @@ const tallaController = {
         try {
             const tallas = await Talla.findAll({
                 where: { isActive: true },
-                attributes: ['id', 'nombre'],
+                attributes: ['id', 'nombre', 'cantidad', 'isActive', 'idProducto', 'campos', 'tipo'],
                 order: [['nombre', 'ASC']]
             });
             return successResponse(res, tallas, 'Tallas activas');
@@ -60,35 +60,41 @@ const tallaController = {
 
     create: async (req, res) => {
         try {
-            const { nombre, cantidad = 0, isActive = true } = req.body;
+            const { nombre, cantidad = 0, isActive = true, idProducto = null, campos = [], tipo = 'general' } = req.body;
             if (!nombre) return errorResponse(res, 'El nombre es requerido', 400);
 
             const nueva = await Talla.create({
                 nombre: nombre.toUpperCase().trim(),
                 cantidad: parseInt(cantidad) || 0,
-                isActive
+                isActive,
+                idProducto: idProducto ? parseInt(idProducto) : null,
+                campos: Array.isArray(campos) ? campos : [],
+                tipo
             });
-            return successResponse(res, nueva, 'Talla creada', 201);
+            return successResponse(res, nueva, 'Artículo registrado con éxito', 201);
         } catch (error) {
-            return errorResponse(res, 'Error al crear talla', 500, error.message);
+            return errorResponse(res, 'Error al crear artículo', 500, error.message);
         }
     },
 
     update: async (req, res) => {
         try {
             const talla = await Talla.findByPk(req.params.id);
-            if (!talla) return errorResponse(res, 'Talla no encontrada', 404);
+            if (!talla) return errorResponse(res, 'Artículo no encontrado', 404);
             
-            const { nombre, cantidad, isActive } = req.body;
+            const { nombre, cantidad, isActive, idProducto, campos, tipo } = req.body;
             const updateData = {};
             if (nombre) updateData.nombre = nombre.toUpperCase().trim();
             if (cantidad !== undefined) updateData.cantidad = parseInt(cantidad);
             if (isActive !== undefined) updateData.isActive = isActive;
+            if (idProducto !== undefined) updateData.idProducto = idProducto ? parseInt(idProducto) : null;
+            if (campos !== undefined) updateData.campos = Array.isArray(campos) ? campos : [];
+            if (tipo !== undefined) updateData.tipo = tipo;
 
             await talla.update(updateData);
-            return successResponse(res, talla, 'Talla actualizada');
+            return successResponse(res, talla, 'Artículo actualizado con éxito');
         } catch (error) {
-            return errorResponse(res, 'Error al actualizar talla', 500, error.message);
+            return errorResponse(res, 'Error al actualizar artículo', 500, error.message);
         }
     },
 

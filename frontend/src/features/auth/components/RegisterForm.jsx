@@ -130,7 +130,7 @@ const RegisterForm = ({
         {/* ✅ NUEVO: Campo de teléfono obligatorio */}
         <div className="input-field-group">
           <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <FaPhone size={12} color="#FFC107" />
+            
             Número de teléfono <span style={{ color: '#ff6b6b' }}>*</span>
           </label>
           <input

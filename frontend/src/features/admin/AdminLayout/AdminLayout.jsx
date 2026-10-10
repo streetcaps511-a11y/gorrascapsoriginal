@@ -6,7 +6,7 @@ import {
   FaUser, FaHome, FaBox, FaUsers, FaShoppingCart, FaChartBar,
   FaExchangeAlt, FaShieldAlt, FaTag, FaTruck, FaSignOutAlt,
   FaUserTie, FaUserCircle, FaCalendarAlt, FaChevronDown,
-  FaBars, FaTimes, FaRuler
+  FaBars, FaTimes, FaRuler, FaBoxes
 } from "react-icons/fa";
 import { useAuth } from "../../shared/contexts/AuthContext";
 import LogoutModal from "../../shared/components/admin/LogoutModal";
@@ -23,7 +23,7 @@ const menuConfig = [
     subItems: [
       { id: "proveedores", label: "Proveedores", icon: FaTruck,        path: "/admin/proveedores" },
       { id: "compras",     label: "Compras",      icon: FaShoppingCart, path: "/admin/compras" },
-      { id: "tallas",      label: "Tallas",       icon: FaRuler,        path: "/admin/tallas" },
+      { id: "tallas",      label: "Artículos",    icon: FaBoxes,        path: "/admin/tallas" },
       { id: "categorias",  label: "Categorías",   icon: FaTag,          path: "/admin/categorias" },
       { id: "productos",   label: "Productos",    icon: FaBox,          path: "/admin/productos" },
     ]

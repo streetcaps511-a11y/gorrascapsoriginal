@@ -27,6 +27,7 @@ export const useVentasLogic = () => {
   const [availableStatuses, setAvailableStatuses] = useState(['Pendiente', 'Completada', 'Rechazada']);
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState([]);
   const [availableSizes, setAvailableSizes] = useState(['Ajustable', '7', '7/1/4', '7/1/8']);
+  const [availableArticulos, setAvailableArticulos] = useState([]);
   const [availableCustomers, setAvailableCustomers] = useState([]);
   const [availableProducts, setAvailableProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -58,7 +59,7 @@ export const useVentasLogic = () => {
   });
 
   // ====== FETCH INICIAL (Nitro Sync) ======
-  const fetchData = useCallback(async (loadAll = false) => {
+  const fetchData = useCallback(async (loadAll = true) => {
     const token = sessionStorage.getItem('token');
     if (!token) return;
     try {
@@ -80,11 +81,13 @@ export const useVentasLogic = () => {
             return lower !== 'activo' && lower !== 'inactivo' && lower !== 'anulada' && lower !== 'anulado';
           });
         const mappedMethods = methods.map(m => typeof m === 'string' ? m : (m.nombre || m.Nombre));
-        const mappedSizes = sizes.length > 0 ? sizes.map(s => typeof s === 'string' ? s : (s.nombre || s.Nombre || s.talla || s.Talla)) : ['Ajustable', '7', '7/1/4', '7/1/8'];
+        const rawSizes = Array.isArray(sizes) ? sizes : [];
+        const mappedSizes = rawSizes.length > 0 ? rawSizes.map(s => typeof s === 'string' ? s : (s.nombre || s.Nombre || s.talla || s.Talla)) : ['Ajustable', '7', '7/1/4', '7/1/8'];
         const activeProducts = products.filter(p => p.isActive);
         setAvailableStatuses(mappedStatuses);
         setAvailablePaymentMethods(mappedMethods);
         setAvailableSizes(mappedSizes);
+        setAvailableArticulos(rawSizes);
         setAvailableCustomers(customers);
         setAvailableProducts(activeProducts);
       }
@@ -520,6 +523,7 @@ export const useVentasLogic = () => {
     availableStatuses,
     availablePaymentMethods,
     availableSizes,
+    availableArticulos,
     availableCustomers,
     availableProducts,
     searchTerm, setSearchTerm,

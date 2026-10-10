@@ -4,7 +4,7 @@ export const AVAILABLE_PERMISSIONS = [
   { id: 'perm_productos', label: 'Productos' },
   { id: 'perm_proveedores', label: 'Proveedores' },
   { id: 'perm_compras', label: 'Compras' },
-  { id: 'perm_tallas', label: 'Tallas' },
+  { id: 'perm_tallas', label: 'Artículos' },
   { id: 'perm_clientes', label: 'Clientes' },
   { id: 'perm_ventas', label: 'Ventas' },
   { id: 'perm_devoluciones', label: 'Devoluciones' },
